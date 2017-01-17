@@ -1,0 +1,10 @@
+debug all;
+nodebug network debug;
+
+read "/path/to/file.pcap";
+#input "eth0";
+
+filter "udp port 53";
+
+#write "/path/to/file.pcap";
+output "eth1";

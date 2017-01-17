@@ -51,6 +51,7 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 missing
 config.h.in
+config.h.in~
 test-driver
 
 # Configure
@@ -65,6 +66,7 @@ src/stamp-h1
 # Project specific files
 src/drool
 src/drool.1
+src/drool.conf.5
 src/test/test-suite.log
 src/test/test*.sh.log
 src/test/test*.sh.trs

@@ -1,0 +1,114 @@
+.TH drool 1 "@PACKAGE_VERSION@" "DNS Replay Tool"
+.SH NAME
+drool \- DNS Replay Tool
+.SH SYNOPSIS
+.B drool
+[
+.B \-c
+[
+.I type
+: ]
+.I config
+]
+[
+.B \-l
+.I facility
+[ :
+.I level
+]
+]
+[
+.B \-L
+.I facility
+[ :
+.I level
+]
+]
+[
+.B \-f
+.I filter
+]
+[
+.B \-i
+.I interface
+]
+[
+.B \-r
+.I file.pcap
+]
+[
+.B \-o
+.I interface
+]
+[
+.B \-w
+.I file.pcap
+]
+[
+.B \-vhV
+]
+.SH DESCRIPTION
+.SH OPTIONS
+.TP
+\fB\-c\fR [\fItype\fR:]\fIconfig\fR
+todo
+.TP
+\fB\-l\fR \fIfacility\fR[:\fIlevel\fR]
+todo
+.TP
+\fB\-L\fR \fIfacility\fR[:\fIlevel\fR]
+todo
+.TP
+\fB\-f\fR \fIfilter\fR
+todo
+.TP
+\fB\-i\fR \fIinterface\fR
+todo
+.TP
+\fB\-r\fR \fIfile.pcap\fR
+todo
+.TP
+\fB\-o\fR \fIinterface\fR
+todo
+.TP
+\fB\-w\fR \fIfile.pcap\fR
+todo
+.TP
+.B \-v
+todo
+.TP
+.B \-h
+todo
+.TP
+.B \-V
+todo
+.SH DEBUG FACILITIES
+todo
+.SH EXIT VALUES
+2 \- unknown or invalid option
+.br
+3 \- conf file error
+.SH SEE ALSO
+drool.conf(5)
+.SH AUTHORS
+Jerry Lundström, DNS-OARC
+.LP
+Maintained by DNS-OARC
+.LP
+.RS
+.I https://www.dns-oarc.net/
+.RE
+.LP
+.SH BUGS
+For issues and feature requests please use:
+.LP
+.RS
+\fI@PACKAGE_URL@\fP
+.RE
+.LP
+For question and help please use:
+.LP
+.RS
+\fI@PACKAGE_BUGREPORT@\fP
+.RE
+.LP
