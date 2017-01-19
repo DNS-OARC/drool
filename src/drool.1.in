@@ -120,9 +120,21 @@ todo
 .SH DEBUG FACILITIES
 todo
 .SH EXIT VALUES
+0 \- no error
+.br
+1 \- generic error
+.br
 2 \- unknown or invalid option
 .br
 3 \- conf file error
+.br
+4 \- signal setup or handling error
+.br
+5 \- signal received
+.br
+6 \- pcap-thread error
+.br
+7 \- out of memory
 .SH SEE ALSO
 drool.conf(5)
 .SH AUTHORS

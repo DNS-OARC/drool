@@ -48,7 +48,7 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 LT_INIT([disable-static])
 
 # pcap_thread
-# AX_PCAP_THREAD
+AX_PCAP_THREAD
 
 # Checks for libraries.
 

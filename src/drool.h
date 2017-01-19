@@ -35,7 +35,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "conf.h"
+
 #ifndef __drool_drool_h
 #define __drool_drool_h
+
+#include <stdint.h>
+
+#if DROOL_ENABLE_ASSERT
+#undef NDEBUG
+#include <assert.h>
+#define drool_assert(x) assert(x)
+#else
+#define drool_assert(x)
+#endif
+
+#define DROOL_ERROR     1
+#define DROOL_EOPT      2
+#define DROOL_ECONF     3
+#define DROOL_ESIGNAL   4
+#define DROOL_ESIGRCV   5
+#define DROOL_EPCAPT    6
+#define DROOL_ENOMEM    7
+
+#define DROOL_T_INIT { 0, 0, 0 }
+typedef struct drool drool_t;
+struct drool {
+    drool_t*        next;
+
+    const conf_t*   conf;
+    uint64_t        packets_seen;
+};
 
 #endif /* __drool_drool_h */
