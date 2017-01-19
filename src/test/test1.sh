@@ -1,3 +1,3 @@
 #!/bin/sh -e
 
-true
+../drool -h

@@ -1,0 +1,50 @@
+.TH drool.conf 5 "@PACKAGE_VERSION@" "DNS Replay Tool Configuration"
+.SH NAME
+drool.conf \- Configuration for DNS Replay Tool
+.SH DESCRIPTION
+.SH CONFIGURATION
+.TP
+\fBdebug\fR FACILITY [ LEVEL ] ;
+todo
+.TP
+\fBnodebug\fR FACILITY [ LEVEL ] ;
+todo
+.TP
+\fBread\fR " FILE " ;
+todo
+.TP
+\fBinput\fR " INTERFACE " ;
+todo
+.TP
+\fBfilter\fR " FILTER " ;
+todo
+.TP
+\fBwrite\fR " FILE " ;
+todo
+.TP
+\fBoutput\fR " INTERFACE " ;
+todo
+.SH SEE ALSO
+drool(1)
+.SH AUTHORS
+Jerry Lundström, DNS-OARC
+.LP
+Maintained by DNS-OARC
+.LP
+.RS
+.I https://www.dns-oarc.net/
+.RE
+.LP
+.SH BUGS
+For issues and feature requests please use:
+.LP
+.RS
+\fI@PACKAGE_URL@\fP
+.RE
+.LP
+For question and help please use:
+.LP
+.RS
+\fI@PACKAGE_BUGREPORT@\fP
+.RE
+.LP
