@@ -1,0 +1,161 @@
+.\" DNS Reply Tool (drool)
+.\"
+.\" Copyright (c) 2017, OARC, Inc.
+.\" Copyright (c) 2017, Comcast Corporation
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\"
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in
+.\"    the documentation and/or other materials provided with the
+.\"    distribution.
+.\"
+.\" 3. Neither the name of the copyright holder nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+.\" "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+.\" LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+.\" FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+.\" COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+.\" BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+.\" LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+.\" CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+.\" ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.\"
+.TH drool 1 "@PACKAGE_VERSION@" "DNS Replay Tool"
+.SH NAME
+drool \- DNS Replay Tool
+.SH SYNOPSIS
+.B drool
+[
+.B \-c
+[
+.I type
+: ]
+.I config
+]
+[
+.B \-l
+.I facility
+[ :
+.I level
+]
+]
+[
+.B \-L
+.I facility
+[ :
+.I level
+]
+]
+[
+.B \-f
+.I filter
+]
+[
+.B \-i
+.I interface
+]
+[
+.B \-r
+.I file.pcap
+]
+[
+.B \-o
+.I interface
+]
+[
+.B \-w
+.I file.pcap
+]
+[
+.B \-vhV
+]
+.SH DESCRIPTION
+.SH OPTIONS
+.TP
+\fB\-c\fR [\fItype\fR:]\fIconfig\fR
+todo
+.TP
+\fB\-l\fR \fIfacility\fR[:\fIlevel\fR]
+todo
+.TP
+\fB\-L\fR \fIfacility\fR[:\fIlevel\fR]
+todo
+.TP
+\fB\-f\fR \fIfilter\fR
+todo
+.TP
+\fB\-i\fR \fIinterface\fR
+todo
+.TP
+\fB\-r\fR \fIfile.pcap\fR
+todo
+.TP
+\fB\-o\fR \fIinterface\fR
+todo
+.TP
+\fB\-w\fR \fIfile.pcap\fR
+todo
+.TP
+.B \-v
+todo
+.TP
+.B \-h
+todo
+.TP
+.B \-V
+todo
+.SH DEBUG FACILITIES
+todo
+.SH EXIT VALUES
+0 \- no error
+.br
+1 \- generic error
+.br
+2 \- unknown or invalid option
+.br
+3 \- conf file error
+.br
+4 \- signal setup or handling error
+.br
+5 \- signal received
+.br
+6 \- pcap-thread error
+.br
+7 \- out of memory
+.SH SEE ALSO
+drool.conf(5)
+.SH AUTHORS
+Jerry Lundström, DNS-OARC
+.LP
+Maintained by DNS-OARC
+.LP
+.RS
+.I https://www.dns-oarc.net/
+.RE
+.LP
+.SH BUGS
+For issues and feature requests please use:
+.LP
+.RS
+\fI@PACKAGE_URL@\fP
+.RE
+.LP
+For question and help please use:
+.LP
+.RS
+\fI@PACKAGE_BUGREPORT@\fP
+.RE
+.LP
