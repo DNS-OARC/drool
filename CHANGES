@@ -1,0 +1,19 @@
+2017-01-20 Jerry Lundström
+
+    Release 1.0.0-alpha.1
+
+    First release, has command line options, conf file handling, logging,
+    man-pages, can capture/read interface/pcaps and will display some
+    statistics at exit.
+
+    $ src/drool -h
+    $ src/drool -vv -r file.pcap
+    $ man src/drool.1
+    $ man src/drool.conf.5
+
+    bb5602c Fix #3
+    a46d040 Fix #13: Add license
+    5b43516 Fix #4: Basic layout for opts, conf, logging, skeleton man-pages
+            and tests
+    a9b6ab5 Fix #1: Add initial files and directories
+    aca355b Initial commit
