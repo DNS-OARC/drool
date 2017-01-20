@@ -1,3 +1,5 @@
+#!/bin/sh -e
+#
 # DNS Reply Tool (drool)
 #
 # Copyright (c) 2017, OARC, Inc.
@@ -33,17 +35,4 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-
-CLEANFILES = test*.log test*.trs \
-    test2.conf.dist
-
-TESTS = test1.sh test2.sh
-
-test2.sh: test2.conf.dist
-
-test2.conf.dist: test2.conf
-	cp "$(srcdir)/test2.conf" test2.conf.dist
-
-EXTRA_DIST = $(TESTS) \
-    test2.conf
+! ../drool -c ./test2.conf.dist

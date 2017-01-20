@@ -70,3 +70,4 @@ src/drool.conf.5
 src/test/test-suite.log
 src/test/test*.sh.log
 src/test/test*.sh.trs
+src/test/*.dist
