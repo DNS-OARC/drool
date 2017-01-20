@@ -51,6 +51,11 @@
 #define CONF_COMMENT    2
 #define CONF_EMPTY      3
 
+#define CONF_EEXIST_STR "Already exists"
+#define CONF_ENOMEM_STR "Out of memory"
+#define CONF_EINVAL_STR "Invalid arguments"
+#define CONF_ERROR_STR  "Generic error"
+
 /*
  * conf file struct and functions
  */
@@ -65,10 +70,10 @@ struct conf_file {
 conf_file_t* conf_file_new(void);
 void conf_file_free(conf_file_t* conf_file);
 void conf_file_release(conf_file_t* conf_file);
-conf_file_t* conf_file_next(const conf_file_t* conf_file);
+const conf_file_t* conf_file_next(const conf_file_t* conf_file);
 int conf_file_set_next(conf_file_t* conf_file, conf_file_t* next);
 const char* conf_file_name(const conf_file_t* conf_file);
-int conf_file_set_name(conf_file_t* conf_file, const char* name);
+int conf_file_set_name(conf_file_t* conf_file, const char* name, size_t length);
 
 /*
  * conf interface struct and functions
@@ -84,10 +89,68 @@ struct conf_interface {
 conf_interface_t* conf_interface_new(void);
 void conf_interface_free(conf_interface_t* conf_interface);
 void conf_interface_release(conf_interface_t* conf_interface);
-conf_interface_t* conf_interface_next(const conf_interface_t* conf_interface);
+const conf_interface_t* conf_interface_next(const conf_interface_t* conf_interface);
 int conf_interface_set_next(conf_interface_t* conf_interface, conf_interface_t* next);
 const char* conf_interface_name(const conf_interface_t* conf_interface);
-int conf_interface_set_name(conf_interface_t* conf_interface, const char* name);
+int conf_interface_set_name(conf_interface_t* conf_interface, const char* name, size_t length);
+
+/*
+ * conf struct and functions
+ */
+
+#define CONF_T_INIT { \
+    0, 0, 0, 0, 0, \
+    0, 0, \
+    0, 0, \
+    CONF_FILE_T_INIT, CONF_INTERFACE_T_INIT, \
+    LOG_T_INIT \
+}
+typedef struct conf conf_t;
+struct conf {
+    unsigned short      have_filter : 1;
+    unsigned short      have_read : 1;
+    unsigned short      have_input : 1;
+    unsigned short      have_write : 1;
+    unsigned short      have_output : 1;
+
+    char*               filter;
+    size_t              filter_length;
+
+    conf_file_t*        read;
+    conf_interface_t*   input;
+
+    conf_file_t         write;
+    conf_interface_t    output;
+
+    log_t               log;
+};
+
+conf_t* conf_new(void);
+void conf_free(conf_t* conf);
+void conf_release(conf_t* conf);
+int conf_have_filter(const conf_t* conf);
+int conf_have_read(const conf_t* conf);
+int conf_have_input(const conf_t* conf);
+int conf_have_write(const conf_t* conf);
+int conf_have_output(const conf_t* conf);
+const char* conf_filter(const conf_t* conf);
+int conf_set_filter(conf_t* conf, const char* filter, size_t length);
+const size_t conf_filter_length(const conf_t* conf);
+const conf_file_t* conf_read(const conf_t* conf);
+const conf_interface_t* conf_input(const conf_t* conf);
+const conf_file_t* conf_write(const conf_t* conf);
+const conf_interface_t* conf_output(const conf_t* conf);
+int conf_add_read(conf_t* conf, const char* file, size_t length);
+int conf_add_input(conf_t* conf, const char* interface, size_t length);
+int conf_set_write(conf_t* conf, const char* file, size_t length);
+int conf_set_output(conf_t* conf, const char* interface, size_t length);
+const log_t* conf_log(const conf_t* conf);
+log_t* conf_log_rw(conf_t* conf);
+
+int conf_parse_file(conf_t* conf, const char* file);
+int conf_parse_text(conf_t* conf, const char* text, const size_t length);
+
+const char* conf_strerr(int errnum);
 
 /*
  * conf token structs
@@ -112,7 +175,7 @@ struct conf_token {
     size_t                      length;
 };
 
-typedef int (*conf_token_callback_t)(const conf_token_t* token);
+typedef int (*conf_token_callback_t)(conf_t* conf, const conf_token_t* tokens, const char** errstr);
 
 typedef struct conf_syntax conf_syntax_t;
 struct conf_syntax {
@@ -120,58 +183,5 @@ struct conf_syntax {
     conf_token_callback_t       callback;
     const conf_token_type_t     syntax[8];
 };
-
-/*
- * conf struct and functions
- */
-
-#define CONF_T_INIT { \
-    0, 0, 0, 0, 0, \
-    0, \
-    0, 0, \
-    CONF_FILE_T_INIT, CONF_INTERFACE_T_INIT, \
-    LOG_T_INIT \
-}
-typedef struct conf conf_t;
-struct conf {
-    unsigned short      have_filter : 1;
-    unsigned short      have_read : 1;
-    unsigned short      have_input : 1;
-    unsigned short      have_write : 1;
-    unsigned short      have_output : 1;
-
-    char*               filter;
-
-    conf_file_t*        read;
-    conf_interface_t*   input;
-
-    conf_file_t         write;
-    conf_interface_t    output;
-
-    log_t               log;
-};
-
-conf_t* conf_new(void);
-void conf_free(conf_t* conf);
-void conf_release(conf_t* conf);
-int conf_have_filter(const conf_t* conf);
-int conf_have_read(const conf_t* conf);
-int conf_have_input(const conf_t* conf);
-int conf_have_write(const conf_t* conf);
-int conf_have_output(const conf_t* conf);
-const char* conf_filter(const conf_t* conf);
-int conf_set_filter(conf_t* conf, const char* filter);
-const conf_file_t* conf_read(const conf_t* conf);
-const conf_interface_t* conf_input(const conf_t* conf);
-const conf_file_t* conf_write(const conf_t* conf);
-const conf_interface_t* conf_output(const conf_t* conf);
-int conf_add_read(conf_t* conf, const char* file);
-int conf_add_input(conf_t* conf, const char* interface);
-int conf_set_write(conf_t* conf, const char* file);
-int conf_set_output(conf_t* conf, const char* interface);
-log_t* conf_log(conf_t* conf);
-
-int conf_parse_file(conf_t* conf, const char* file);
-int conf_parse_text(conf_t* conf, const char* text);
 
 #endif /* __drool_conf_h */

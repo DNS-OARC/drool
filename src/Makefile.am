@@ -39,8 +39,8 @@ CLEANFILES = drool.1
 SUBDIRS = test
 
 AM_CFLAGS = -I$(srcdir) \
-    -I$(top_srcdir)
-#    $(PTHREAD_CFLAGS)
+    -I$(top_srcdir) \
+    $(PTHREAD_CFLAGS)
 
 EXTRA_DIST = drool.1.in \
     drool.conf.5.in \
@@ -48,9 +48,13 @@ EXTRA_DIST = drool.1.in \
 
 bin_PROGRAMS = drool
 
-drool_SOURCES = conf.c drool.c log.c
-dist_drool_SOURCES = assert.h conf.h drool.h log.h
-# drool_LDADD = $(PTHREAD_LIBS)
+drool_SOURCES = conf.c drool.c log.c \
+    omg-dns/omg_dns.c \
+    pcap-thread/pcap_thread.c
+dist_drool_SOURCES = conf.h drool.h log.h \
+    omg-dns/omg_dns.h \
+    pcap-thread/pcap_thread.h
+drool_LDADD = $(PTHREAD_LIBS)
 
 man1_MANS = drool.1 \
     drool.conf.5

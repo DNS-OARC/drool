@@ -33,8 +33,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-ACLOCAL_AMFLAGS = -I m4
-# -I src/pcap-thread/m4
+ACLOCAL_AMFLAGS = -I m4 -I src/pcap-thread/m4
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in \
     $(srcdir)/src/config.h.in~ \

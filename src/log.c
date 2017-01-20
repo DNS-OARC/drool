@@ -37,11 +37,26 @@
 
 #include "config.h"
 
-#include "assert.h"
 #include "log.h"
+#include "drool.h"
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
+static const log_settings_t* get_facility(const log_t* log, const log_facility_t facility) {
+    drool_assert(log);
+    switch (facility) {
+        case LOG_FACILITY_CORE:
+            return &(log->core);
+        case LOG_FACILITY_NETWORK:
+            return &(log->network);
+        default:
+            break;
+    }
+    return &(log->none);
+}
 
 inline int log_level_enable(log_settings_t* settings, const log_level_t level) {
     drool_assert(settings);
@@ -117,6 +132,87 @@ inline int log_level_disable(log_settings_t* settings, const log_level_t level) 
     return -1;
 }
 
+const char* log_level_name(const log_level_t level) {
+    switch (level) {
+        case LOG_LEVEL_DEBUG:
+            return LOG_LEVEL_DEBUG_STR;
+        case LOG_LEVEL_INFO:
+            return LOG_LEVEL_INFO_STR;
+        case LOG_LEVEL_NOTICE:
+            return LOG_LEVEL_NOTICE_STR;
+        case LOG_LEVEL_WARNING:
+            return LOG_LEVEL_WARNING_STR;
+        case LOG_LEVEL_ERROR:
+            return LOG_LEVEL_ERROR_STR;
+        case LOG_LEVEL_CRITICAL:
+            return LOG_LEVEL_CRITICAL_STR;
+        case LOG_LEVEL_ALL:
+            return LOG_LEVEL_ALL_STR;
+    }
+    return LOG_LEVEL_UNKNOWN_STR;
+}
+
+const char* log_facility_name(const log_facility_t facility) {
+    switch (facility) {
+        case LOG_FACILITY_CORE:
+            return LOG_FACILITY_CORE_STR;
+        case LOG_FACILITY_NETWORK:
+            return LOG_FACILITY_NETWORK_STR;
+        case LOG_FACILITY_NONE:
+            return LOG_FACILITY_NONE_STR;
+    }
+    return LOG_FACILITY_UNKNOWN_STR;
+}
+
+int log_is_enabled(const log_t* log, const log_facility_t facility, const log_level_t level) {
+    const log_settings_t* settings;
+
+    drool_assert(log);
+    if (!log) {
+        return 0;
+    }
+
+    settings = get_facility(log, facility);
+    drool_assert(settings);
+    if (!settings) {
+        return 0;
+    }
+
+    switch (level) {
+        case LOG_LEVEL_DEBUG:
+            if (settings->debug)
+                return 1;
+            break;
+
+        case LOG_LEVEL_INFO:
+            if (settings->info)
+                return 1;
+            break;
+
+        case LOG_LEVEL_NOTICE:
+            if (settings->notice)
+                return 1;
+            break;
+
+        case LOG_LEVEL_WARNING:
+            if (settings->warning)
+                return 1;
+            break;
+
+        case LOG_LEVEL_ERROR:
+            if (settings->error)
+                return 1;
+            break;
+
+        case LOG_LEVEL_CRITICAL:
+            if (settings->critical)
+                return 1;
+            break;
+    }
+
+    return 0;
+}
+
 inline int log_enable(log_t* log, const log_facility_t facility, const log_level_t level) {
     drool_assert(log);
 
@@ -149,9 +245,6 @@ inline int log_disable(log_t* log, const log_facility_t facility, const log_leve
 
 void log_printf_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...) {
     va_list ap;
-    const log_settings_t* settings = 0;
-    const char* facility_name = LOG_FACILITY_UNKNOWN_STR;
-    const char* level_name = LOG_LEVEL_UNKNOWN_STR;
 
     drool_assert(log);
     if (!log) {
@@ -162,69 +255,56 @@ void log_printf_fileline(const log_t* log, const log_facility_t facility, const 
         return;
     }
 
-    switch (facility) {
-        case LOG_FACILITY_CORE:
-            settings = &(log->core);
-            facility_name = LOG_FACILITY_CORE_STR;
-            break;
-
-        case LOG_FACILITY_NETWORK:
-            settings = &(log->network);
-            facility_name = LOG_FACILITY_NETWORK_STR;
-            break;
-
-        case LOG_FACILITY_NONE:
-            facility_name = LOG_FACILITY_NONE_STR;
-        default:
-            settings = &(log->none);
-    }
-
-    drool_assert(settings);
-    if (!settings) {
+    if (!log_is_enabled(log, facility, level)) {
         return;
     }
 
-    switch (level) {
-        case LOG_LEVEL_DEBUG:
-            if (!settings->debug)
-                return;
-            level_name = LOG_LEVEL_DEBUG_STR;
-            break;
-
-        case LOG_LEVEL_INFO:
-            if (!settings->info)
-                return;
-            level_name = LOG_LEVEL_INFO_STR;
-            break;
-
-        case LOG_LEVEL_NOTICE:
-            if (!settings->notice)
-                return;
-            level_name = LOG_LEVEL_NOTICE_STR;
-            break;
-
-        case LOG_LEVEL_WARNING:
-            if (!settings->warning)
-                return;
-            level_name = LOG_LEVEL_WARNING_STR;
-            break;
-
-        case LOG_LEVEL_ERROR:
-            if (!settings->error)
-                return;
-            level_name = LOG_LEVEL_ERROR_STR;
-            break;
-
-        case LOG_LEVEL_CRITICAL:
-            if (!settings->critical)
-                return;
-            level_name = LOG_LEVEL_CRITICAL_STR;
-            break;
-    }
-
-    printf("%s:%06lu %s %s: ", file, line, facility_name, level_name);
+    printf("%s:%06lu %s %s: ", file, line, log_facility_name(facility), log_level_name(level));
     va_start(ap, format);
     vprintf(format, ap);
     va_end(ap);
     printf("\n");
 }
+
+void log_errnof_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...) {
+    va_list ap;
+    char buf[512];
+    int errnum = errno;
+
+    drool_assert(log);
+    if (!log) {
+        return;
+    }
+    drool_assert(format);
+    if (!format) {
+        return;
+    }
+
+    if (!log_is_enabled(log, facility, level)) {
+        return;
+    }
+
+    memset(buf, 0, sizeof(buf));
+
+#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE) || defined(__FreeBSD__) || defined(__OpenBSD__)
+    /* XSI-compliant version */
+    {
+        int ret = strerror_r(errnum, buf, sizeof(buf));
+        if (ret > 0) {
+            (void)strerror_r(ret, buf, sizeof(buf));
+        }
+        else {
+            (void)strerror_r(errno, buf, sizeof(buf));
+        }
+    }
+#else
+    /* GNU-specific version */
+    buf = strerror_r(errnum, buf, sizeof(buf));
+#endif
+
+    printf("%s:%06lu %s %s: ", file, line, log_facility_name(facility), log_level_name(level));
+    va_start(ap, format);
+    vprintf(format, ap);
+    va_end(ap);
+    printf(": %s\n", buf);
+};

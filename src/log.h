@@ -38,7 +38,7 @@
 #ifndef __drool_log_h
 #define __drool_log_h
 
-#include <sys/types.h>
+#include <stddef.h>
 
 #define LOG_SETTINGS_T_INIT         { 0, 0, 0, 1, 1, 1 }
 #define LOG_SETTINGS_T_INIT_NONE    { 0, 0, 0, 0, 0, 0 }
@@ -60,6 +60,7 @@ struct log_settings {
 #define LOG_LEVEL_WARNING_STR   "warning"
 #define LOG_LEVEL_ERROR_STR     "error"
 #define LOG_LEVEL_CRITICAL_STR  "critical"
+#define LOG_LEVEL_ALL_STR       "all"
 typedef enum log_level log_level_t;
 enum log_level {
     LOG_LEVEL_DEBUG,
@@ -80,6 +81,7 @@ enum log_level {
 
 int log_level_enable(log_settings_t* settings, const log_level_t level);
 int log_level_disable(log_settings_t* settings, const log_level_t level);
+const char* log_level_name(const log_level_t level);
 
 #define LOG_FACILITY_UNKNOWN_STR    "unknown"
 #define LOG_FACILITY_NONE_STR       "none"
@@ -95,6 +97,8 @@ enum log_facility {
 #define LCORE       LOG_FACILITY_CORE
 #define LNETWORK    LOG_FACILITY_NETWORK
 
+const char* log_facility_name(const log_facility_t facility);
+
 #define LOG_T_INIT { \
     LOG_SETTINGS_T_INIT_ALL, \
     LOG_SETTINGS_T_INIT, \
@@ -107,6 +111,7 @@ struct log {
     log_settings_t  network;
 };
 
+int log_is_enabled(const log_t* log, const log_facility_t facility, const log_level_t level);
 int log_enable(log_t* log, const log_facility_t facility, const log_level_t level);
 int log_disable(log_t* log, const log_facility_t facility, const log_level_t level);
 
@@ -115,5 +120,11 @@ void log_printf_fileline(const log_t* log, const log_facility_t facility, const 
     log_printf_fileline(log, facility, level, __FILE__, __LINE__, text)
 #define log_printf(log, facility, level, format, args...) \
     log_printf_fileline(log, facility, level, __FILE__, __LINE__, format, args)
+
+void log_errnof_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...);
+#define log_errno(log, facility, level, text) \
+    log_errnof_fileline(log, facility, level, __FILE__, __LINE__, text)
+#define log_errnof(log, facility, level, format, args...) \
+    log_errnof_fileline(log, facility, level, __FILE__, __LINE__, format, args)
 
 #endif /* __drool_log_h */
