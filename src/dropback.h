@@ -35,52 +35,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "conf.h"
-#include "client_pool.h"
+#ifndef __drool_dropback_h
+#define __drool_dropback_h
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#include <pcap/pcap.h>
 
-#include <stdint.h>
-#include <time.h>
+void dropback(u_char* user, const struct pcap_pkthdr* pkthdr, const u_char* pkt, const char* name, int dlt);
 
-#if DROOL_ENABLE_ASSERT
-#undef NDEBUG
-#include <assert.h>
-#define drool_assert(x) assert(x)
-#else
-#define drool_assert(x)
-#endif
-
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0 \
-}
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
-
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
-
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_time_queue;
-
-    drool_client_pool_t*    client_pool;
-};
-
-#endif /* __drool_drool_h */
+#endif /* __drool_dropback_h */

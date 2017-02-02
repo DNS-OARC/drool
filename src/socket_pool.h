@@ -35,52 +35,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "sllq/sllq.h"
 #include "conf.h"
-#include "client_pool.h"
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#ifndef __drool_socket_pool_h
+#define __drool_socket_pool_h
 
-#include <stdint.h>
-#include <time.h>
+#include <pthread.h>
 
-#if DROOL_ENABLE_ASSERT
-#undef NDEBUG
-#include <assert.h>
-#define drool_assert(x) assert(x)
-#else
-#define drool_assert(x)
-#endif
-
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0 \
-}
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
-
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
-
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_time_queue;
-
-    drool_client_pool_t*    client_pool;
+typedef enum drool_socket_pool_state drool_socket_pool_state_t;
+enum drool_socket_pool_state {
+    SOCKET_POOL_INACTIVE = 0,
+    SOCKET_POOL_RUNNING,
+    SOCKET_POOL_STOPPED,
+    SOCKET_POOL_ERROR
 };
 
-#endif /* __drool_drool_h */
+typedef struct drool_socket_pool drool_socket_pool_t;
+struct drool_socket_pool {
+    const drool_conf_t*         conf;
+    drool_socket_pool_state_t   state;
+    pthread_t                   thread_id;
+
+    sllq_t                      queue;
+
+    int                         family;
+    int                         type;
+    int                         proto;
+    int                         nonblocking;
+};
+
+drool_socket_pool_t* socket_pool_new(const drool_conf_t* conf, int family, int type, int proto, int nonblocking);
+void socket_pool_free(drool_socket_pool_t* socket_pool);
+
+int socket_pool_family(const drool_socket_pool_t* socket_pool);
+int socket_pool_type(const drool_socket_pool_t* socket_pool);
+int socket_pool_proto(const drool_socket_pool_t* socket_pool);
+int socket_pool_nonblocking(const drool_socket_pool_t* socket_pool);
+
+int socket_pool_start(drool_socket_pool_t* socket_pool);
+int socket_pool_stop(drool_socket_pool_t* socket_pool);
+int socket_pool_getsock(drool_socket_pool_t* socket_pool, int* fd);
+
+#endif /* __drool_socket_pool_h */

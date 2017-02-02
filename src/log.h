@@ -43,8 +43,8 @@
 #define LOG_SETTINGS_T_INIT         { 0, 0, 0, 1, 1, 1 }
 #define LOG_SETTINGS_T_INIT_NONE    { 0, 0, 0, 0, 0, 0 }
 #define LOG_SETTINGS_T_INIT_ALL     { 1, 1, 1, 1, 1, 1 }
-typedef struct log_settings log_settings_t;
-struct log_settings {
+typedef struct drool_log_settings drool_log_settings_t;
+struct drool_log_settings {
     unsigned short      debug : 1;
     unsigned short      info : 1;
     unsigned short      notice : 1;
@@ -61,8 +61,8 @@ struct log_settings {
 #define LOG_LEVEL_ERROR_STR     "error"
 #define LOG_LEVEL_CRITICAL_STR  "critical"
 #define LOG_LEVEL_ALL_STR       "all"
-typedef enum log_level log_level_t;
-enum log_level {
+typedef enum drool_log_level drool_log_level_t;
+enum drool_log_level {
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_INFO,
     LOG_LEVEL_NOTICE,
@@ -79,16 +79,16 @@ enum log_level {
 #define LERROR      LOG_LEVEL_ERROR
 #define LCRITICAL   LOG_LEVEL_CRITICAL
 
-int log_level_enable(log_settings_t* settings, const log_level_t level);
-int log_level_disable(log_settings_t* settings, const log_level_t level);
-const char* log_level_name(const log_level_t level);
+int log_level_enable(drool_log_settings_t* settings, const drool_log_level_t level);
+int log_level_disable(drool_log_settings_t* settings, const drool_log_level_t level);
+const char* log_level_name(const drool_log_level_t level);
 
 #define LOG_FACILITY_UNKNOWN_STR    "unknown"
 #define LOG_FACILITY_NONE_STR       "none"
 #define LOG_FACILITY_CORE_STR       "core"
 #define LOG_FACILITY_NETWORK_STR    "network"
-typedef enum log_facility log_facility_t;
-enum log_facility {
+typedef enum drool_log_facility drool_log_facility_t;
+enum drool_log_facility {
     LOG_FACILITY_NONE = 0,
     LOG_FACILITY_CORE,
     LOG_FACILITY_NETWORK
@@ -97,31 +97,31 @@ enum log_facility {
 #define LCORE       LOG_FACILITY_CORE
 #define LNETWORK    LOG_FACILITY_NETWORK
 
-const char* log_facility_name(const log_facility_t facility);
+const char* log_facility_name(const drool_log_facility_t facility);
 
 #define LOG_T_INIT { \
     LOG_SETTINGS_T_INIT_ALL, \
     LOG_SETTINGS_T_INIT, \
     LOG_SETTINGS_T_INIT, \
 }
-typedef struct log log_t;
-struct log {
-    log_settings_t  none;
-    log_settings_t  core;
-    log_settings_t  network;
+typedef struct drool_log drool_log_t;
+struct drool_log {
+    drool_log_settings_t    none;
+    drool_log_settings_t    core;
+    drool_log_settings_t    network;
 };
 
-int log_is_enabled(const log_t* log, const log_facility_t facility, const log_level_t level);
-int log_enable(log_t* log, const log_facility_t facility, const log_level_t level);
-int log_disable(log_t* log, const log_facility_t facility, const log_level_t level);
+int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level);
+int log_enable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level);
+int log_disable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level);
 
-void log_printf_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...);
+void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...);
 #define log_print(log, facility, level, text) \
     log_printf_fileline(log, facility, level, __FILE__, __LINE__, text)
 #define log_printf(log, facility, level, format, args...) \
     log_printf_fileline(log, facility, level, __FILE__, __LINE__, format, args)
 
-void log_errnof_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...);
+void log_errnof_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...);
 #define log_errno(log, facility, level, text) \
     log_errnof_fileline(log, facility, level, __FILE__, __LINE__, text)
 #define log_errnof(log, facility, level, format, args...) \
