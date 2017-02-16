@@ -78,6 +78,7 @@ struct drool {
 
     struct timeval          last_packet;
     struct timespec         last_time;
+    struct timespec         last_realtime;
     struct timespec         last_time_queue;
 
     drool_client_pool_t*    client_pool;

@@ -55,6 +55,9 @@ AC_CHECK_SIZEOF(void*)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 
+# Checks for functions
+AC_CHECK_FUNCS([clock_nanosleep nanosleep])
+
 # Checks for libraries/headers.
 AC_CHECK_LIB([ev], [ev_now], [], AC_MSG_ERROR([libev not found]))
 AC_CHECK_HEADER([ev.h], [], [AC_MSG_ERROR([libev header not found])])

@@ -145,7 +145,11 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
 
             // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "diff %lu.%06lu", diff.tv_sec, diff.tv_usec);
 
+#if !defined(HAVE_CLOCK_NANOSLEEP) && defined(HAVE_NANOSLEEP)
+            sleep_to = context->last_realtime;
+#else
             sleep_to = context->last_time;
+#endif
             sleep_to.tv_nsec += diff.tv_usec * 1000;
             if (sleep_to.tv_nsec > 999999999) {
                 sleep_to.tv_sec += sleep_to.tv_nsec / 1000000000;
@@ -209,12 +213,22 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
                 sleep_to.tv_nsec %= 1000000000;
             }
 
+            /*
             log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "last %lu.%09lu", context->last_time.tv_sec, context->last_time.tv_nsec);
             log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "now %lu.%09lu", now.tv_sec, now.tv_nsec);
             log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "sleep_to %lu.%09lu", sleep_to.tv_sec, sleep_to.tv_nsec);
+            */
 
-            if (sleep_to.tv_sec || sleep_to.tv_nsec)
+            if (sleep_to.tv_sec || sleep_to.tv_nsec) {
+#if HAVE_CLOCK_NANOSLEEP
                 clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleep_to, 0);
+#elif HAVE_NANOSLEEP
+#define SAVE_REALTIME 1
+                nanosleep(&sleep_to, 0);
+#else
+#error "No clock_nanosleep() or nanosleep(), can not continue"
+#endif
+            }
         }
 
         if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time))) {
@@ -222,6 +236,15 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             context->last_time.tv_sec = 0;
             context->last_time.tv_nsec = 0;
         }
+#ifdef SAVE_REALTIME
+        if (clock_gettime(CLOCK_REALTIME, &(context->last_realtime))) {
+            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
+            context->last_realtime.tv_sec = 0;
+            context->last_realtime.tv_nsec = 0;
+            context->last_time.tv_sec = 0;
+            context->last_time.tv_nsec = 0;
+        }
+#endif
 
         context->last_packet = walkpkt->pkthdr.ts;
     }
