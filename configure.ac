@@ -50,15 +50,21 @@ LT_INIT([disable-static])
 # pcap_thread
 AX_PCAP_THREAD
 
-# Checks for libraries.
+# Checks for sizes
+AC_CHECK_SIZEOF(void*)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+
+# Checks for functions
+AC_CHECK_FUNCS([clock_nanosleep nanosleep])
+
+# Checks for libraries/headers.
+AC_CHECK_LIB([ev], [ev_now], [], AC_MSG_ERROR([libev not found]))
+AC_CHECK_HEADER([ev.h], [], [AC_MSG_ERROR([libev header not found])])
 
 # Check for OS specific libraries
 # case "$host_os" in
 # esac
-
-# Checks for header files.
-
-# Checks for library functions.
 
 # Output Makefiles
 AC_CONFIG_FILES([

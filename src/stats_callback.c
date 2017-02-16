@@ -35,53 +35,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "conf.h"
-#include "client_pool.h"
+#include "config.h"
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#include "stats_callback.h"
+#include "drool.h"
+#include "log.h"
 
-#include <stdint.h>
-#include <time.h>
+void drool_stats_callback(u_char* user, const struct pcap_stat* stats, const char* name, int dlt) {
+    const drool_conf_t* conf = (drool_conf_t*)user;
 
-#if DROOL_ENABLE_ASSERT
-#undef NDEBUG
-#include <assert.h>
-#define drool_assert(x) assert(x)
-#else
-#define drool_assert(x)
-#endif
+    drool_assert(conf);
+    drool_assert(stats);
+    drool_assert(name);
 
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0 \
+    log_printf(conf_log(conf), LNETWORK, LINFO, "stats for %s received: %u dropped: %u interface dropped: %u", name, stats->ps_recv, stats->ps_drop, stats->ps_ifdrop);
 }
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
-
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
-
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_realtime;
-    struct timespec         last_time_queue;
-
-    drool_client_pool_t*    client_pool;
-};
-
-#endif /* __drool_drool_h */

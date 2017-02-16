@@ -44,8 +44,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
-static const log_settings_t* get_facility(const log_t* log, const log_facility_t facility) {
+static const drool_log_settings_t* get_facility(const drool_log_t* log, const drool_log_facility_t facility) {
     drool_assert(log);
     switch (facility) {
         case LOG_FACILITY_CORE:
@@ -58,7 +59,7 @@ static const log_settings_t* get_facility(const log_t* log, const log_facility_t
     return &(log->none);
 }
 
-inline int log_level_enable(log_settings_t* settings, const log_level_t level) {
+inline int log_level_enable(drool_log_settings_t* settings, const drool_log_level_t level) {
     drool_assert(settings);
 
     switch (level) {
@@ -95,7 +96,7 @@ inline int log_level_enable(log_settings_t* settings, const log_level_t level) {
     return -1;
 }
 
-inline int log_level_disable(log_settings_t* settings, const log_level_t level) {
+inline int log_level_disable(drool_log_settings_t* settings, const drool_log_level_t level) {
     drool_assert(settings);
 
     switch (level) {
@@ -132,7 +133,7 @@ inline int log_level_disable(log_settings_t* settings, const log_level_t level) 
     return -1;
 }
 
-const char* log_level_name(const log_level_t level) {
+const char* log_level_name(const drool_log_level_t level) {
     switch (level) {
         case LOG_LEVEL_DEBUG:
             return LOG_LEVEL_DEBUG_STR;
@@ -152,7 +153,7 @@ const char* log_level_name(const log_level_t level) {
     return LOG_LEVEL_UNKNOWN_STR;
 }
 
-const char* log_facility_name(const log_facility_t facility) {
+const char* log_facility_name(const drool_log_facility_t facility) {
     switch (facility) {
         case LOG_FACILITY_CORE:
             return LOG_FACILITY_CORE_STR;
@@ -164,8 +165,8 @@ const char* log_facility_name(const log_facility_t facility) {
     return LOG_FACILITY_UNKNOWN_STR;
 }
 
-int log_is_enabled(const log_t* log, const log_facility_t facility, const log_level_t level) {
-    const log_settings_t* settings;
+int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level) {
+    const drool_log_settings_t* settings;
 
     drool_assert(log);
     if (!log) {
@@ -213,7 +214,7 @@ int log_is_enabled(const log_t* log, const log_facility_t facility, const log_le
     return 0;
 }
 
-inline int log_enable(log_t* log, const log_facility_t facility, const log_level_t level) {
+inline int log_enable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level) {
     drool_assert(log);
 
     switch (facility) {
@@ -228,7 +229,7 @@ inline int log_enable(log_t* log, const log_facility_t facility, const log_level
     return -1;
 }
 
-inline int log_disable(log_t* log, const log_facility_t facility, const log_level_t level) {
+inline int log_disable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level) {
     drool_assert(log);
 
     switch (facility) {
@@ -243,7 +244,7 @@ inline int log_disable(log_t* log, const log_facility_t facility, const log_leve
     return -1;
 }
 
-void log_printf_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...) {
+void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...) {
     va_list ap;
 
     drool_assert(log);
@@ -259,14 +260,15 @@ void log_printf_fileline(const log_t* log, const log_facility_t facility, const 
         return;
     }
 
-    printf("%s:%06lu %s %s: ", file, line, log_facility_name(facility), log_level_name(level));
+    printf("%s:%06lu t:%lu %s %s: ", file, line, pthread_self(), log_facility_name(facility), log_level_name(level));
     va_start(ap, format);
     vprintf(format, ap);
     va_end(ap);
     printf("\n");
+    fflush(stdout);
 }
 
-void log_errnof_fileline(const log_t* log, const log_facility_t facility, const log_level_t level, const char* file, size_t line, const char* format, ...) {
+void log_errnof_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...) {
     va_list ap;
     char buf[512];
     int errnum = errno;
@@ -302,9 +304,10 @@ void log_errnof_fileline(const log_t* log, const log_facility_t facility, const 
     buf = strerror_r(errnum, buf, sizeof(buf));
 #endif
 
-    printf("%s:%06lu %s %s: ", file, line, log_facility_name(facility), log_level_name(level));
+    printf("%s:%06lu t:%lu %s %s: ", file, line, pthread_self(), log_facility_name(facility), log_level_name(level));
     va_start(ap, format);
     vprintf(format, ap);
     va_end(ap);
     printf(": %s\n", buf);
+    fflush(stdout);
 };

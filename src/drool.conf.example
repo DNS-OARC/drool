@@ -6,5 +6,30 @@ read "/path/to/file.pcap";
 
 filter "udp port 53";
 
+timing ignore;
+#timing keep;
+#timing add 100;
+#timing reduce 200;
+#timing multiply 1.5;
+
+client_pool target 127.0.0.1 53;
+client_pool max_clients 5000;
+client_pool client_ttl 0.05;
+
 #write "/path/to/file.pcap";
-output "eth1";
+#output "eth1";
+
+# Experimental:
+#read once "";
+#read sequential "";
+#read times "" 5;
+#read loop "";
+#sequential "/path/to/file1.pcap";
+#sequential "/path/to/file2.pcap";
+#sequential "/path/to/file3.pcap";
+#loop "/path/to/file.pcap";
+#change ip from[:port[-range]] to[:port[-range]];
+#client context; ??
+#client ip ip[:port[-range]]
+#client net ip mask [port[-range]];
+#client maximum <num>;

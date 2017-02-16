@@ -62,6 +62,7 @@ libtool
 .deps
 src/config.h
 src/stamp-h1
+build
 
 # Project specific files
 src/drool

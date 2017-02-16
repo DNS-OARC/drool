@@ -35,53 +35,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "conf.h"
-#include "client_pool.h"
+#ifndef __drool_query_h
+#define __drool_query_h
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
-#include <stdint.h>
-#include <time.h>
+typedef struct drool_query drool_query_t;
+struct drool_query {
+    unsigned short  is_udp : 1;
+    unsigned short  is_tcp : 1;
+    unsigned short  have_ipv4 : 1;
+    unsigned short  have_ipv6 : 1;
+    unsigned short  have_port : 1;
+    unsigned short  have_raw : 1;
 
-#if DROOL_ENABLE_ASSERT
-#undef NDEBUG
-#include <assert.h>
-#define drool_assert(x) assert(x)
-#else
-#define drool_assert(x)
-#endif
+    union {
+        struct in_addr  ip_dst;
+        struct in6_addr ip6_dst;
+    } addr;
+    uint16_t    port;
 
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0 \
-}
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
-
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
-
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_realtime;
-    struct timespec         last_time_queue;
-
-    drool_client_pool_t*    client_pool;
+    u_char*     raw;
+    size_t      length;
 };
 
-#endif /* __drool_drool_h */
+drool_query_t* query_new(void);
+void query_free(drool_query_t* query);
+
+int query_is_udp(const drool_query_t* query);
+int query_is_tcp(const drool_query_t* query);
+int query_have_ipv4(const drool_query_t* query);
+int query_have_ipv6(const drool_query_t* query);
+int query_have_port(const drool_query_t* query);
+int query_have_raw(const drool_query_t* query);
+
+const struct in_addr* query_ip(const drool_query_t* query);
+const struct in6_addr* query_ip6(const drool_query_t* query);
+uint16_t query_port(const drool_query_t* query);
+size_t query_length(const drool_query_t* query);
+const u_char* query_raw(const drool_query_t* query);
+
+int query_set_udp(drool_query_t* query);
+int query_set_tcp(drool_query_t* query);
+int query_set_ip(drool_query_t* query, const struct in_addr* addr);
+int query_set_ip6(drool_query_t* query, const struct in6_addr* addr);
+int query_set_port(drool_query_t* query, uint16_t port);
+int query_set_raw(drool_query_t* query, const u_char* raw, size_t length);
+
+#endif /* __drool_query_h */

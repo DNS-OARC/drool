@@ -39,7 +39,12 @@
 
 #include "drool.h"
 #include "conf.h"
+#include "callback.h"
+#include "dropback.h"
+#include "stats_callback.h"
 #include "pcap-thread/pcap_thread.h"
+
+#include "client_pool.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -86,9 +91,9 @@ static void version(void) {
 }
 
 struct signal_context {
-    sigset_t        set;
-    const conf_t*   conf;
-    pcap_thread_t*  pcap_thread;
+    sigset_t            set;
+    const drool_conf_t* conf;
+    pcap_thread_t*      pcap_thread;
 };
 static void* signal_handler_thread(void* arg) {
     struct signal_context* context = (struct signal_context*)arg;
@@ -112,46 +117,10 @@ static void* signal_handler_thread(void* arg) {
     return 0;
 }
 
-static void pcap_thread_callback(u_char* user, const struct pcap_pkthdr* pkthdr, const u_char* pkt, const char* name, int dlt) {
-    drool_t* context = (drool_t*)user;
-
-    drool_assert(context);
-    drool_assert(pkthdr);
-    drool_assert(pkt);
-    drool_assert(name);
-
-    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "packet received from %s", name);
-
-    context->packets_seen++;
-}
-
-static void pcap_thread_dropback(u_char* user, const struct pcap_pkthdr* pkthdr, const u_char* pkt, const char* name, int dlt) {
-    drool_t* context = (drool_t*)user;
-
-    drool_assert(context);
-    drool_assert(pkthdr);
-    drool_assert(pkt);
-    drool_assert(name);
-
-    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "packet received from %s but dropped", name);
-
-    context->packets_seen++;
-}
-
-static void pcap_thread_stats_callback(u_char* user, const struct pcap_stat* stats, const char* name, int dlt) {
-    const conf_t* conf = (conf_t*)user;
-
-    drool_assert(conf);
-    drool_assert(stats);
-    drool_assert(name);
-
-    log_printf(conf_log(conf), LNETWORK, LINFO, "stats for %s received: %u dropped: %u interface dropped: %u", name, stats->ps_recv, stats->ps_drop, stats->ps_ifdrop);
-}
-
 int main(int argc, char* argv[]) {
     int opt, err;
     size_t verbose = 0;
-    conf_t conf = CONF_T_INIT;
+    drool_conf_t conf = CONF_T_INIT;
     struct signal_context sigcontext;
     pcap_thread_t pcap_thread = PCAP_THREAD_T_INIT;
     struct timespec ts_start, ts_end, ts_diff;
@@ -187,8 +156,8 @@ int main(int argc, char* argv[]) {
             case 'L':
                 {
                     char* level_str = strchr(optarg, ':');
-                    log_facility_t facility = LOG_FACILITY_NONE;
-                    log_level_t level = LOG_LEVEL_ALL;
+                    drool_log_facility_t facility = LOG_FACILITY_NONE;
+                    drool_log_level_t level = LOG_LEVEL_ALL;
                     size_t len = 0;
                     int all = 0;
 
@@ -389,10 +358,16 @@ int main(int argc, char* argv[]) {
         else if ((err = pcap_thread_set_queue_mode(&pcap_thread, PCAP_THREAD_QUEUE_MODE_DIRECT)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread queue mode to direct";
         }
-        else if ((err = pcap_thread_set_callback(&pcap_thread, &pcap_thread_callback)) != PCAP_THREAD_OK) {
-            errstr = "Unable to set pcap-thread callback";
+        else if ((err = pcap_thread_set_use_layers(&pcap_thread, 1)) != PCAP_THREAD_OK) {
+            errstr = "Unable to set pcap-thread use layers";
         }
-        else if ((err = pcap_thread_set_dropback(&pcap_thread, &pcap_thread_dropback)) != PCAP_THREAD_OK) {
+        else if ((err = pcap_thread_set_callback_udp(&pcap_thread, &callback_udp)) != PCAP_THREAD_OK) {
+            errstr = "Unable to set pcap-thread udp callback";
+        }
+        else if ((err = pcap_thread_set_callback_tcp(&pcap_thread, &callback_tcp)) != PCAP_THREAD_OK) {
+            errstr = "Unable to set pcap-thread tcp callback";
+        }
+        else if ((err = pcap_thread_set_dropback(&pcap_thread, &dropback)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread dropback";
         }
 
@@ -408,7 +383,7 @@ int main(int argc, char* argv[]) {
             exit(DROOL_EPCAPT);
 
         if (conf_have_read(&conf)) {
-            const conf_file_t* conf_file = conf_read(&conf);
+            const drool_conf_file_t* conf_file = conf_read(&conf);
 
             while (conf_file) {
                 if (!(context = calloc(1, sizeof(drool_t)))) {
@@ -417,6 +392,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 context->conf = &conf;
+                context->client_pool = client_pool_new(&conf); /* TODO */
                 context->next = contexts;
                 contexts = context;
 
@@ -436,7 +412,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (conf_have_input(&conf)) {
-            const conf_interface_t* conf_interface = conf_input(&conf);
+            const drool_conf_interface_t* conf_interface = conf_input(&conf);
 
             while (conf_interface) {
                 if (!(context = calloc(1, sizeof(drool_t)))) {
@@ -445,6 +421,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 context->conf = &conf;
+                context->client_pool = client_pool_new(&conf); /* TODO */
                 context->next = contexts;
                 contexts = context;
 
@@ -475,6 +452,11 @@ int main(int argc, char* argv[]) {
     ts_end = ts_diff = ts_start;
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
 
+    /* TODO */
+    for (context = contexts; context; context = context->next) {
+        client_pool_start(context->client_pool);
+    }
+
     if ((err = pcap_thread_run(&pcap_thread)) != PCAP_THREAD_OK) {
         if (err == PCAP_THREAD_ERRNO)
             log_errnof(conf_log(&conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s", pcap_thread_errbuf(&pcap_thread));
@@ -487,6 +469,12 @@ int main(int argc, char* argv[]) {
         exit(DROOL_EPCAPT);
     }
 
+    /* TODO */
+    for (context = contexts; context; context = context->next) {
+        client_pool_stop(context->client_pool);
+        client_pool_free(context->client_pool);
+    }
+
     /*
      * Finish
      */
@@ -496,10 +484,13 @@ int main(int argc, char* argv[]) {
 
     {
         float pkts_fraction = 0;
-        uint64_t pkts = 0;
+        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0;
 
         for (context = contexts; context; context = context->next) {
-            pkts += context->packets_seen;
+            seen += context->packets_seen;
+            sent += context->packets_sent;
+            dropped += context->packets_dropped;
+            ignored += context->packets_ignored;
         }
 
         if (ts_end.tv_sec == ts_start.tv_sec && ts_end.tv_nsec >= ts_start.tv_nsec) {
@@ -508,17 +499,28 @@ int main(int argc, char* argv[]) {
         }
         else if (ts_end.tv_sec > ts_start.tv_sec) {
             long nsec = 1000000000 - ts_start.tv_nsec + ts_end.tv_nsec;
+            long sec = ts_end.tv_sec - ts_start.tv_sec - 1;
+
             pkts_fraction = 1 / (((float)ts_end.tv_sec - (float)ts_start.tv_sec - 1) + ((float)nsec/(float)1000000000));
-            log_printf(conf_log(&conf), LCORE, LINFO, "runtime %ld.%09ld seconds", ts_end.tv_sec - ts_start.tv_sec - 1, nsec);
+
+            if (nsec > 1000000000) {
+                sec += nsec / 1000000000;
+                nsec %= 1000000000;
+            }
+
+            log_printf(conf_log(&conf), LCORE, LINFO, "runtime %ld.%09ld seconds", sec, nsec);
         }
         else {
             log_print(conf_log(&conf), LCORE, LINFO, "Unable to compute runtime, clock is behind starting point");
         }
 
-        log_printf(conf_log(&conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", pkts, pkts*pkts_fraction);
+        log_printf(conf_log(&conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
+        log_printf(conf_log(&conf), LCORE, LINFO, "sent %lu packets, %.0f/pps", sent, sent*pkts_fraction);
+        log_printf(conf_log(&conf), LCORE, LINFO, "dropped %lu packets", dropped);
+        log_printf(conf_log(&conf), LCORE, LINFO, "ignored %lu packets", ignored);
     }
 
-    if ((err = pcap_thread_stats(&pcap_thread, &pcap_thread_stats_callback, (void*)&conf)) != PCAP_THREAD_OK) {
+    if ((err = pcap_thread_stats(&pcap_thread, &drool_stats_callback, (void*)&conf)) != PCAP_THREAD_OK) {
         if (err == PCAP_THREAD_ERRNO)
             log_errnof(conf_log(&conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s", pcap_thread_errbuf(&pcap_thread));
         else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(&pcap_thread))

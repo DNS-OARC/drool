@@ -4,3 +4,6 @@
 [submodule "src/pcap-thread"]
 	path = src/pcap-thread
 	url = https://github.com/DNS-OARC/pcap-thread.git
+[submodule "src/sllq"]
+	path = src/sllq
+	url = https://github.com/DNS-OARC/sllq.git
