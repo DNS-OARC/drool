@@ -39,10 +39,10 @@ drool.conf \- Configuration for DNS Replay Tool
 .SH DESCRIPTION
 .SH CONFIGURATION
 .TP
-\fBdebug\fR FACILITY [ LEVEL ] ;
+\fBlog\fR FACILITY [ LEVEL ] ;
 todo
 .TP
-\fBnodebug\fR FACILITY [ LEVEL ] ;
+\fBnolog\fR FACILITY [ LEVEL ] ;
 todo
 .TP
 \fBread\fR " FILE " ;
@@ -52,6 +52,33 @@ todo
 todo
 .TP
 \fBfilter\fR " FILTER " ;
+todo
+.TP
+\fBtiming\fR ignore ;
+todo
+.TP
+\fBtiming\fR keep ;
+todo
+.TP
+\fBtiming\fR add NANOSECONDS ;
+todo
+.TP
+\fBtiming\fR reduce NANOSECONDS ;
+todo
+.TP
+\fBtiming\fR multiply MULTIPLY_AS_FLOAT ;
+todo
+.TP
+\fBclient_pool\fR target " IP_OR_HOSTNAME " " SERVICE_OR_PORT ";
+todo
+.TP
+\fBclient_pool\fR max_clients NUMBER ;
+todo
+.TP
+\fBclient_pool\fR client_ttl SECONDS_AS_FLOAT ;
+todo
+.TP
+\fBclient_pool\fR skip_reply ;
 todo
 .TP
 \fBwrite\fR " FILE " ;
