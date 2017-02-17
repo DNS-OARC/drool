@@ -81,6 +81,7 @@ void conf_release(drool_conf_t* conf) {
             }
             conf->have_input = 0;
         }
+        /*
         if (conf->have_write) {
             conf_file_release(&(conf->write));
             conf->have_write = 0;
@@ -89,6 +90,7 @@ void conf_release(drool_conf_t* conf) {
             conf_interface_release(&(conf->output));
             conf->have_output = 0;
         }
+        */
     }
 }
 
@@ -107,6 +109,12 @@ inline int conf_have_input(const drool_conf_t* conf) {
     return conf->have_input;
 }
 
+inline int conf_have_read_mode(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->have_read_mode;
+}
+
+/*
 inline int conf_have_write(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_write;
@@ -116,6 +124,7 @@ inline int conf_have_output(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_output;
 }
+*/
 
 inline const char* conf_filter(const drool_conf_t* conf) {
     drool_assert(conf);
@@ -165,6 +174,17 @@ inline const drool_conf_interface_t* conf_input(const drool_conf_t* conf) {
     return conf->input;
 }
 
+inline drool_conf_read_mode_t conf_read_mode(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->read_mode;
+}
+
+inline size_t conf_read_iter(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->read_iter;
+}
+
+/*
 inline const drool_conf_file_t* conf_write(const drool_conf_t* conf) {
     drool_assert(conf);
     return &(conf->write);
@@ -174,6 +194,7 @@ inline const drool_conf_interface_t* conf_output(const drool_conf_t* conf) {
     drool_assert(conf);
     return &(conf->output);
 }
+*/
 
 inline drool_timing_mode_t conf_timing_mode(const drool_conf_t* conf) {
     drool_assert(conf);
@@ -251,6 +272,31 @@ int conf_add_input(drool_conf_t* conf, const char* interface, size_t length) {
     return CONF_OK;
 }
 
+int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode) {
+    if (!conf) {
+        return CONF_EINVAL;
+    }
+
+    conf->read_mode = read_mode;
+    if (read_mode == CONF_READ_MODE_NONE)
+        conf->have_read_mode = 0;
+    else
+        conf->have_read_mode = 1;
+
+    return CONF_OK;
+}
+
+int conf_set_read_iter(drool_conf_t* conf, size_t read_iter) {
+    if (!conf) {
+        return CONF_EINVAL;
+    }
+
+    conf->read_iter = read_iter;
+
+    return CONF_OK;
+}
+
+/*
 int conf_set_write(drool_conf_t* conf, const char* file, size_t length) {
     int ret;
 
@@ -294,6 +340,7 @@ int conf_set_output(drool_conf_t* conf, const char* interface, size_t length) {
     }
     return ret;
 }
+*/
 
 inline const drool_log_t* conf_log(const drool_conf_t* conf) {
     drool_assert(conf);
@@ -741,6 +788,7 @@ static int parse_nolog(void* user, const parseconf_token_t* tokens, const char**
     return 0;
 }
 
+/*
 static parseconf_token_type_t read_tokens[] = {
     PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
 };
@@ -792,6 +840,7 @@ static int parse_input(void* user, const parseconf_token_t* tokens, const char**
 
     return 0;
 }
+*/
 
 static parseconf_token_type_t filter_tokens[] = {
     PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
@@ -818,6 +867,7 @@ static int parse_filter(void* user, const parseconf_token_t* tokens, const char*
     return 0;
 }
 
+/*
 static parseconf_token_type_t write_tokens[] = {
     PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
 };
@@ -849,6 +899,7 @@ static int parse_output(void* user, const parseconf_token_t* tokens, const char*
 
     return 0;
 }
+*/
 
 static parseconf_token_type_t nested_tokens[] = {
     PARSECONF_TOKEN_NESTED
@@ -860,15 +911,15 @@ static parseconf_syntax_t _syntax2[] = {
     /* nolog <facility> [level] ; */
     { "nolog", parse_nolog, nolog_tokens, 0 },
     /* read " <file.pcap> " ; */
-    { "read", parse_read, read_tokens, 0 },
+    /*{ "read", parse_read, read_tokens, 0 },*/
     /* input " <interface> " ; */
-    { "input", parse_input, input_tokens, 0 },
+    /*{ "input", parse_input, input_tokens, 0 },*/
     /* filter " <filter> " ; */
     { "filter", parse_filter, filter_tokens, 0 },
     /* write " <file.pcap> " ; */
-    { "write", parse_write, write_tokens, 0 },
+    /*{ "write", parse_write, write_tokens, 0 },*/
     /* output " <interface> " ; */
-    { "output", parse_output, output_tokens, 0 },
+    /*{ "output", parse_output, output_tokens, 0 },*/
     /* timing ... ; */
     { "timing", 0, nested_tokens, timing_syntax },
     /* client_pool ... ; */

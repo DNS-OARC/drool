@@ -72,53 +72,87 @@ drool \- DNS Replay Tool
 .I file.pcap
 ]
 [
-.B \-o
-.I interface
+.B \-R
+.I mode
 ]
-[
-.B \-w
-.I file.pcap
-]
+.\" [
+.\" .B \-o
+.\" .I interface
+.\" ]
+.\" [
+.\" .B \-w
+.\" .I file.pcap
+.\" ]
 [
 .B \-vhV
 ]
 .SH DESCRIPTION
+todo
 .SH OPTIONS
 .TP
 \fB\-c\fR [\fItype\fR:]\fIconfig\fR
-todo
+Specify the configuration to use, if no \fItype\fR is given then
+\fIconfig\fR expects to be a file. Valid types are \fBfile\fR and \fBtext\fR.
+Can be given multiple times and will be processed in the
+given order. See drool.conf(5) for configuration syntax.
 .TP
 \fB\-l\fR \fIfacility\fR[:\fIlevel\fR]
-todo
+Enable logging for \fIfacility\fR, optional log \fIlevel\fR can be given
+to enable just that. Can be given multiple times and will be
+processed in the given order. See LOGGING for more information.
 .TP
 \fB\-L\fR \fIfacility\fR[:\fIlevel\fR]
-todo
+Disable logging for \fIfacility\fR, optional log \fIlevel\fR can be
+given to disable just that. Can be given multiple times and
+will be processed in the given order. See LOGGING for more information.
 .TP
 \fB\-f\fR \fIfilter\fR
-todo
+Set the Berkeley Packet Filter to use.
 .TP
 \fB\-i\fR \fIinterface\fR
-todo
+Capture packets from interface, can be given multiple times.
 .TP
 \fB\-r\fR \fIfile.pcap\fR
-todo
+Read packets from PCAP file, can be given multiple times.
 .TP
-\fB\-o\fR \fIinterface\fR
-todo
+\fB\-R\fR \fImode\fR
+Specify the mode for reading PCAP files, see READ MODES for
+available modes.
 .TP
-\fB\-w\fR \fIfile.pcap\fR
-todo
-.TP
+.\" \fB\-o\fR \fIinterface\fR
+.\" todo
+.\" .TP
+.\" \fB\-w\fR \fIfile.pcap\fR
+.\" todo
+.\" .TP
 .B \-v
-todo
+Enable verbose, a simple way to enable logging. Can be
+given multiple times to increase verbosity level.
 .TP
 .B \-h
-todo
+Print help and exit.
 .TP
 .B \-V
-todo
-.SH DEBUG FACILITIES
-todo
+Print version and exit.
+.SH LOGGING
+todo facilities: core, network, all. level: debug, info, notice, warning,
+error, critical.
+
+  drool -l all -L network:debug
+.SH READ MODES
+.TP
+\fBloop\fR
+Loop the given file(s) until interrupted.
+.TP
+\fBiter\fR:\fInumber\fR
+Iterate the given file(s) for \fInumber\fR of times.
+.SH EXITING
+\fBdrool\fR will exit once processing of PCAP files is complete or if
+interrupted (CTRL-C or SIGINT). If any interface is being processed or
+if loop read mode is being used, then \fBdrool\fR must be interruped in
+order to exit.
+
+\fBdrool\fR can be forcefully exited by interrupting (CTRL-C or SIGINT) twice.
 .SH EXIT VALUES
 0 \- no error
 .br
