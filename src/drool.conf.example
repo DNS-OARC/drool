@@ -15,11 +15,13 @@ timing ignore;
 client_pool target "127.0.0.1" "53";
 client_pool max_clients 5000;
 client_pool client_ttl 0.05;
+#client_pool skip_reply;
 
+# Not working yet:
 #write "/path/to/file.pcap";
 #output "eth1";
 
-# Experimental:
+# Experimental / unimplemented / unsupported:
 #read once "";
 #read sequential "";
 #read times "" 5;
