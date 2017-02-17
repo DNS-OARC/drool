@@ -205,42 +205,4 @@ int conf_parse_text(drool_conf_t* conf, const char* text, const size_t length);
 
 const char* conf_strerr(int errnum);
 
-/*
- * conf token structs
- */
-
-typedef enum conf_token_type conf_token_type_t;
-enum conf_token_type {
-    TOKEN_END = 0,
-    TOKEN_STRING,
-    TOKEN_QSTRING,
-    TOKEN_NUMBER,
-    TOKEN_STRINGS,
-    TOKEN_QSTRINGS,
-    TOKEN_NUMBERS,
-    TOKEN_ANY,
-    TOKEN_FLOAT,
-    TOKEN_FLOATS,
-    TOKEN_NESTED
-};
-
-typedef struct conf_token conf_token_t;
-struct conf_token {
-    conf_token_type_t           type;
-    const char*                 token;
-    size_t                      length;
-};
-
-typedef int (*conf_token_callback_t)(drool_conf_t* conf, const conf_token_t* tokens, const char** errstr);
-
-#define CONF_SYNTAX_T_TOKENS 8
-
-typedef struct conf_syntax conf_syntax_t;
-struct conf_syntax {
-    const char*                 token;
-    conf_token_callback_t       callback;
-    const conf_token_type_t     syntax[CONF_SYNTAX_T_TOKENS];
-    const conf_syntax_t*        nested;
-};
-
 #endif /* __drool_conf_h */
