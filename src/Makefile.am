@@ -50,10 +50,12 @@ bin_PROGRAMS = drool
 
 drool_SOURCES = callback.c client.c client_pool.c conf.c drool.c dropback.c log.c query.c socket_pool.c stats_callback.c \
     omg-dns/omg_dns.c \
+    parseconf/parseconf.c \
     pcap-thread/pcap_thread.c \
     sllq/sllq.c
 dist_drool_SOURCES = callback.h client.h client_pool.h conf.h drool.h dropback.h log.h query.h socket_pool.h stats_callback.h timing.h \
     omg-dns/omg_dns.h \
+    parseconf/parseconf.h \
     pcap-thread/pcap_thread.h \
     sllq/sllq.h
 drool_LDADD = $(PTHREAD_LIBS)

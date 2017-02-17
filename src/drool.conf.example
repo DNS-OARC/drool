@@ -12,7 +12,7 @@ timing ignore;
 #timing reduce 200;
 #timing multiply 1.5;
 
-client_pool target 127.0.0.1 53;
+client_pool target "127.0.0.1" "53";
 client_pool max_clients 5000;
 client_pool client_ttl 0.05;
 
