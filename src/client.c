@@ -166,6 +166,11 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents) {
     }
 
     ev_io_stop(loop, w);
+    if (client->skip_reply) {
+        client->state = CLIENT_SUCCESS;
+        client->callback(client, loop);
+        return;
+    }
     ev_io_start(loop, &(client->read_watcher));
     client->state = CLIENT_RECIVING;
     return;
@@ -342,6 +347,17 @@ int client_set_start(drool_client_t* client, ev_tstamp start) {
     }
 
     client->start = start;
+
+    return 0;
+}
+
+int client_set_skip_reply(drool_client_t* client) {
+    drool_assert(client);
+    if (!client) {
+        return 1;
+    }
+
+    client->skip_reply = 1;
 
     return 0;
 }

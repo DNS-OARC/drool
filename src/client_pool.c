@@ -372,7 +372,9 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         else
 #endif
         if ((client = client_new(query, &client_pool_client_callback))
-            && !client_set_start(client, ev_now(loop)))
+            && !client_set_start(client, ev_now(loop))
+            && (!conf_client_pool_skip_reply(conf_client_pool(client_pool->conf))
+                || !client_set_skip_reply(client)))
         {
 #ifdef DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
             int fd;
