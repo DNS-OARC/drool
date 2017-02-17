@@ -45,284 +45,6 @@
 #include <string.h>
 #include <stdio.h>
 
-/*
- * conf file
- */
-
-drool_conf_file_t* conf_file_new(void) {
-    drool_conf_file_t* conf_file = calloc(1, sizeof(drool_conf_file_t));
-    return conf_file;
-}
-
-void conf_file_free(drool_conf_file_t* conf_file) {
-    if (conf_file) {
-        conf_file_release(conf_file);
-        free(conf_file);
-    }
-}
-
-void conf_file_release(drool_conf_file_t* conf_file) {
-    if (conf_file) {
-        if (conf_file->name) {
-            free(conf_file->name);
-            conf_file->name = 0;
-        }
-    }
-}
-
-inline const drool_conf_file_t* conf_file_next(const drool_conf_file_t* conf_file) {
-    drool_assert(conf_file);
-    return conf_file->next;
-}
-
-int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next) {
-    if (!conf_file) {
-        return CONF_EINVAL;
-    }
-    if (!next) {
-        return CONF_EINVAL;
-    }
-
-    conf_file->next = next;
-
-    return CONF_OK;
-}
-
-inline const char* conf_file_name(const drool_conf_file_t* conf_file) {
-    drool_assert(conf_file);
-    return conf_file->name;
-}
-
-int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t length) {
-    if (!conf_file) {
-        return CONF_EINVAL;
-    }
-    if (!name) {
-        return CONF_EINVAL;
-    }
-
-    if (conf_file->name) {
-        free(conf_file->name);
-    }
-    if (length) {
-        if (!(conf_file->name = strndup(name, length))) {
-            return CONF_ENOMEM;
-        }
-    }
-    else {
-        if (!(conf_file->name = strdup(name))) {
-            return CONF_ENOMEM;
-        }
-    }
-    printf("name: %s\n", conf_file->name);
-
-    return CONF_OK;
-}
-
-/*
- * conf interface
- */
-
-drool_conf_interface_t* conf_interface_new(void) {
-    drool_conf_interface_t* conf_interface = calloc(1, sizeof(drool_conf_interface_t));
-    return conf_interface;
-}
-
-void conf_interface_free(drool_conf_interface_t* conf_interface) {
-    if (conf_interface) {
-        conf_interface_release(conf_interface);
-        free(conf_interface);
-    }
-}
-
-void conf_interface_release(drool_conf_interface_t* conf_interface) {
-    if (conf_interface) {
-        if (conf_interface->name) {
-            free(conf_interface->name);
-            conf_interface->name = 0;
-        }
-    }
-}
-
-inline const drool_conf_interface_t* conf_interface_next(const drool_conf_interface_t* conf_interface) {
-    drool_assert(conf_interface);
-    return conf_interface->next;
-}
-
-int conf_interface_set_next(drool_conf_interface_t* conf_interface, drool_conf_interface_t* next) {
-    if (!conf_interface) {
-        return CONF_EINVAL;
-    }
-    if (!next) {
-        return CONF_EINVAL;
-    }
-
-    conf_interface->next = next;
-
-    return CONF_OK;
-}
-
-inline const char* conf_interface_name(const drool_conf_interface_t* conf_interface) {
-    drool_assert(conf_interface);
-    return conf_interface->name;
-}
-
-int conf_interface_set_name(drool_conf_interface_t* conf_interface, const char* name, size_t length) {
-    if (!conf_interface) {
-        return CONF_EINVAL;
-    }
-    if (!name) {
-        return CONF_EINVAL;
-    }
-
-    if (conf_interface->name) {
-        free(conf_interface->name);
-    }
-    if (length) {
-        if (!(conf_interface->name = strndup(name, length))) {
-            return CONF_ENOMEM;
-        }
-    }
-    else {
-        if (!(conf_interface->name = strdup(name))) {
-            return CONF_ENOMEM;
-        }
-    }
-
-    return CONF_OK;
-}
-
-/*
- * conf client_pool
- */
-
-drool_conf_client_pool_t* conf_client_pool_new(void) {
-    drool_conf_client_pool_t* conf_client_pool = calloc(1, sizeof(drool_conf_client_pool_t));
-    return conf_client_pool;
-}
-
-void conf_client_pool_free(drool_conf_client_pool_t* conf_client_pool) {
-    if (conf_client_pool) {
-        if (conf_client_pool->target_host)
-            free(conf_client_pool->target_host);
-        if (conf_client_pool->target_service)
-            free(conf_client_pool->target_service);
-        free(conf_client_pool);
-    }
-}
-
-int conf_client_pool_have_target(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->have_target;
-}
-
-int conf_client_pool_have_max_clients(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->have_max_clients;
-}
-
-int conf_client_pool_have_client_ttl(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->have_client_ttl;
-}
-
-const drool_conf_client_pool_t* conf_client_pool_next(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->next;
-}
-
-const char* conf_client_pool_target_host(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->target_host;
-}
-
-const char* conf_client_pool_target_service(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->target_service;
-}
-
-size_t conf_client_pool_max_clients(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->max_clients;
-}
-
-double conf_client_pool_client_ttl(const drool_conf_client_pool_t* conf_client_pool) {
-    drool_assert(conf_client_pool);
-    return conf_client_pool->client_ttl;
-}
-
-int conf_client_pool_set_next(drool_conf_client_pool_t* conf_client_pool, drool_conf_client_pool_t* next) {
-    if (!conf_client_pool) {
-        return CONF_EINVAL;
-    }
-    if (!next) {
-        return CONF_EINVAL;
-    }
-
-    conf_client_pool->next = next;
-
-    return CONF_OK;
-}
-
-int conf_client_pool_set_target(drool_conf_client_pool_t* conf_client_pool, const char* host, size_t host_length, const char* service, size_t service_length) {
-    if (!conf_client_pool) {
-        return CONF_EINVAL;
-    }
-    if (!host) {
-        return CONF_EINVAL;
-    }
-    if (!host_length) {
-        return CONF_EINVAL;
-    }
-    if (!service) {
-        return CONF_EINVAL;
-    }
-    if (!service_length) {
-        return CONF_EINVAL;
-    }
-
-    if (conf_client_pool->target_host)
-        free(conf_client_pool->target_host);
-    if (conf_client_pool->target_service)
-        free(conf_client_pool->target_service);
-    conf_client_pool->have_target = 0;
-    if (!(conf_client_pool->target_host = strndup(host, host_length))) {
-        return CONF_ENOMEM;
-    }
-    if (!(conf_client_pool->target_service = strndup(service, service_length))) {
-        return CONF_ENOMEM;
-    }
-    conf_client_pool->have_target = 1;
-
-    return CONF_OK;
-}
-
-int conf_client_pool_set_max_clients(drool_conf_client_pool_t* conf_client_pool, size_t max_clients) {
-    if (!conf_client_pool) {
-        return CONF_EINVAL;
-    }
-
-    conf_client_pool->max_clients = max_clients;
-    conf_client_pool->have_max_clients = 1;
-
-    return CONF_OK;
-}
-
-int conf_client_pool_set_client_ttl(drool_conf_client_pool_t* conf_client_pool, double client_ttl) {
-    if (!conf_client_pool) {
-        return CONF_EINVAL;
-    }
-
-    conf_client_pool->client_ttl = client_ttl;
-    conf_client_pool->have_client_ttl = 1;
-
-    return CONF_OK;
-}
-
-/*
- * conf
- */
-
 drool_conf_t* conf_new(void) {
     drool_conf_t* conf = calloc(1, sizeof(drool_conf_t));
     return conf;
@@ -808,6 +530,20 @@ static int parse_client_pool_client_ttl(void* user, const parseconf_token_t* tok
     return conf_client_pool_set_client_ttl(&(conf->client_pool), client_ttl);
 }
 
+static parseconf_token_type_t client_pool_skip_reply_tokens[] = {
+    PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_skip_reply(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+
+    if (!conf) {
+        return 1;
+    }
+
+    return conf_client_pool_set_skip_reply(&(conf->client_pool));
+}
+
 static parseconf_syntax_t client_pool_syntax[] = {
     /* client_pool target <host> <port>; */
     { "target", parse_client_pool_target, client_pool_target_tokens, 0 },
@@ -815,6 +551,8 @@ static parseconf_syntax_t client_pool_syntax[] = {
     { "max_clients", parse_client_pool_max_clients, client_pool_max_clients_tokens, 0 },
     /* client_pool client_ttl <float>; */
     { "client_ttl", parse_client_pool_client_ttl, client_pool_client_ttl_tokens, 0 },
+    /* client_pool skip_reply; */
+    { "skip_reply", parse_client_pool_skip_reply, client_pool_skip_reply_tokens, 0 },
     PARSECONF_SYNTAX_END
 };
 

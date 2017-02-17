@@ -37,11 +37,14 @@
 
 #include "log.h"
 #include "timing.h"
+#include "conf_file.h"
+#include "conf_interface.h"
+#include "conf_client_pool.h"
 
 #ifndef __drool_conf_h
 #define __drool_conf_h
 
-#include <sys/types.h>
+#include <stddef.h>
 
 #define CONF_EEXIST     -4
 #define CONF_ENOMEM     -3
@@ -56,86 +59,6 @@
 #define CONF_ENOMEM_STR "Out of memory"
 #define CONF_EINVAL_STR "Invalid arguments"
 #define CONF_ERROR_STR  "Generic error"
-
-/*
- * conf file struct and functions
- */
-
-#define CONF_FILE_T_INIT { 0, 0 }
-typedef struct drool_conf_file drool_conf_file_t;
-struct drool_conf_file {
-    drool_conf_file_t*  next;
-    char*               name;
-};
-
-drool_conf_file_t* conf_file_new(void);
-void conf_file_free(drool_conf_file_t* conf_file);
-void conf_file_release(drool_conf_file_t* conf_file);
-const drool_conf_file_t* conf_file_next(const drool_conf_file_t* conf_file);
-int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next);
-const char* conf_file_name(const drool_conf_file_t* conf_file);
-int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t length);
-
-/*
- * conf interface struct and functions
- */
-
-#define CONF_INTERFACE_T_INIT { 0, 0 }
-typedef struct drool_conf_interface drool_conf_interface_t;
-struct drool_conf_interface {
-    drool_conf_interface_t* next;
-    char*                   name;
-};
-
-drool_conf_interface_t* conf_interface_new(void);
-void conf_interface_free(drool_conf_interface_t* conf_interface);
-void conf_interface_release(drool_conf_interface_t* conf_interface);
-const drool_conf_interface_t* conf_interface_next(const drool_conf_interface_t* conf_interface);
-int conf_interface_set_next(drool_conf_interface_t* conf_interface, drool_conf_interface_t* next);
-const char* conf_interface_name(const drool_conf_interface_t* conf_interface);
-int conf_interface_set_name(drool_conf_interface_t* conf_interface, const char* name, size_t length);
-
-/*
- * conf client_pool struct and functions
- */
-
-#define CONF_CLIENT_POOL_T_INIT { \
-    0, \
-    0, 0, 0, \
-    0, 0, 0, 0 \
-}
-typedef struct drool_conf_client_pool drool_conf_client_pool_t;
-struct drool_conf_client_pool {
-    drool_conf_client_pool_t*   next;
-
-    unsigned short  have_target : 1;
-    unsigned short  have_max_clients : 1;
-    unsigned short  have_client_ttl : 1;
-
-    char*           target_host;
-    char*           target_service;
-    size_t          max_clients;
-    double          client_ttl;
-};
-
-drool_conf_client_pool_t* conf_client_pool_new(void);
-void conf_client_pool_free(drool_conf_client_pool_t* conf_client_pool);
-int conf_client_pool_have_target(const drool_conf_client_pool_t* conf_client_pool);
-int conf_client_pool_have_max_clients(const drool_conf_client_pool_t* conf_client_pool);
-int conf_client_pool_have_client_ttl(const drool_conf_client_pool_t* conf_client_pool);
-const drool_conf_client_pool_t* conf_client_pool_next(const drool_conf_client_pool_t* conf_client_pool);
-const char* conf_client_pool_target_host(const drool_conf_client_pool_t* conf_client_pool);
-const char* conf_client_pool_target_service(const drool_conf_client_pool_t* conf_client_pool);
-size_t conf_client_pool_max_clients(const drool_conf_client_pool_t* conf_client_pool);
-double conf_client_pool_client_ttl(const drool_conf_client_pool_t* conf_client_pool);
-int conf_client_pool_set_next(drool_conf_client_pool_t* conf_client_pool, drool_conf_client_pool_t* next);
-int conf_client_pool_set_target(drool_conf_client_pool_t* conf_client_pool, const char* host, size_t host_length, const char* service, size_t service_length);
-int conf_client_pool_set_max_clients(drool_conf_client_pool_t* conf_client_pool, size_t max_clients);
-int conf_client_pool_set_client_ttl(drool_conf_client_pool_t* conf_client_pool, double client_ttl);
-
-/*
- * conf struct and functions
- */
 
 #define CONF_T_INIT { \
     0, 0, 0, 0, 0, \

@@ -70,6 +70,7 @@ struct drool_client {
     unsigned short  have_from_addr : 1;
     unsigned short  have_fd : 1;
     unsigned short  is_connected : 1;
+    unsigned short  skip_reply : 1;
 
     ev_tstamp               start;
     drool_client_t*         next;
@@ -106,6 +107,7 @@ int client_set_next(drool_client_t* client, drool_client_t* next);
 int client_set_prev(drool_client_t* client, drool_client_t* prev);
 int client_set_fd(drool_client_t* client, int fd);
 int client_set_start(drool_client_t* client, ev_tstamp start);
+int client_set_skip_reply(drool_client_t* client);
 
 int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* addr, socklen_t addlen, struct ev_loop* loop);
 int client_connect_fd(drool_client_t* client, int fd, const struct sockaddr* addr, socklen_t addlen, struct ev_loop* loop);
