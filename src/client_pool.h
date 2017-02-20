@@ -34,15 +34,11 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-//#define DROOL_CLIENT_POOL_ENABLE_REUSE_CLIENT 1
 
 #include "sllq/sllq.h"
 #include "query.h"
 #include "conf.h"
 #include "client.h"
-#ifdef DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
-#include "socket_pool.h"
-#endif
 
 #ifndef __drool_client_pool_h
 #define __drool_client_pool_h
@@ -83,14 +79,9 @@ struct drool_client_pool {
 
     struct addrinfo*            addrinfo;
 
-#ifdef DROOL_CLIENT_POOL_ENABLE_REUSE_CLIENT
     drool_client_t*             reuse_client_list;
     size_t                      reuse_clients;
     size_t                      max_reuse_clients;
-#endif
-#ifdef DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
-    drool_socket_pool_t*        sockpool_udpv4;
-#endif
 };
 
 drool_client_pool_t* client_pool_new(const drool_conf_t* conf);

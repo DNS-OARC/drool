@@ -71,14 +71,14 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
         client_pool->conf = conf;
         client_pool->max_clients = 100;
         client_pool->client_ttl = 0.05;
-#ifdef DROOL_CLIENT_POOL_ENABLE_REUSE_CLIENT
-        client_pool->max_reuse_clients = 0; /* TODO */
-#endif
+        client_pool->max_reuse_clients = 20;
 
         if (conf_client_pool_have_max_clients(conf_client_pool(conf)))
             client_pool->max_clients = conf_client_pool_max_clients(conf_client_pool(conf));
         if (conf_client_pool_have_client_ttl(conf_client_pool(conf)))
-            client_pool->max_clients = conf_client_pool_client_ttl(conf_client_pool(conf));
+            client_pool->client_ttl = conf_client_pool_client_ttl(conf_client_pool(conf));
+        if (conf_client_pool_have_max_reuse_clients(conf_client_pool(conf)))
+            client_pool->max_reuse_clients = conf_client_pool_max_reuse_clients(conf_client_pool(conf));
 
         memset(&hints, 0, sizeof(struct addrinfo));
         hints.ai_family = AF_UNSPEC;
@@ -107,12 +107,6 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
         }
 
         ev_set_userdata(client_pool->ev_loop, (void*)client_pool);
-
-#ifdef DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
-        if ((client_pool->sockpool_udpv4 = socket_pool_new(conf, AF_INET, SOCK_DGRAM, 0, 1))) {
-            socket_pool_start(client_pool->sockpool_udpv4);
-        }
-#endif
     }
 
     return client_pool;
@@ -132,21 +126,13 @@ void client_pool_free(drool_client_pool_t* client_pool) {
             ev_loop_destroy(client_pool->ev_loop);
         if (client_pool->addrinfo)
             freeaddrinfo(client_pool->addrinfo);
-#ifdef DROOL_CLIENT_POOL_ENABLE_REUSE_CLIENT
         while (client_pool->reuse_client_list) {
             drool_client_t* client = client_pool->reuse_client_list;
             client_pool->reuse_client_list = client_next(client);
             client_close(client);
             client_free(client);
         }
-#endif
-#if DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
-        if (client_pool->sockpool_udpv4) {
-            socket_pool_stop(client_pool->sockpool_udpv4);
-            socket_pool_free(client_pool->sockpool_udpv4);
-        }
         free(client_pool);
-#endif
     }
 }
 
@@ -221,21 +207,25 @@ static void client_pool_client_callback(drool_client_t* client, struct ev_loop* 
             client_set_next(client_prev(client), client_next(client));
         }
     }
-#ifdef DROOL_CLIENT_POOL_ENABLE_REUSE_CLIENT
-    if (client_state(client) == CLIENT_SUCCESS && client_pool->reuse_clients < client_pool->max_reuse_clients) {
+
+    if (client_is_dgram(client)
+        && client_state(client) == CLIENT_SUCCESS
+        && client_pool->reuse_clients < client_pool->max_reuse_clients)
+    {
         client_set_next(client, client_pool->reuse_client_list);
         client_set_prev(client, 0);
         client_pool->reuse_client_list = client;
         client_pool->reuse_clients++;
+        log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client added to reuse (%lu/%lu)", client_pool->reuse_clients, client_pool->max_reuse_clients);
     }
-    else
-#endif
-    {
+    else {
         client_close(client);
         client_free(client);
     }
+
     if (client_pool->clients) /* TODO: Error? */
         client_pool->clients--;
+
     if (!client_pool->client_list && ev_is_active(&(client_pool->timeout))) {
         ev_timer_stop(loop, &(client_pool->timeout));
     }
@@ -328,10 +318,9 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
     log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "shift queue, query %p", query);
 
     {
-        drool_client_t* client;
+        drool_client_t* client = 0;
         int proto = -1;
 
-#ifdef DROOL_CLIENT_POOL_ENABLE_REUSE_CLIENT
         if (client_pool->reuse_client_list) {
             /* TODO: udp or tcp? */
             client = client_pool->reuse_client_list;
@@ -341,45 +330,16 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
             client_set_next(client, 0);
             client_set_prev(client, 0);
 
-            if (client_reuse(client, query)) {
+            if (client_set_start(client, ev_now(loop))
+                || client_reuse(client, query))
+            {
                 log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "reuse client failed");
                 client_close(client);
                 client_free(client);
-            }
-            else {
-                if (client_send(client, loop)) {
-                    log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "client send failed");
-                    client_close(client);
-                    client_free(client);
-                }
-                else {
-                    client_pool->clients++;
-
-                    if (client_pool->client_list)
-                        client_set_prev(client_pool->client_list, client);
-                    client_set_next(client, client_pool->client_list);
-                    client_pool->client_list = client;
-
-                    if (!ev_is_active(&(client_pool->timeout))) {
-                        ev_timer_set(&(client_pool->timeout), client_pool->client_ttl, 0.);
-                        ev_timer_start(loop, &(client_pool->timeout));
-                    }
-
-                    log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "reuse client (%lu/%lu)", client_pool->clients, client_pool->max_clients);
-                }
+                client = 0;
             }
         }
-        else
-#endif
-        if ((client = client_new(query, &client_pool_client_callback))
-            && !client_set_start(client, ev_now(loop))
-            && (!conf_client_pool_skip_reply(conf_client_pool(client_pool->conf))
-                || !client_set_skip_reply(client)))
-        {
-#ifdef DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
-            int fd;
-#endif
-
+        else if ((client = client_new(query, &client_pool_client_callback))) {
             if (query_is_udp(query)) {
                 proto = IPPROTO_UDP;
             }
@@ -389,30 +349,38 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
 
             /* TODO: Multiple addrinfo entries? */
 
-#ifdef DROOL_CLIENT_POOL_ENABLE_SOCKET_POOL
-            fd = -1;
-            if (client_pool->addrinfo->ai_family == AF_INET && proto == IPPROTO_UDP && client_pool->sockpool_udpv4) {
-                socket_pool_getsock(client_pool->sockpool_udpv4, &fd);
-            }
-
-            if (fd > -1 && client_connect_fd(client, fd, client_pool->addrinfo->ai_addr, client_pool->addrinfo->ai_addrlen, loop)) {
-                log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "new client fd failed");
-                client_free(client);
-            }
-            else if (fd < 0 &&
-#else
-            if (
-#endif
-                client_connect(client, proto, client_pool->addrinfo->ai_addr, client_pool->addrinfo->ai_addrlen, loop))
+            if (client_set_start(client, ev_now(loop))
+                || (conf_client_pool_skip_reply(conf_client_pool(client_pool->conf)) && client_set_skip_reply(client))
+                || client_connect(client, proto, client_pool->addrinfo->ai_addr, client_pool->addrinfo->ai_addrlen, loop))
             {
                 log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "new client failed");
                 client_free(client);
+                client = 0;
+            }
+        }
+
+        if (client) {
+            if (client_state(client) == CLIENT_CONNECTED && client_send(client, loop)) {
+                log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "client send failed");
+                client_close(client);
+                client_free(client);
             }
             else {
-                if (client_state(client) == CLIENT_CONNECTED && client_send(client, loop)) {
-                    log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "client send failed");
-                    client_close(client);
-                    client_free(client);
+                if (client_state(client) == CLIENT_SUCCESS) {
+                    log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client success");
+
+                    if (client_is_dgram(client)
+                        && client_pool->reuse_clients < client_pool->max_reuse_clients)
+                    {
+                        client_set_next(client, client_pool->reuse_client_list);
+                        client_pool->reuse_client_list = client;
+                        client_pool->reuse_clients++;
+                        log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client added to reuse (%lu/%lu)", client_pool->reuse_clients, client_pool->max_reuse_clients);
+                    }
+                    else {
+                        client_close(client);
+                        client_free(client);
+                    }
                 }
                 else {
                     client_pool->clients++;
@@ -433,11 +401,10 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         }
         else {
             log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "unable to create client, query lost");
-            if (client)
-                client_free(client);
         }
     }
 
+    /* TODO: Can we optimize this? Not call it every time? */
     ev_async_send(loop, &(client_pool->notify_query));
 }
 
