@@ -55,7 +55,7 @@ drool_SOURCES = callback.c client.c client_pool.c \
     parseconf/parseconf.c \
     pcap-thread/pcap_thread.c \
     sllq/sllq.c
-dist_drool_SOURCES = callback.h client.h client_pool.h \
+dist_drool_SOURCES = assert.h callback.h client.h client_pool.h \
     conf.h conf_client_pool.h conf_file.h conf_interface.h \
     drool.h dropback.h log.h query.h stats_callback.h timing.h \
     omg-dns/omg_dns.h \

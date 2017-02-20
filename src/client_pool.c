@@ -38,8 +38,8 @@
 #include "config.h"
 
 #include "client_pool.h"
-#include "drool.h"
 #include "log.h"
+#include "assert.h"
 
 #include <string.h>
 #include <errno.h>
@@ -72,6 +72,7 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
         client_pool->max_clients = 100;
         client_pool->client_ttl = 0.05;
         client_pool->max_reuse_clients = 20;
+        client_pool->sendas = CLIENT_POOL_SENDAS_ORIGINAL; /* TODO */
 
         if (conf_client_pool_have_max_clients(conf_client_pool(conf)))
             client_pool->max_clients = conf_client_pool_max_clients(conf_client_pool(conf));
@@ -94,7 +95,7 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
         }
 
         memcpy(&(client_pool->queries), &client_pool_sllq_init, sizeof(sllq_t));
-        sllq_set_size(&(client_pool->queries), 0x200);
+        sllq_set_size(&(client_pool->queries), 0x200); /* TODO: conf */
         if (sllq_init(&(client_pool->queries)) != SLLQ_OK) {
             free(client_pool);
             return 0;
@@ -321,8 +322,28 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         drool_client_t* client = 0;
         int proto = -1;
 
-        if (client_pool->reuse_client_list) {
-            /* TODO: udp or tcp? */
+        switch (client_pool->sendas) {
+            case CLIENT_POOL_SENDAS_UDP:
+                proto = IPPROTO_UDP;
+                break;
+
+            case CLIENT_POOL_SENDAS_TCP:
+                proto = IPPROTO_TCP;
+                break;
+
+            default:
+                if (query_is_udp(query)) {
+                    proto = IPPROTO_UDP;
+                }
+                else if (query_is_tcp(query)) {
+                    proto = IPPROTO_TCP;
+                }
+                break;
+        }
+
+        if (proto == IPPROTO_UDP
+            && client_pool->reuse_client_list)
+        {
             client = client_pool->reuse_client_list;
             client_pool->reuse_client_list = client_next(client);
             if (client_pool->reuse_clients)
@@ -330,9 +351,17 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
             client_set_next(client, 0);
             client_set_prev(client, 0);
 
-            if (client_set_start(client, ev_now(loop))
-                || client_reuse(client, query))
-            {
+            if (client_reuse(client, query)) {
+                client_close(client);
+                client_free(client);
+                client = 0;
+            }
+            else {
+                /* client have taken ownership of query */
+                query = 0;
+            }
+
+            if (!client || client_set_start(client, ev_now(loop))) {
                 log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "reuse client failed");
                 client_close(client);
                 client_free(client);
@@ -340,12 +369,8 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
             }
         }
         else if ((client = client_new(query, &client_pool_client_callback))) {
-            if (query_is_udp(query)) {
-                proto = IPPROTO_UDP;
-            }
-            else if (query_is_tcp(query)) {
-                proto = IPPROTO_TCP;
-            }
+            /* client have taken ownership of query */
+            query = 0;
 
             /* TODO: Multiple addrinfo entries? */
 
@@ -401,6 +426,7 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         }
         else {
             log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "unable to create client, query lost");
+            query_free(query);
         }
     }
 

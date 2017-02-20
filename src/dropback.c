@@ -40,6 +40,7 @@
 #include "dropback.h"
 #include "drool.h"
 #include "log.h"
+#include "assert.h"
 
 void dropback(u_char* user, const struct pcap_pkthdr* pkthdr, const u_char* pkt, const char* name, int dlt) {
     drool_t* context = (drool_t*)user;

@@ -43,7 +43,6 @@
 #include "dropback.h"
 #include "stats_callback.h"
 #include "pcap-thread/pcap_thread.h"
-
 #include "client_pool.h"
 
 #include <stdio.h>
@@ -386,13 +385,19 @@ int main(int argc, char* argv[]) {
             const drool_conf_file_t* conf_file = conf_read(&conf);
 
             while (conf_file) {
+                size_t n;
+
                 if (!(context = calloc(1, sizeof(drool_t)))) {
                     log_errno(conf_log(&conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
                     exit(DROOL_ENOMEM);
                 }
 
                 context->conf = &conf;
-                context->client_pool = client_pool_new(&conf); /* TODO */
+                for (n = 0; n < conf.context_client_pools; n++) { /* TODO */
+                    context->client_pool = client_pool_new(&conf);
+                    context->client_pool->next = context->client_pools;
+                    context->client_pools = context->client_pool;
+                }
                 context->next = contexts;
                 contexts = context;
 
@@ -415,13 +420,19 @@ int main(int argc, char* argv[]) {
             const drool_conf_interface_t* conf_interface = conf_input(&conf);
 
             while (conf_interface) {
+                size_t n;
+
                 if (!(context = calloc(1, sizeof(drool_t)))) {
                     log_errno(conf_log(&conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
                     exit(DROOL_ENOMEM);
                 }
 
                 context->conf = &conf;
-                context->client_pool = client_pool_new(&conf); /* TODO */
+                for (n = 0; n < conf.context_client_pools; n++) { /* TODO */
+                    context->client_pool = client_pool_new(&conf);
+                    context->client_pool->next = context->client_pools;
+                    context->client_pools = context->client_pool;
+                }
                 context->next = contexts;
                 contexts = context;
 
@@ -454,7 +465,10 @@ int main(int argc, char* argv[]) {
 
     /* TODO */
     for (context = contexts; context; context = context->next) {
-        client_pool_start(context->client_pool);
+        drool_client_pool_t* client_pool = context->client_pools;
+        for (; client_pool; client_pool = client_pool->next) {
+            client_pool_start(client_pool);
+        }
     }
 
     if ((err = pcap_thread_run(&pcap_thread)) != PCAP_THREAD_OK) {
@@ -471,8 +485,13 @@ int main(int argc, char* argv[]) {
 
     /* TODO */
     for (context = contexts; context; context = context->next) {
-        client_pool_stop(context->client_pool);
-        client_pool_free(context->client_pool);
+        drool_client_pool_t* client_pool = context->client_pools;
+        for (; client_pool; ) {
+            drool_client_pool_t* item = client_pool;
+            client_pool = client_pool->next;
+            client_pool_stop(item);
+            client_pool_free(item);
+        }
     }
 
     /*
@@ -484,11 +503,12 @@ int main(int argc, char* argv[]) {
 
     {
         float pkts_fraction = 0;
-        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0;
+        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0, size = 0;
 
         for (context = contexts; context; context = context->next) {
             seen += context->packets_seen;
             sent += context->packets_sent;
+            size += context->packets_size;
             dropped += context->packets_dropped;
             ignored += context->packets_ignored;
         }
@@ -515,7 +535,7 @@ int main(int argc, char* argv[]) {
         }
 
         log_printf(conf_log(&conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
-        log_printf(conf_log(&conf), LCORE, LINFO, "sent %lu packets, %.0f/pps", sent, sent*pkts_fraction);
+        log_printf(conf_log(&conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp", sent, sent*pkts_fraction, (float)size/(float)sent);
         log_printf(conf_log(&conf), LCORE, LINFO, "dropped %lu packets", dropped);
         log_printf(conf_log(&conf), LCORE, LINFO, "ignored %lu packets", ignored);
     }

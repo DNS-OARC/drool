@@ -38,19 +38,17 @@
 #include "config.h"
 
 #include "query.h"
-#include "drool.h"
+#include "assert.h"
 
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 /*
  * New/Free
  */
 
 drool_query_t* query_new(void) {
-    drool_query_t* query = calloc(1, sizeof(drool_query_t));
-
-    return query;
+    return calloc(1, sizeof(drool_query_t));
 }
 
 void query_free(drool_query_t* query) {
@@ -131,7 +129,7 @@ inline size_t query_length(const drool_query_t* query) {
 
 inline const u_char* query_raw(const drool_query_t* query) {
     drool_assert(query);
-    return query->raw;
+    return query->raw ? query->raw : query->small;
 }
 
 /*
@@ -231,10 +229,15 @@ int query_set_raw(drool_query_t* query, const u_char* raw, size_t length) {
         query->length = 0;
         query->have_raw = 0;
     }
-    if (!(query->raw = calloc(length, 1))) {
-        return 1;
+    if (length > sizeof(query->small)) {
+        if (!(query->raw = calloc(length, 1))) {
+            return 1;
+        }
+        memcpy(query->raw, raw, length);
     }
-    memcpy(query->raw, raw, length);
+    else {
+        memcpy(query->small, raw, length);
+    }
     query->length = length;
     query->have_raw = 1;
 

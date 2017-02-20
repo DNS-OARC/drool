@@ -35,54 +35,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __drool_query_h
-#define __drool_query_h
+#ifndef __drool_assert_h
+#define __drool_assert_h
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#if DROOL_ENABLE_ASSERT
+#undef NDEBUG
+#include <assert.h>
+#define drool_assert(x) assert(x)
+#else
+#define drool_assert(x)
+#endif
 
-typedef struct drool_query drool_query_t;
-struct drool_query {
-    unsigned short  is_udp : 1;
-    unsigned short  is_tcp : 1;
-    unsigned short  have_ipv4 : 1;
-    unsigned short  have_ipv6 : 1;
-    unsigned short  have_port : 1;
-    unsigned short  have_raw : 1;
-
-    union {
-        struct in_addr  ip_dst;
-        struct in6_addr ip6_dst;
-    } addr;
-    uint16_t    port;
-
-    u_char      small[64];
-    u_char*     raw;
-    size_t      length;
-};
-
-drool_query_t* query_new(void);
-void query_free(drool_query_t* query);
-
-int query_is_udp(const drool_query_t* query);
-int query_is_tcp(const drool_query_t* query);
-int query_have_ipv4(const drool_query_t* query);
-int query_have_ipv6(const drool_query_t* query);
-int query_have_port(const drool_query_t* query);
-int query_have_raw(const drool_query_t* query);
-
-const struct in_addr* query_ip(const drool_query_t* query);
-const struct in6_addr* query_ip6(const drool_query_t* query);
-uint16_t query_port(const drool_query_t* query);
-size_t query_length(const drool_query_t* query);
-const u_char* query_raw(const drool_query_t* query);
-
-int query_set_udp(drool_query_t* query);
-int query_set_tcp(drool_query_t* query);
-int query_set_ip(drool_query_t* query, const struct in_addr* addr);
-int query_set_ip6(drool_query_t* query, const struct in6_addr* addr);
-int query_set_port(drool_query_t* query, uint16_t port);
-int query_set_raw(drool_query_t* query, const u_char* raw, size_t length);
-
-#endif /* __drool_query_h */
+#endif /* __drool_assert_h */

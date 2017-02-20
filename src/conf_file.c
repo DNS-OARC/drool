@@ -38,7 +38,8 @@
 #include "config.h"
 
 #include "conf_file.h"
-#include "drool.h"
+#include "conf.h"
+#include "assert.h"
 
 #include <stdlib.h>
 #include <string.h>

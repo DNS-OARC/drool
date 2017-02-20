@@ -38,7 +38,7 @@
 #include "config.h"
 
 #include "log.h"
-#include "drool.h"
+#include "assert.h"
 
 #include <stdarg.h>
 #include <stdio.h>
