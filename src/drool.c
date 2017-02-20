@@ -385,13 +385,19 @@ int main(int argc, char* argv[]) {
             const drool_conf_file_t* conf_file = conf_read(&conf);
 
             while (conf_file) {
+                size_t n;
+
                 if (!(context = calloc(1, sizeof(drool_t)))) {
                     log_errno(conf_log(&conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
                     exit(DROOL_ENOMEM);
                 }
 
                 context->conf = &conf;
-                context->client_pool = client_pool_new(&conf); /* TODO */
+                for (n = 0; n < conf.context_client_pools; n++) { /* TODO */
+                    context->client_pool = client_pool_new(&conf);
+                    context->client_pool->next = context->client_pools;
+                    context->client_pools = context->client_pool;
+                }
                 context->next = contexts;
                 contexts = context;
 
@@ -414,13 +420,19 @@ int main(int argc, char* argv[]) {
             const drool_conf_interface_t* conf_interface = conf_input(&conf);
 
             while (conf_interface) {
+                size_t n;
+
                 if (!(context = calloc(1, sizeof(drool_t)))) {
                     log_errno(conf_log(&conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
                     exit(DROOL_ENOMEM);
                 }
 
                 context->conf = &conf;
-                context->client_pool = client_pool_new(&conf); /* TODO */
+                for (n = 0; n < conf.context_client_pools; n++) { /* TODO */
+                    context->client_pool = client_pool_new(&conf);
+                    context->client_pool->next = context->client_pools;
+                    context->client_pools = context->client_pool;
+                }
                 context->next = contexts;
                 contexts = context;
 
@@ -453,7 +465,10 @@ int main(int argc, char* argv[]) {
 
     /* TODO */
     for (context = contexts; context; context = context->next) {
-        client_pool_start(context->client_pool);
+        drool_client_pool_t* client_pool = context->client_pools;
+        for (; client_pool; client_pool = client_pool->next) {
+            client_pool_start(client_pool);
+        }
     }
 
     if ((err = pcap_thread_run(&pcap_thread)) != PCAP_THREAD_OK) {
@@ -470,8 +485,13 @@ int main(int argc, char* argv[]) {
 
     /* TODO */
     for (context = contexts; context; context = context->next) {
-        client_pool_stop(context->client_pool);
-        client_pool_free(context->client_pool);
+        drool_client_pool_t* client_pool = context->client_pools;
+        for (; client_pool; ) {
+            drool_client_pool_t* item = client_pool;
+            client_pool = client_pool->next;
+            client_pool_stop(item);
+            client_pool_free(item);
+        }
     }
 
     /*

@@ -57,8 +57,17 @@ enum drool_client_pool_state {
     CLIENT_POOL_ERROR
 };
 
+typedef enum drool_client_pool_sendas drool_client_pool_sendas_t;
+enum drool_client_pool_sendas {
+    CLIENT_POOL_SENDAS_ORIGINAL = 0,
+    CLIENT_POOL_SENDAS_UDP,
+    CLIENT_POOL_SENDAS_TCP
+};
+
 typedef struct drool_client_pool drool_client_pool_t;
 struct drool_client_pool {
+    drool_client_pool_t* next;
+
     unsigned short  have_queued_queries : 1;
     unsigned short  is_stopping : 1;
 
@@ -82,6 +91,8 @@ struct drool_client_pool {
     drool_client_t*             reuse_client_list;
     size_t                      reuse_clients;
     size_t                      max_reuse_clients;
+
+    drool_client_pool_sendas_t  sendas;
 };
 
 drool_client_pool_t* client_pool_new(const drool_conf_t* conf);

@@ -67,7 +67,8 @@
     CONF_FILE_T_INIT, CONF_INTERFACE_T_INIT, \
     LOG_T_INIT, \
     TIMING_MODE_KEEP, 0, 0, 0.0, \
-    CONF_CLIENT_POOL_T_INIT \
+    CONF_CLIENT_POOL_T_INIT, \
+    6 \
 }
 typedef struct drool_conf drool_conf_t;
 struct drool_conf {
@@ -94,6 +95,8 @@ struct drool_conf {
     long double             timing_multiply;
 
     drool_conf_client_pool_t    client_pool;
+
+    size_t                  context_client_pools; /* TODO */
 };
 
 drool_conf_t* conf_new(void);

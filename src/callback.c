@@ -93,6 +93,7 @@ static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, cons
         context->packets_dropped++;
         return;
     }
+    context->client_pool = context->client_pool->next ? context->client_pool->next : context->client_pools;
 
     log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "packet is dns query, queued %p", query);
     context->packets_sent++;

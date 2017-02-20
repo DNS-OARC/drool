@@ -56,7 +56,7 @@
     0, \
     0, 0, 0, 0, 0, \
     { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0 \
+    0, 0 \
 }
 typedef struct drool drool_t;
 struct drool {
@@ -75,6 +75,7 @@ struct drool {
     struct timespec         last_time_queue;
 
     drool_client_pool_t*    client_pool;
+    drool_client_pool_t*    client_pools;
 };
 
 #endif /* __drool_drool_h */
