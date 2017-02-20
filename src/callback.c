@@ -43,6 +43,7 @@
 #include "query.h"
 #include "omg-dns/omg_dns.h"
 #include "client_pool.h"
+#include "assert.h"
 
 static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length) {
     omg_dns_t dns = OMG_DNS_T_INIT;
@@ -95,6 +96,7 @@ static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, cons
 
     log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "packet is dns query, queued %p", query);
     context->packets_sent++;
+    context->packets_size += length;
 }
 
 static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length) {

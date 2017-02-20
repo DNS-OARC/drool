@@ -38,8 +38,8 @@
 #include "config.h"
 
 #include "client.h"
-#include "drool.h"
 #include "log.h"
+#include "assert.h"
 
 #include <stdlib.h>
 #include <unistd.h>

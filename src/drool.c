@@ -43,7 +43,6 @@
 #include "dropback.h"
 #include "stats_callback.h"
 #include "pcap-thread/pcap_thread.h"
-
 #include "client_pool.h"
 
 #include <stdio.h>
@@ -484,11 +483,12 @@ int main(int argc, char* argv[]) {
 
     {
         float pkts_fraction = 0;
-        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0;
+        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0, size = 0;
 
         for (context = contexts; context; context = context->next) {
             seen += context->packets_seen;
             sent += context->packets_sent;
+            size += context->packets_size;
             dropped += context->packets_dropped;
             ignored += context->packets_ignored;
         }
@@ -515,7 +515,7 @@ int main(int argc, char* argv[]) {
         }
 
         log_printf(conf_log(&conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
-        log_printf(conf_log(&conf), LCORE, LINFO, "sent %lu packets, %.0f/pps", sent, sent*pkts_fraction);
+        log_printf(conf_log(&conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp", sent, sent*pkts_fraction, (float)size/(float)sent);
         log_printf(conf_log(&conf), LCORE, LINFO, "dropped %lu packets", dropped);
         log_printf(conf_log(&conf), LCORE, LINFO, "ignored %lu packets", ignored);
     }

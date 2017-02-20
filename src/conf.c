@@ -38,8 +38,8 @@
 #include "config.h"
 
 #include "conf.h"
-#include "drool.h"
 #include "parseconf/parseconf.h"
+#include "assert.h"
 
 #include <stdlib.h>
 #include <string.h>

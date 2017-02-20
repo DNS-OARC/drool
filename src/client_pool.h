@@ -35,13 +35,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __drool_client_pool_h
+#define __drool_client_pool_h
+
 #include "sllq/sllq.h"
 #include "query.h"
 #include "conf.h"
 #include "client.h"
-
-#ifndef __drool_client_pool_h
-#define __drool_client_pool_h
 
 #include <pthread.h>
 #include <ev.h>

@@ -35,11 +35,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "query.h"
-#include "conf.h"
-
 #ifndef __drool_client_h
 #define __drool_client_h
+
+#include "query.h"
+#include "conf.h"
 
 #include <ev.h>
 #include <sys/types.h>

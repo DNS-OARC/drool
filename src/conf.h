@@ -35,14 +35,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef __drool_conf_h
+#define __drool_conf_h
+
 #include "log.h"
 #include "timing.h"
 #include "conf_file.h"
 #include "conf_interface.h"
 #include "conf_client_pool.h"
-
-#ifndef __drool_conf_h
-#define __drool_conf_h
 
 #include <stddef.h>
 

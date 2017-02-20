@@ -35,22 +35,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "conf.h"
-#include "client_pool.h"
-
 #ifndef __drool_drool_h
 #define __drool_drool_h
 
+#include "conf.h"
+#include "client_pool.h"
+
 #include <stdint.h>
 #include <time.h>
-
-#if DROOL_ENABLE_ASSERT
-#undef NDEBUG
-#include <assert.h>
-#define drool_assert(x) assert(x)
-#else
-#define drool_assert(x)
-#endif
 
 #define DROOL_ERROR     1
 #define DROOL_EOPT      2
@@ -73,6 +65,7 @@ struct drool {
     const drool_conf_t*     conf;
     uint64_t                packets_seen;
     uint64_t                packets_sent;
+    uint64_t                packets_size;
     uint64_t                packets_dropped;
     uint64_t                packets_ignored;
 

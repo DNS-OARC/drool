@@ -37,8 +37,9 @@
 
 #include "config.h"
 
+#include "conf_client_pool.h"
 #include "conf.h"
-#include "drool.h"
+#include "assert.h"
 
 #include <stdlib.h>
 #include <string.h>

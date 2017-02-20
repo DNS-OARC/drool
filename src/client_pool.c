@@ -38,8 +38,8 @@
 #include "config.h"
 
 #include "client_pool.h"
-#include "drool.h"
 #include "log.h"
+#include "assert.h"
 
 #include <string.h>
 #include <errno.h>
@@ -330,9 +330,17 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
             client_set_next(client, 0);
             client_set_prev(client, 0);
 
-            if (client_set_start(client, ev_now(loop))
-                || client_reuse(client, query))
-            {
+            if (client_reuse(client, query)) {
+                client_close(client);
+                client_free(client);
+                client = 0;
+            }
+            else {
+                /* client have taken ownership of query */
+                query = 0;
+            }
+
+            if (!client || client_set_start(client, ev_now(loop))) {
                 log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "reuse client failed");
                 client_close(client);
                 client_free(client);
@@ -346,6 +354,9 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
             else if (query_is_tcp(query)) {
                 proto = IPPROTO_TCP;
             }
+
+            /* client have taken ownership of query */
+            query = 0;
 
             /* TODO: Multiple addrinfo entries? */
 
@@ -401,6 +412,7 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         }
         else {
             log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "unable to create client, query lost");
+            query_free(query);
         }
     }
 
