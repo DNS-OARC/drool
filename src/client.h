@@ -71,6 +71,8 @@ struct drool_client {
     unsigned short  have_fd : 1;
     unsigned short  is_connected : 1;
     unsigned short  skip_reply : 1;
+    unsigned short  is_dgram : 1;
+    unsigned short  is_stream : 1;
 
     ev_tstamp               start;
     drool_client_t*         next;
@@ -103,6 +105,8 @@ drool_client_state_t client_state(const drool_client_t* client);
 int client_is_connected(const drool_client_t* client);
 int client_errno(const drool_client_t* client);
 ev_tstamp client_start(const drool_client_t* client);
+int client_is_dgram(const drool_client_t* client);
+int client_is_stream(const drool_client_t* client);
 int client_set_next(drool_client_t* client, drool_client_t* next);
 int client_set_prev(drool_client_t* client, drool_client_t* prev);
 int client_set_fd(drool_client_t* client, int fd);

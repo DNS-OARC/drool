@@ -173,40 +173,6 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents) {
     }
     ev_io_start(loop, &(client->read_watcher));
     client->state = CLIENT_RECIVING;
-    return;
-
-    /* TODO: pointer++! */
-    if ((wrote = write(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent)) < 0) {
-        switch (errno) {
-            case EAGAIN:
-#if EAGAIN != EWOULDBLOCK
-            case EWOULDBLOCK:
-#endif
-                wrote = 0;
-                break;
-
-            default:
-                ev_io_stop(loop, w);
-                client->errnum = errno;
-                client->state = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
-                client->callback(client, loop);
-                return;
-        }
-    }
-
-    if (wrote) {
-        client->sent += wrote;
-        if (client->sent > query_length(client->query)) {
-            ev_io_stop(loop, w);
-            client->state = CLIENT_ERROR;
-            client->callback(client, loop);
-        }
-        else if (client->sent == query_length(client->query)) {
-            ev_io_stop(loop, w);
-            ev_io_start(loop, &(client->read_watcher));
-            client->state = CLIENT_RECIVING;
-        }
-    }
 }
 
 /*
@@ -292,6 +258,16 @@ inline int client_errno(const drool_client_t* client) {
 inline ev_tstamp client_start(const drool_client_t* client) {
     drool_assert(client);
     return client->start;
+}
+
+inline int client_is_dgram(const drool_client_t* client) {
+    drool_assert(client);
+    return client->is_dgram;
+}
+
+inline int client_is_stream(const drool_client_t* client) {
+    drool_assert(client);
+    return client->is_stream;
 }
 
 int client_set_next(drool_client_t* client, drool_client_t* next) {
@@ -398,10 +374,12 @@ int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* a
             memcpy(&(client->to_addr), addr, addrlen);
             client->to_addrlen = addrlen;
             client->have_to_addr = 1;
+            client->is_dgram = 1;
             break;
 
         case IPPROTO_TCP:
             socket_type = SOCK_STREAM;
+            client->is_stream = 1;
             break;
 
         default:
@@ -483,6 +461,10 @@ int client_connect_fd(drool_client_t* client, int fd, const struct sockaddr* add
         memcpy(&(client->to_addr), addr, addrlen);
         client->to_addrlen = addrlen;
         client->have_to_addr = 1;
+        client->is_dgram = 1;
+    }
+    else {
+        client->is_stream = 1;
     }
     client->fd = fd;
     client->have_fd = 1;
@@ -528,11 +510,34 @@ int client_send(drool_client_t* client, struct ev_loop* loop) {
         return 1;
     }
 
-    /* TODO: Send directly? Queue if not able to send all */
+    if (client->have_to_addr)
+        client->sent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, &(client->to_addr), client->to_addrlen);
+    else
+        client->sent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, 0, 0);
+    if (client->sent < 0) {
+        switch (errno) {
+            case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+            case EWOULDBLOCK:
+#endif
+                ev_io_start(loop, &(client->write_watcher));
+                client->state = CLIENT_SENDING;
+                return 0;
 
-    ev_io_start(loop, &(client->write_watcher));
-    client->state = CLIENT_SENDING;
+            default:
+                client->errnum = errno;
+                client->state = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
+                return 1;
+        }
+    }
 
+    if (client->skip_reply) {
+        client->state = CLIENT_SUCCESS;
+        return 0;
+    }
+
+    ev_io_start(loop, &(client->read_watcher));
+    client->state = CLIENT_RECIVING;
     return 0;
 }
 

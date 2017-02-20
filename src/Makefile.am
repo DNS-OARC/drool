@@ -50,14 +50,14 @@ bin_PROGRAMS = drool
 
 drool_SOURCES = callback.c client.c client_pool.c \
     conf.c conf_client_pool.c conf_file.c conf_interface.c \
-    drool.c dropback.c log.c query.c socket_pool.c stats_callback.c \
+    drool.c dropback.c log.c query.c stats_callback.c \
     omg-dns/omg_dns.c \
     parseconf/parseconf.c \
     pcap-thread/pcap_thread.c \
     sllq/sllq.c
 dist_drool_SOURCES = callback.h client.h client_pool.h \
     conf.h conf_client_pool.h conf_file.h conf_interface.h \
-    drool.h dropback.h log.h query.h socket_pool.h stats_callback.h timing.h \
+    drool.h dropback.h log.h query.h stats_callback.h timing.h \
     omg-dns/omg_dns.h \
     parseconf/parseconf.h \
     pcap-thread/pcap_thread.h \

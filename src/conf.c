@@ -544,6 +544,31 @@ static int parse_client_pool_skip_reply(void* user, const parseconf_token_t* tok
     return conf_client_pool_set_skip_reply(&(conf->client_pool));
 }
 
+static parseconf_token_type_t client_pool_max_reuse_clients_tokens[] = {
+    PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_max_reuse_clients(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    size_t max_reuse_clients = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_ulongint(&tokens[2], &max_reuse_clients, errstr)) {
+        return 1;
+    }
+
+    return conf_client_pool_set_max_reuse_clients(&(conf->client_pool), max_reuse_clients);
+}
+
 static parseconf_syntax_t client_pool_syntax[] = {
     /* client_pool target <host> <port>; */
     { "target", parse_client_pool_target, client_pool_target_tokens, 0 },
@@ -553,6 +578,8 @@ static parseconf_syntax_t client_pool_syntax[] = {
     { "client_ttl", parse_client_pool_client_ttl, client_pool_client_ttl_tokens, 0 },
     /* client_pool skip_reply; */
     { "skip_reply", parse_client_pool_skip_reply, client_pool_skip_reply_tokens, 0 },
+    /* client_pool max_reuse_clients <num>; */
+    { "max_reuse_clients", parse_client_pool_max_reuse_clients, client_pool_max_reuse_clients_tokens, 0 },
     PARSECONF_SYNTAX_END
 };
 

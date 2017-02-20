@@ -73,6 +73,11 @@ inline int conf_client_pool_have_client_ttl(const drool_conf_client_pool_t* conf
     return conf_client_pool->have_client_ttl;
 }
 
+inline int conf_client_pool_have_max_reuse_clients(const drool_conf_client_pool_t* conf_client_pool) {
+    drool_assert(conf_client_pool);
+    return conf_client_pool->have_max_reuse_clients;
+}
+
 inline const drool_conf_client_pool_t* conf_client_pool_next(const drool_conf_client_pool_t* conf_client_pool) {
     drool_assert(conf_client_pool);
     return conf_client_pool->next;
@@ -101,6 +106,11 @@ inline double conf_client_pool_client_ttl(const drool_conf_client_pool_t* conf_c
 inline int conf_client_pool_skip_reply(const drool_conf_client_pool_t* conf_client_pool) {
     drool_assert(conf_client_pool);
     return conf_client_pool->skip_reply;
+}
+
+inline size_t conf_client_pool_max_reuse_clients(const drool_conf_client_pool_t* conf_client_pool) {
+    drool_assert(conf_client_pool);
+    return conf_client_pool->max_reuse_clients;
 }
 
 int conf_client_pool_set_next(drool_conf_client_pool_t* conf_client_pool, drool_conf_client_pool_t* next) {
@@ -177,6 +187,17 @@ int conf_client_pool_set_skip_reply(drool_conf_client_pool_t* conf_client_pool) 
     }
 
     conf_client_pool->skip_reply = 1;
+
+    return CONF_OK;
+}
+
+int conf_client_pool_set_max_reuse_clients(drool_conf_client_pool_t* conf_client_pool, size_t max_reuse_clients) {
+    if (!conf_client_pool) {
+        return CONF_EINVAL;
+    }
+
+    conf_client_pool->max_reuse_clients = max_reuse_clients;
+    conf_client_pool->have_max_reuse_clients = 1;
 
     return CONF_OK;
 }
