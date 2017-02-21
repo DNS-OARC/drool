@@ -38,176 +38,26 @@
 #include "config.h"
 
 #include "conf.h"
-#include "drool.h"
+#include "parseconf/parseconf.h"
+#include "assert.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-/*
- * conf file
- */
-
-conf_file_t* conf_file_new(void) {
-    conf_file_t* conf_file = calloc(1, sizeof(conf_file_t));
-    return conf_file;
-}
-
-void conf_file_free(conf_file_t* conf_file) {
-    if (conf_file) {
-        conf_file_release(conf_file);
-        free(conf_file);
-    }
-}
-
-void conf_file_release(conf_file_t* conf_file) {
-    if (conf_file) {
-        if (conf_file->name) {
-            free(conf_file->name);
-            conf_file->name = 0;
-        }
-    }
-}
-
-inline const conf_file_t* conf_file_next(const conf_file_t* conf_file) {
-    drool_assert(conf_file);
-    return conf_file->next;
-}
-
-int conf_file_set_next(conf_file_t* conf_file, conf_file_t* next) {
-    if (!conf_file) {
-        return CONF_EINVAL;
-    }
-    if (!next) {
-        return CONF_EINVAL;
-    }
-
-    conf_file->next = next;
-
-    return CONF_OK;
-}
-
-inline const char* conf_file_name(const conf_file_t* conf_file) {
-    drool_assert(conf_file);
-    return conf_file->name;
-}
-
-int conf_file_set_name(conf_file_t* conf_file, const char* name, size_t length) {
-    if (!conf_file) {
-        return CONF_EINVAL;
-    }
-    if (!name) {
-        return CONF_EINVAL;
-    }
-
-    if (conf_file->name) {
-        free(conf_file->name);
-    }
-    if (length) {
-        if (!(conf_file->name = strndup(name, length))) {
-            return CONF_ENOMEM;
-        }
-    }
-    else {
-        if (!(conf_file->name = strdup(name))) {
-            return CONF_ENOMEM;
-        }
-    }
-    printf("name: %s\n", conf_file->name);
-
-    return CONF_OK;
-}
-
-/*
- * conf interface
- */
-
-conf_interface_t* conf_interface_new(void) {
-    conf_interface_t* conf_interface = calloc(1, sizeof(conf_interface_t));
-    return conf_interface;
-}
-
-void conf_interface_free(conf_interface_t* conf_interface) {
-    if (conf_interface) {
-        conf_interface_release(conf_interface);
-        free(conf_interface);
-    }
-}
-
-void conf_interface_release(conf_interface_t* conf_interface) {
-    if (conf_interface) {
-        if (conf_interface->name) {
-            free(conf_interface->name);
-            conf_interface->name = 0;
-        }
-    }
-}
-
-inline const conf_interface_t* conf_interface_next(const conf_interface_t* conf_interface) {
-    drool_assert(conf_interface);
-    return conf_interface->next;
-}
-
-int conf_interface_set_next(conf_interface_t* conf_interface, conf_interface_t* next) {
-    if (!conf_interface) {
-        return CONF_EINVAL;
-    }
-    if (!next) {
-        return CONF_EINVAL;
-    }
-
-    conf_interface->next = next;
-
-    return CONF_OK;
-}
-
-inline const char* conf_interface_name(const conf_interface_t* conf_interface) {
-    drool_assert(conf_interface);
-    return conf_interface->name;
-}
-
-int conf_interface_set_name(conf_interface_t* conf_interface, const char* name, size_t length) {
-    if (!conf_interface) {
-        return CONF_EINVAL;
-    }
-    if (!name) {
-        return CONF_EINVAL;
-    }
-
-    if (conf_interface->name) {
-        free(conf_interface->name);
-    }
-    if (length) {
-        if (!(conf_interface->name = strndup(name, length))) {
-            return CONF_ENOMEM;
-        }
-    }
-    else {
-        if (!(conf_interface->name = strdup(name))) {
-            return CONF_ENOMEM;
-        }
-    }
-
-    return CONF_OK;
-}
-
-/*
- * conf
- */
-
-conf_t* conf_new(void) {
-    conf_t* conf = calloc(1, sizeof(conf_t));
+drool_conf_t* conf_new(void) {
+    drool_conf_t* conf = calloc(1, sizeof(drool_conf_t));
     return conf;
 }
 
-void conf_free(conf_t* conf) {
+void conf_free(drool_conf_t* conf) {
     if (conf) {
         conf_release(conf);
         free(conf);
     }
 }
 
-void conf_release(conf_t* conf) {
+void conf_release(drool_conf_t* conf) {
     if (conf) {
         if (conf->have_filter) {
             free(conf->filter);
@@ -215,7 +65,7 @@ void conf_release(conf_t* conf) {
         }
         if (conf->have_read) {
             while (conf->read) {
-                conf_file_t* conf_file = conf->read;
+                drool_conf_file_t* conf_file = conf->read;
 
                 conf->read = conf_file->next;
                 conf_file_free(conf_file);
@@ -224,13 +74,14 @@ void conf_release(conf_t* conf) {
         }
         if (conf->have_input) {
             while (conf->input) {
-                conf_interface_t* conf_interface = conf->input;
+                drool_conf_interface_t* conf_interface = conf->input;
 
                 conf->input = conf_interface->next;
                 conf_interface_free(conf_interface);
             }
             conf->have_input = 0;
         }
+        /*
         if (conf->have_write) {
             conf_file_release(&(conf->write));
             conf->have_write = 0;
@@ -239,40 +90,48 @@ void conf_release(conf_t* conf) {
             conf_interface_release(&(conf->output));
             conf->have_output = 0;
         }
+        */
     }
 }
 
-inline int conf_have_filter(const conf_t* conf) {
+inline int conf_have_filter(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_filter;
 }
 
-inline int conf_have_read(const conf_t* conf) {
+inline int conf_have_read(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_read;
 }
 
-inline int conf_have_input(const conf_t* conf) {
+inline int conf_have_input(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_input;
 }
 
-inline int conf_have_write(const conf_t* conf) {
+inline int conf_have_read_mode(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->have_read_mode;
+}
+
+/*
+inline int conf_have_write(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_write;
 }
 
-inline int conf_have_output(const conf_t* conf) {
+inline int conf_have_output(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->have_output;
 }
+*/
 
-inline const char* conf_filter(const conf_t* conf) {
+inline const char* conf_filter(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->filter;
 }
 
-int conf_set_filter(conf_t* conf, const char* filter, size_t length) {
+int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length) {
     if (!conf) {
         return CONF_EINVAL;
     }
@@ -300,33 +159,65 @@ int conf_set_filter(conf_t* conf, const char* filter, size_t length) {
     return CONF_OK;
 }
 
-inline const size_t conf_filter_length(const conf_t* conf) {
+inline const size_t conf_filter_length(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->filter_length;
 }
 
-inline const conf_file_t* conf_read(const conf_t* conf) {
+inline const drool_conf_file_t* conf_read(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->read;
 }
 
-inline const conf_interface_t* conf_input(const conf_t* conf) {
+inline const drool_conf_interface_t* conf_input(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->input;
 }
 
-inline const conf_file_t* conf_write(const conf_t* conf) {
+inline drool_conf_read_mode_t conf_read_mode(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->read_mode;
+}
+
+inline size_t conf_read_iter(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->read_iter;
+}
+
+/*
+inline const drool_conf_file_t* conf_write(const drool_conf_t* conf) {
     drool_assert(conf);
     return &(conf->write);
 }
 
-inline const conf_interface_t* conf_output(const conf_t* conf) {
+inline const drool_conf_interface_t* conf_output(const drool_conf_t* conf) {
     drool_assert(conf);
     return &(conf->output);
 }
+*/
 
-int conf_add_read(conf_t* conf, const char* file, size_t length) {
-    conf_file_t* conf_file;
+inline drool_timing_mode_t conf_timing_mode(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->timing_mode;
+}
+
+inline unsigned long int conf_timing_increase(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->timing_increase;
+}
+
+inline unsigned long int conf_timing_reduce(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->timing_reduce;
+}
+
+inline long double conf_timing_multiply(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->timing_multiply;
+}
+
+int conf_add_read(drool_conf_t* conf, const char* file, size_t length) {
+    drool_conf_file_t* conf_file;
     int err = CONF_OK;
 
     if (!conf) {
@@ -353,8 +244,8 @@ int conf_add_read(conf_t* conf, const char* file, size_t length) {
     return err;
 }
 
-int conf_add_input(conf_t* conf, const char* interface, size_t length) {
-    conf_interface_t* conf_interface;
+int conf_add_input(drool_conf_t* conf, const char* interface, size_t length) {
+    drool_conf_interface_t* conf_interface;
     int err = CONF_OK;
 
     if (!conf) {
@@ -381,7 +272,32 @@ int conf_add_input(conf_t* conf, const char* interface, size_t length) {
     return CONF_OK;
 }
 
-int conf_set_write(conf_t* conf, const char* file, size_t length) {
+int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode) {
+    if (!conf) {
+        return CONF_EINVAL;
+    }
+
+    conf->read_mode = read_mode;
+    if (read_mode == CONF_READ_MODE_NONE)
+        conf->have_read_mode = 0;
+    else
+        conf->have_read_mode = 1;
+
+    return CONF_OK;
+}
+
+int conf_set_read_iter(drool_conf_t* conf, size_t read_iter) {
+    if (!conf) {
+        return CONF_EINVAL;
+    }
+
+    conf->read_iter = read_iter;
+
+    return CONF_OK;
+}
+
+/*
+int conf_set_write(drool_conf_t* conf, const char* file, size_t length) {
     int ret;
 
     if (!conf) {
@@ -403,7 +319,7 @@ int conf_set_write(conf_t* conf, const char* file, size_t length) {
     return ret;
 }
 
-int conf_set_output(conf_t* conf, const char* interface, size_t length) {
+int conf_set_output(drool_conf_t* conf, const char* interface, size_t length) {
     int ret;
 
     if (!conf) {
@@ -424,25 +340,319 @@ int conf_set_output(conf_t* conf, const char* interface, size_t length) {
     }
     return ret;
 }
+*/
 
-inline const log_t* conf_log(const conf_t* conf) {
+inline const drool_log_t* conf_log(const drool_conf_t* conf) {
     drool_assert(conf);
     return &(conf->log);
 }
 
-inline log_t* conf_log_rw(conf_t* conf) {
+inline drool_log_t* conf_log_rw(drool_conf_t* conf) {
     drool_assert(conf);
     return &(conf->log);
 }
+
+inline const drool_conf_client_pool_t* conf_client_pool(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return &(conf->client_pool);
+}
+
+/*
+ * timing conf parsers
+ */
+
+static parseconf_token_type_t timing_ignore_tokens[] = {
+    PARSECONF_TOKEN_END
+};
+
+static int parse_timing_ignore(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    conf->timing_mode = TIMING_MODE_IGNORE;
+
+    return 0;
+}
+
+static parseconf_token_type_t timing_keep_tokens[] = {
+    PARSECONF_TOKEN_END
+};
+
+static int parse_timing_keep(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    conf->timing_mode = TIMING_MODE_KEEP;
+
+    return 0;
+}
+
+static parseconf_token_type_t timing_increase_tokens[] = {
+    PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
+};
+
+static int parse_timing_increase(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    unsigned long int nanoseconds = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_ulongint(&tokens[2], &nanoseconds, errstr)) {
+        return 1;
+    }
+
+    conf->timing_mode = TIMING_MODE_INCREASE;
+    conf->timing_increase = nanoseconds;
+
+    return 0;
+}
+
+static parseconf_token_type_t timing_reduce_tokens[] = {
+    PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
+};
+
+static int parse_timing_reduce(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    unsigned long int nanoseconds = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_ulongint(&tokens[2], &nanoseconds, errstr)) {
+        return 1;
+    }
+
+    conf->timing_mode = TIMING_MODE_REDUCE;
+    conf->timing_reduce = nanoseconds;
+
+    return 0;
+}
+
+static parseconf_token_type_t timing_multiply_tokens[] = {
+    PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
+};
+
+static int parse_timing_multiply(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    long double multiply = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_longdouble(&tokens[2], &multiply, errstr)) {
+        return 1;
+    }
+
+    conf->timing_mode = TIMING_MODE_MULTIPLY;
+    conf->timing_multiply = multiply;
+
+    return 0;
+}
+
+static parseconf_syntax_t timing_syntax[] = {
+    /* timing ignore; */
+    { "ignore", parse_timing_ignore, timing_ignore_tokens, 0 },
+    /* timing keep; */
+    { "keep", parse_timing_keep, timing_keep_tokens, 0 },
+    /* timing increase <nanoseconds>; */
+    { "increase", parse_timing_increase, timing_increase_tokens, 0 },
+    /* timing reduce <nanoseconds>; */
+    { "reduce", parse_timing_reduce, timing_reduce_tokens, 0 },
+    /* timing multiply <multiplication>; */
+    { "multiply", parse_timing_multiply, timing_multiply_tokens, 0 },
+    PARSECONF_SYNTAX_END
+};
+
+/*
+ * client_pool conf parsers
+ */
+
+static parseconf_token_type_t client_pool_target_tokens[] = {
+    PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_target(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    return conf_client_pool_set_target(&(conf->client_pool), tokens[2].token, tokens[2].length, tokens[3].token, tokens[3].length);
+}
+
+static parseconf_token_type_t client_pool_max_clients_tokens[] = {
+    PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_max_clients(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    size_t max_clients = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_ulongint(&tokens[2], &max_clients, errstr)) {
+        return 1;
+    }
+
+    return conf_client_pool_set_max_clients(&(conf->client_pool), max_clients);
+}
+
+static parseconf_token_type_t client_pool_client_ttl_tokens[] = {
+    PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_client_ttl(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    double client_ttl = 0.;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_double(&tokens[2], &client_ttl, errstr)) {
+        return 1;
+    }
+
+    return conf_client_pool_set_client_ttl(&(conf->client_pool), client_ttl);
+}
+
+static parseconf_token_type_t client_pool_skip_reply_tokens[] = {
+    PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_skip_reply(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+
+    if (!conf) {
+        return 1;
+    }
+
+    return conf_client_pool_set_skip_reply(&(conf->client_pool));
+}
+
+static parseconf_token_type_t client_pool_max_reuse_clients_tokens[] = {
+    PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_max_reuse_clients(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    size_t max_reuse_clients = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_ulongint(&tokens[2], &max_reuse_clients, errstr)) {
+        return 1;
+    }
+
+    return conf_client_pool_set_max_reuse_clients(&(conf->client_pool), max_reuse_clients);
+}
+
+static parseconf_syntax_t client_pool_syntax[] = {
+    /* client_pool target <host> <port>; */
+    { "target", parse_client_pool_target, client_pool_target_tokens, 0 },
+    /* client_pool max_clients <num>; */
+    { "max_clients", parse_client_pool_max_clients, client_pool_max_clients_tokens, 0 },
+    /* client_pool client_ttl <float>; */
+    { "client_ttl", parse_client_pool_client_ttl, client_pool_client_ttl_tokens, 0 },
+    /* client_pool skip_reply; */
+    { "skip_reply", parse_client_pool_skip_reply, client_pool_skip_reply_tokens, 0 },
+    /* client_pool max_reuse_clients <num>; */
+    { "max_reuse_clients", parse_client_pool_max_reuse_clients, client_pool_max_reuse_clients_tokens, 0 },
+    PARSECONF_SYNTAX_END
+};
 
 /*
  * conf parsers
  */
 
-static int parse_log(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
-    log_facility_t facility = LOG_FACILITY_NONE;
-    log_level_t level = LOG_LEVEL_ALL;
+static parseconf_token_type_t log_tokens[] = {
+    PARSECONF_TOKEN_STRINGS, PARSECONF_TOKEN_END
+};
+
+static int parse_log(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    drool_log_facility_t facility = LOG_FACILITY_NONE;
+    drool_log_level_t level = LOG_LEVEL_ALL;
     int all = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
 
     if (!strncmp(tokens[1].token, "core", tokens[1].length)) {
         facility = LOG_FACILITY_CORE;
@@ -458,7 +668,7 @@ static int parse_log(conf_t* conf, const conf_token_t* tokens, const char** errs
         return 1;
     }
 
-    if (tokens[2].type == TOKEN_STRING) {
+    if (tokens[2].type == PARSECONF_TOKEN_STRING) {
         if (!strncmp(tokens[2].token, "debug", tokens[2].length)) {
             level = LOG_LEVEL_DEBUG;
         }
@@ -501,10 +711,25 @@ static int parse_log(conf_t* conf, const conf_token_t* tokens, const char** errs
     return 0;
 }
 
-static int parse_nolog(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
-    log_facility_t facility = LOG_FACILITY_NONE;
-    log_level_t level = LOG_LEVEL_ALL;
+static parseconf_token_type_t nolog_tokens[] = {
+    PARSECONF_TOKEN_STRINGS, PARSECONF_TOKEN_END
+};
+
+static int parse_nolog(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    drool_log_facility_t facility = LOG_FACILITY_NONE;
+    drool_log_level_t level = LOG_LEVEL_ALL;
     int all = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
 
     if (!strncmp(tokens[1].token, "core", tokens[1].length)) {
         facility = LOG_FACILITY_CORE;
@@ -520,7 +745,7 @@ static int parse_nolog(conf_t* conf, const conf_token_t* tokens, const char** er
         return 1;
     }
 
-    if (tokens[2].type == TOKEN_STRING) {
+    if (tokens[2].type == PARSECONF_TOKEN_STRING) {
         if (!strncmp(tokens[2].token, "debug", tokens[2].length)) {
             level = LOG_LEVEL_DEBUG;
         }
@@ -563,8 +788,24 @@ static int parse_nolog(conf_t* conf, const conf_token_t* tokens, const char** er
     return 0;
 }
 
-static int parse_read(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
+/*
+static parseconf_token_type_t read_tokens[] = {
+    PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
+};
+
+static int parse_read(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
     int err;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
 
     if ((err = conf_add_read(conf, tokens[1].token, tokens[1].length)) != CONF_OK) {
         *errstr = conf_strerr(err);
@@ -574,8 +815,23 @@ static int parse_read(conf_t* conf, const conf_token_t* tokens, const char** err
     return 0;
 }
 
-static int parse_input(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
+static parseconf_token_type_t input_tokens[] = {
+    PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
+};
+
+static int parse_input(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
     int err;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
 
     if ((err = conf_add_input(conf, tokens[1].token, tokens[1].length)) != CONF_OK) {
         *errstr = conf_strerr(err);
@@ -584,9 +840,25 @@ static int parse_input(conf_t* conf, const conf_token_t* tokens, const char** er
 
     return 0;
 }
+*/
 
-static int parse_filter(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
+static parseconf_token_type_t filter_tokens[] = {
+    PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
+};
+
+static int parse_filter(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
     int err;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
 
     if ((err = conf_set_filter(conf, tokens[1].token, tokens[1].length)) != CONF_OK) {
         *errstr = conf_strerr(err);
@@ -595,7 +867,13 @@ static int parse_filter(conf_t* conf, const conf_token_t* tokens, const char** e
     return 0;
 }
 
-static int parse_write(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
+/*
+static parseconf_token_type_t write_tokens[] = {
+    PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
+};
+
+static int parse_write(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
     int err;
 
     if ((err = conf_set_write(conf, tokens[1].token, tokens[1].length)) != CONF_OK) {
@@ -606,7 +884,12 @@ static int parse_write(conf_t* conf, const conf_token_t* tokens, const char** er
     return 0;
 }
 
-static int parse_output(conf_t* conf, const conf_token_t* tokens, const char** errstr) {
+static parseconf_token_type_t output_tokens[] = {
+    PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
+};
+
+static int parse_output(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
     int err;
 
     if ((err = conf_set_output(conf, tokens[1].token, tokens[1].length)) != CONF_OK) {
@@ -616,206 +899,102 @@ static int parse_output(conf_t* conf, const conf_token_t* tokens, const char** e
 
     return 0;
 }
+*/
 
-static conf_syntax_t _syntax[] = {
-    /* log <facility> [level] ; */
-    {
-        "log",
-        parse_log,
-        { TOKEN_STRINGS, TOKEN_END }
-    },
-    /* nolog <facility> [level] ; */
-    {
-        "nolog",
-        parse_nolog,
-        { TOKEN_STRINGS, TOKEN_END }
-    },
-    /* read " <file.pcap> " ; */
-    {
-        "read",
-        parse_read,
-        { TOKEN_QSTRING, TOKEN_END }
-    },
-    /* input " <interface> " ; */
-    {
-        "input",
-        parse_input,
-        { TOKEN_QSTRING, TOKEN_END }
-    },
-    /* filter " <filter> " ; */
-    {
-        "filter",
-        parse_filter,
-        { TOKEN_QSTRING, TOKEN_END }
-    },
-    /* write " <file.pcap> " ; */
-    {
-        "write",
-        parse_write,
-        { TOKEN_QSTRING, TOKEN_END }
-    },
-    /* output " <interface> " ; */
-    {
-        "output",
-        parse_output,
-        { TOKEN_QSTRING, TOKEN_END }
-    },
-    { 0, 0, { TOKEN_END } }
+static parseconf_token_type_t nested_tokens[] = {
+    PARSECONF_TOKEN_NESTED
 };
 
-static int parse_token(const char** conf, size_t* length, conf_token_t* token) {
-    int quoted = 0, end = 0;
+static parseconf_syntax_t _syntax2[] = {
+    /* log <facility> [level] ; */
+    { "log", parse_log, log_tokens, 0 },
+    /* nolog <facility> [level] ; */
+    { "nolog", parse_nolog, nolog_tokens, 0 },
+    /* read " <file.pcap> " ; */
+    /*{ "read", parse_read, read_tokens, 0 },*/
+    /* input " <interface> " ; */
+    /*{ "input", parse_input, input_tokens, 0 },*/
+    /* filter " <filter> " ; */
+    { "filter", parse_filter, filter_tokens, 0 },
+    /* write " <file.pcap> " ; */
+    /*{ "write", parse_write, write_tokens, 0 },*/
+    /* output " <interface> " ; */
+    /*{ "output", parse_output, output_tokens, 0 },*/
+    /* timing ... ; */
+    { "timing", 0, nested_tokens, timing_syntax },
+    /* client_pool ... ; */
+    { "client_pool", 0, nested_tokens, client_pool_syntax },
+    PARSECONF_SYNTAX_END
+};
 
-    if (!conf || !*conf || !length || !token) {
-        return CONF_EINVAL;
-    }
-    if (!*length) {
-        return CONF_ERROR;
-    }
-    if (**conf == ' ' || **conf == '\t' || **conf == ';' || !**conf || **conf == '\n' || **conf == '\r') {
-        return CONF_ERROR;
-    }
-    if (**conf == '#') {
-        return CONF_COMMENT;
-    }
+static void parseconf_error(void* user, parseconf_error_t error, size_t line, size_t token, const parseconf_token_t* tokens, const char* errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
 
-    if (**conf == '"') {
-        quoted = 1;
-        (*conf)++;
-        (*length)--;
-        token->type = TOKEN_QSTRING;
-    }
-    else {
-        token->type = TOKEN_NUMBER;
-    }
-
-    token->token = *conf;
-    token->length = 0;
-
-    for (; **conf && length; (*conf)++, (*length)--) {
-        if (quoted && **conf == '"') {
-            end = 1;
-            continue;
-        }
-        else if ((!quoted || end) && (**conf == ' ' || **conf == '\t' || **conf == ';')) {
-            if (**conf == ';') {
-                (*conf)++;
-                (*length)--;
-                return CONF_LAST;
-            }
-            (*conf)++;
-            (*length)--;
-            return CONF_OK;
-        }
-        else if (end || **conf == '\n' || **conf == '\r' || !**conf) {
-            return CONF_ERROR;
-        }
-
-        if ((**conf < '0' || **conf > '9') && token->type != TOKEN_QSTRING) {
-            token->type = TOKEN_STRING;
-        }
-
-        token->length++;
+    if (!conf) {
+        return;
     }
 
-    return CONF_ERROR;
-}
-
-static int parse_tokens(conf_t* conf, const conf_token_t* tokens, size_t token_size, size_t line) {
-    const conf_syntax_t*        syntax;
-    const conf_token_type_t*    type;
-    size_t i;
-
-    if (!tokens || !token_size) {
-        log_printf(conf_log(conf), LCORE, LERROR, "Internal error in config at line %lu", line);
-        return CONF_ERROR;
-    }
-
-    if (tokens[0].type != TOKEN_STRING) {
-        log_printf(conf_log(conf), LCORE, LERROR, "Wrong first config token at line %lu, expected a string", line);
-        return CONF_ERROR;
-    }
-
-    for (syntax = _syntax; syntax->token; syntax++) {
-        if (!strncmp(tokens[0].token, syntax->token, tokens[0].length)) {
+    switch (error) {
+        case PARSECONF_ERROR_INTERNAL:
+            log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu", line);
             break;
-        }
+
+        case PARSECONF_ERROR_EXPECT_STRING:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a string", line, token);
+            break;
+
+        case PARSECONF_ERROR_EXPECT_NUMBER:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a number", line, token);
+            break;
+
+        case PARSECONF_ERROR_EXPECT_QSTRING:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a quoted string", line, token);
+            break;
+
+        case PARSECONF_ERROR_EXPECT_FLOAT:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a float", line, token);
+            break;
+
+        case PARSECONF_ERROR_EXPECT_ANY:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected any type", line, token);
+            break;
+
+        case PARSECONF_ERROR_UNKNOWN:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, unknown configuration", line, token);
+            break;
+
+        case PARSECONF_ERROR_NO_NESTED:
+            log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, no nested conf", line, token);
+            break;
+
+        case PARSECONF_ERROR_NO_CALLBACK:
+            log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, no callback", line, token);
+            break;
+
+        case PARSECONF_ERROR_CALLBACK:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, %s", line, errstr);
+            break;
+
+        case PARSECONF_ERROR_FILE_ERRNO:
+            log_errnof(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, errno", line, token);
+            break;
+
+        case PARSECONF_ERROR_TOO_MANY_ARGUMENTS:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, too many arguments", line);
+            break;
+
+        case PARSECONF_ERROR_INVALID_SYNTAX:
+            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, invalid syntax", line);
+            break;
+
+        default:
+            log_printf(conf_log(conf), LCORE, LERROR, "Unknown conf error %d at %lu", error, line);
+            break;
     }
-    if (!syntax->token) {
-        log_printf(conf_log(conf), LCORE, LERROR, "Unknown config option %.*s at line %lu", (int)tokens[0].length, tokens[0].token, line);
-        return CONF_ERROR;
-    }
-
-    for (type = syntax->syntax, i = 1; *type != TOKEN_END && i < token_size; i++) {
-        if (*type == TOKEN_STRINGS) {
-            if (tokens[i].type != TOKEN_STRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Wrong config token for argument %lu at line %lu, expected a string", i, line);
-                return CONF_ERROR;
-            }
-            continue;
-        }
-        if (*type == TOKEN_QSTRINGS) {
-            if (tokens[i].type != TOKEN_QSTRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Wrong config token for argument %lu at line %lu, expected a quoted string", i, line);
-                return CONF_ERROR;
-            }
-            continue;
-        }
-        if (*type == TOKEN_NUMBERS) {
-            if (tokens[i].type != TOKEN_NUMBER) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Wrong config token for argument %lu at line %lu, expected a number", i, line);
-                return CONF_ERROR;
-            }
-            continue;
-        }
-        if (*type == TOKEN_ANY) {
-            if (tokens[i].type != TOKEN_STRING && tokens[i].type != TOKEN_NUMBER && tokens[i].type != TOKEN_QSTRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Wrong config token for argument %lu at line %lu, expected a string or number", i, line);
-                return CONF_ERROR;
-            }
-            continue;
-        }
-
-        if (tokens[i].type != *type) {
-            log_printf(conf_log(conf), LCORE, LERROR, "Wrong config token for argument %lu at line %lu%s", i, line,
-                *type == TOKEN_STRING ? ", expected a string"
-                    : *type == TOKEN_NUMBER ? ", expected a number"
-                        : *type == TOKEN_QSTRING ? ", expected a quoted string"
-                            : ""
-            );
-            return CONF_ERROR;
-        }
-        type++;
-    }
-
-    if (syntax->callback) {
-        int ret;
-        const char* errstr = "Syntax error or invalid arguments";
-
-        log_printf(conf_log(conf), LCORE, LDEBUG, "Calling config callback for %.*s at line %lu", (int)tokens[0].length, tokens[0].token, line);
-        ret = syntax->callback(conf, tokens, &errstr);
-
-        if (ret < 0) {
-            log_errnof(conf_log(conf), LCORE, LERROR, "Config error at line %lu: %s", line, errstr);
-        }
-        if (ret > 0) {
-            log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu for %.*s: %s", line, (int)tokens[0].length, tokens[0].token, errstr);
-        }
-        return ret ? CONF_ERROR : CONF_OK;
-    }
-
-    return CONF_OK;
 }
 
-int conf_parse_file(conf_t* conf, const char* file) {
-    FILE* fp;
-    char* buffer = 0;
-    size_t bufsize = 0;
-    const char* buf;
-    size_t s, i, line = 0;
-    conf_token_t tokens[8];
-    int ret, ret2;
-    size_t loop = 10;
+int conf_parse_file(drool_conf_t* conf, const char* file) {
+    int err;
 
     if (!conf) {
         return CONF_EINVAL;
@@ -825,106 +1004,16 @@ int conf_parse_file(conf_t* conf, const char* file) {
     }
 
     log_printf(conf_log(conf), LCORE, LDEBUG, "Opening config file %s", file);
-    if (!(fp = fopen(file, "r"))) {
+    if ((err = parseconf_file((void*)conf, file, _syntax2, parseconf_error)) != PARSECONF_OK) {
+        log_printf(conf_log(conf), LCORE, LERROR, "Parsing file %s failed: %s", file, parseconf_strerr(err));
         return CONF_ERROR;
     }
-    ret2 = getline(&buffer, &bufsize, fp);
-    buf = buffer;
-    s = bufsize;
-    line++;
-    while (ret2 > 0) {
-        memset(tokens, 0, sizeof(tokens));
-        /*
-         * Go to the first non white-space character
-         */
-        for (ret = CONF_OK; *buf && s; buf++, s--) {
-            if (*buf != ' ' && *buf != '\t') {
-                if (*buf == '\n' || *buf == '\r') {
-                    ret = CONF_EMPTY;
-                }
-                break;
-            }
-        }
-        /*
-         * Parse all the tokens
-         */
-        for (i = 0; i < 8 && ret == CONF_OK; i++) {
-            ret = parse_token(&buf, &s, &tokens[i]);
-        }
-
-        if (ret == CONF_COMMENT) {
-            /*
-             * Line ended with comment, reduce the number of tokens
-             */
-            i--;
-        }
-        else if (ret == CONF_EMPTY) {
-            i = 0;
-        }
-        else if (ret == CONF_OK) {
-            if (i > 0 && tokens[0].type == TOKEN_STRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu for %.*s, too many arguments", line, (int)tokens[0].length, tokens[0].token);
-            }
-            else {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu, too many arguments", line);
-            }
-            free(buffer);
-            fclose(fp);
-            return CONF_ERROR;
-        }
-        else if (ret != CONF_LAST) {
-            if (i > 0 && tokens[0].type == TOKEN_STRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu for %.*s, invalid syntax", line, (int)tokens[0].length, tokens[0].token);
-            }
-            else {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu, invalid syntax", line);
-            }
-            free(buffer);
-            fclose(fp);
-            return CONF_ERROR;
-        }
-
-        if (i) {
-            /*
-             * Config using the tokens
-             */
-            if (parse_tokens(conf, tokens, i, line) != CONF_OK) {
-                free(buffer);
-                fclose(fp);
-                return CONF_ERROR;
-            }
-        }
-
-        if (ret == CONF_COMMENT || !s || !*buf || *buf == '\n' || *buf == '\r') {
-            ret2 = getline(&buffer, &bufsize, fp);
-            buf = buffer;
-            s = bufsize;
-            line++;
-        }
-    }
-    if (ret2 < 0) {
-        long pos;
-        char errbuf[512];
-
-        pos = ftell(fp);
-        if (fseek(fp, 0, SEEK_END)) {
-            log_errnof(conf_log(conf), LCORE, LERROR, "Config error at line %lu, fseek()", line);
-        }
-        else if (ftell(fp) < pos) {
-            log_errnof(conf_log(conf), LCORE, LERROR, "Config error at line %lu, ftell()", line);
-        }
-    }
-    free(buffer);
-    fclose(fp);
 
     return CONF_OK;
 }
 
-int conf_parse_text(conf_t* conf, const char* text, const size_t length) {
-    const char* buf;
-    size_t s, i, line = 0;
-    conf_token_t tokens[8];
-    int ret, ret2;
+int conf_parse_text(drool_conf_t* conf, const char* text, size_t length) {
+    int err;
 
     if (!conf) {
         return CONF_EINVAL;
@@ -932,75 +1021,13 @@ int conf_parse_text(conf_t* conf, const char* text, const size_t length) {
     if (!text) {
         return CONF_EINVAL;
     }
+    if (!length) {
+        return CONF_EINVAL;
+    }
 
-    memset(tokens, 0, sizeof(tokens));
-    buf = text;
-    s = length;
-    line++;
-
-    while (1) {
-        /*
-         * Go to the first non white-space character
-         */
-        for (ret = CONF_OK; *buf && s; buf++, s--) {
-            if (*buf != ' ' && *buf != '\t') {
-                if (*buf == '\n' || *buf == '\t') {
-                    ret = CONF_EMPTY;
-                }
-                break;
-            }
-        }
-        /*
-         * Parse all the tokens
-         */
-        for (i = 0; i < 8 && ret == CONF_OK; i++) {
-            ret = parse_token(&buf, &s, &tokens[i]);
-        }
-
-        if (ret == CONF_COMMENT) {
-            /*
-             * Line ended with comment, reduce the number of tokens
-             */
-            i--;
-            if (!i) {
-                /*
-                 * Comment was the only token so the line is empty
-                 */
-                return CONF_OK;
-            }
-        }
-        else if (ret == CONF_EMPTY) {
-            i = 0;
-        }
-        else if (ret == CONF_OK) {
-            if (i > 0 && tokens[0].type == TOKEN_STRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu for %.*s, too many arguments", line, (int)tokens[0].length, tokens[0].token);
-            }
-            else {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu, too many arguments", line);
-            }
-            return CONF_ERROR;
-        }
-        else if (ret != CONF_LAST) {
-            if (i > 0 && tokens[0].type == TOKEN_STRING) {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu for %.*s, invalid syntax", line, (int)tokens[0].length, tokens[0].token);
-            }
-            else {
-                log_printf(conf_log(conf), LCORE, LERROR, "Config error at line %lu, invalid syntax", line);
-            }
-            return CONF_ERROR;
-        }
-
-        /*
-         * Configure using the tokens
-         */
-        if (i && parse_tokens(conf, tokens, i, line) != CONF_OK) {
-            return CONF_ERROR;
-        }
-
-        if (ret == CONF_COMMENT || !s || !*buf || *buf == '\n' || *buf == '\r') {
-            break;
-        }
+    if ((err = parseconf_text((void*)conf, text, length, _syntax2, parseconf_error)) != PARSECONF_OK) {
+        log_printf(conf_log(conf), LCORE, LERROR, "Parsing text failed: %s", parseconf_strerr(err));
+        return CONF_ERROR;
     }
 
     return CONF_OK;

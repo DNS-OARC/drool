@@ -35,47 +35,80 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#include "config.h"
 
+#include "conf_file.h"
 #include "conf.h"
-#include "client_pool.h"
+#include "assert.h"
 
-#include <stdint.h>
-#include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0, 0 \
+drool_conf_file_t* conf_file_new(void) {
+    drool_conf_file_t* conf_file = calloc(1, sizeof(drool_conf_file_t));
+    return conf_file;
 }
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
 
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_size;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
+void conf_file_free(drool_conf_file_t* conf_file) {
+    if (conf_file) {
+        conf_file_release(conf_file);
+        free(conf_file);
+    }
+}
 
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_realtime;
-    struct timespec         last_time_queue;
+void conf_file_release(drool_conf_file_t* conf_file) {
+    if (conf_file) {
+        if (conf_file->name) {
+            free(conf_file->name);
+            conf_file->name = 0;
+        }
+    }
+}
 
-    drool_client_pool_t*    client_pool;
-    drool_client_pool_t*    client_pools;
-};
+inline const drool_conf_file_t* conf_file_next(const drool_conf_file_t* conf_file) {
+    drool_assert(conf_file);
+    return conf_file->next;
+}
 
-#endif /* __drool_drool_h */
+int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next) {
+    if (!conf_file) {
+        return CONF_EINVAL;
+    }
+    if (!next) {
+        return CONF_EINVAL;
+    }
+
+    conf_file->next = next;
+
+    return CONF_OK;
+}
+
+inline const char* conf_file_name(const drool_conf_file_t* conf_file) {
+    drool_assert(conf_file);
+    return conf_file->name;
+}
+
+int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t length) {
+    if (!conf_file) {
+        return CONF_EINVAL;
+    }
+    if (!name) {
+        return CONF_EINVAL;
+    }
+
+    if (conf_file->name) {
+        free(conf_file->name);
+    }
+    if (length) {
+        if (!(conf_file->name = strndup(name, length))) {
+            return CONF_ENOMEM;
+        }
+    }
+    else {
+        if (!(conf_file->name = strdup(name))) {
+            return CONF_ENOMEM;
+        }
+    }
+
+    return CONF_OK;
+}

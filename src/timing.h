@@ -35,47 +35,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#ifndef __drool_timing_h
+#define __drool_timing_h
 
-#include "conf.h"
-#include "client_pool.h"
-
-#include <stdint.h>
-#include <time.h>
-
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0, 0 \
-}
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
-
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_size;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
-
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_realtime;
-    struct timespec         last_time_queue;
-
-    drool_client_pool_t*    client_pool;
-    drool_client_pool_t*    client_pools;
+typedef enum drool_timing_mode drool_timing_mode_t;
+enum drool_timing_mode {
+    TIMING_MODE_KEEP,
+    TIMING_MODE_IGNORE,
+    TIMING_MODE_INCREASE,
+    TIMING_MODE_REDUCE,
+    TIMING_MODE_MULTIPLY
 };
 
-#endif /* __drool_drool_h */
+#endif /* __drool_timing_h */

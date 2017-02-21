@@ -35,47 +35,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __drool_drool_h
-#define __drool_drool_h
+#ifndef __drool_conf_file_h
+#define __drool_conf_file_h
 
-#include "conf.h"
-#include "client_pool.h"
+#include <stddef.h>
 
-#include <stdint.h>
-#include <time.h>
-
-#define DROOL_ERROR     1
-#define DROOL_EOPT      2
-#define DROOL_ECONF     3
-#define DROOL_ESIGNAL   4
-#define DROOL_ESIGRCV   5
-#define DROOL_EPCAPT    6
-#define DROOL_ENOMEM    7
-
-#define DROOL_T_INIT { \
-    0, \
-    0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
-    0, 0 \
-}
-typedef struct drool drool_t;
-struct drool {
-    drool_t*                next;
-
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_size;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
-
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_realtime;
-    struct timespec         last_time_queue;
-
-    drool_client_pool_t*    client_pool;
-    drool_client_pool_t*    client_pools;
+#define CONF_FILE_T_INIT { 0, 0 }
+typedef struct drool_conf_file drool_conf_file_t;
+struct drool_conf_file {
+    drool_conf_file_t*  next;
+    char*               name;
 };
 
-#endif /* __drool_drool_h */
+drool_conf_file_t* conf_file_new(void);
+void conf_file_free(drool_conf_file_t* conf_file);
+void conf_file_release(drool_conf_file_t* conf_file);
+const drool_conf_file_t* conf_file_next(const drool_conf_file_t* conf_file);
+int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next);
+const char* conf_file_name(const drool_conf_file_t* conf_file);
+int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t length);
+
+#endif /* __drool_conf_file_h */

@@ -1,3 +1,43 @@
+2017-02-21 Jerry Lundström
+
+    Release 1.0.0-alpha.2
+
+    This release implements the core engine and most of the network code
+    which consists of:
+    - parsing DNS packet from input using omg-dns
+    - sending queries to a client pool using sllq
+    - processing queries using client objects and libev event loops
+
+    Handling results/responses have yet been implemented.
+
+    Command line option changes:
+    - Added `-R` to specify read mode for PCAP files
+    - Removed `-w` and `-o`
+
+    Config changes:
+    - Added `timing ignore;`
+    - Added `timing keep;`
+    - Added `timing add nanoseconds;`
+    - Added `timing reduce nanoseconds;`
+    - Added `timing multiply float;`, note: no logic added yet
+    - Added `client_pool target "ip" "port";`
+    - Added `client_pool max_clients num;`
+    - Added `client_pool client_ttl float;`
+    - Added `client_pool skip_reply;`
+    - Removed `read`, `input`, `write` and `output`
+
+    246c9ad Update README with example, build info and copyright etc
+    94ce650 Loop/iteration read, lag detect and documentation
+    7bda852 Send as, multi client pools per context
+    e233f51 Tweaks
+    3d0dae4 Rework network code
+    5d2e492 Update conf example and man-page
+    9d2b4a3 Split conf, skip reply
+    c9cc5a2 Use parseconf submodule
+    64241b8 Check for `clock_nanosleep()`, `nanosleep()` and use what it
+            available
+    bbdcb07 A lot of more stuff
+
 2017-01-20 Jerry Lundström
 
     Release 1.0.0-alpha.1

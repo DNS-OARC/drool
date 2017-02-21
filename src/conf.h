@@ -35,12 +35,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "log.h"
-
 #ifndef __drool_conf_h
 #define __drool_conf_h
 
-#include <sys/types.h>
+#include "log.h"
+#include "timing.h"
+#include "conf_file.h"
+#include "conf_interface.h"
+#include "conf_client_pool.h"
+
+#include <stddef.h>
 
 #define CONF_EEXIST     -4
 #define CONF_ENOMEM     -3
@@ -56,132 +60,102 @@
 #define CONF_EINVAL_STR "Invalid arguments"
 #define CONF_ERROR_STR  "Generic error"
 
-/*
- * conf file struct and functions
- */
-
-#define CONF_FILE_T_INIT { 0, 0 }
-typedef struct conf_file conf_file_t;
-struct conf_file {
-    conf_file_t*        next;
-    char*               name;
+typedef enum drool_conf_read_mode drool_conf_read_mode_t;
+enum drool_conf_read_mode {
+    CONF_READ_MODE_NONE = 0,
+    CONF_READ_MODE_LOOP,
+    CONF_READ_MODE_ITER
 };
-
-conf_file_t* conf_file_new(void);
-void conf_file_free(conf_file_t* conf_file);
-void conf_file_release(conf_file_t* conf_file);
-const conf_file_t* conf_file_next(const conf_file_t* conf_file);
-int conf_file_set_next(conf_file_t* conf_file, conf_file_t* next);
-const char* conf_file_name(const conf_file_t* conf_file);
-int conf_file_set_name(conf_file_t* conf_file, const char* name, size_t length);
-
-/*
- * conf interface struct and functions
- */
-
-#define CONF_INTERFACE_T_INIT { 0, 0 }
-typedef struct conf_interface conf_interface_t;
-struct conf_interface {
-    conf_interface_t*   next;
-    char*               name;
-};
-
-conf_interface_t* conf_interface_new(void);
-void conf_interface_free(conf_interface_t* conf_interface);
-void conf_interface_release(conf_interface_t* conf_interface);
-const conf_interface_t* conf_interface_next(const conf_interface_t* conf_interface);
-int conf_interface_set_next(conf_interface_t* conf_interface, conf_interface_t* next);
-const char* conf_interface_name(const conf_interface_t* conf_interface);
-int conf_interface_set_name(conf_interface_t* conf_interface, const char* name, size_t length);
-
-/*
- * conf struct and functions
- */
 
 #define CONF_T_INIT { \
-    0, 0, 0, 0, 0, \
+    0, 0, 0, 0, /*0, 0,*/ \
     0, 0, \
     0, 0, \
-    CONF_FILE_T_INIT, CONF_INTERFACE_T_INIT, \
-    LOG_T_INIT \
+    0, 0, \
+    /* CONF_FILE_T_INIT, CONF_INTERFACE_T_INIT,*/ \
+    LOG_T_INIT, \
+    TIMING_MODE_KEEP, 0, 0, 0.0, \
+    CONF_CLIENT_POOL_T_INIT, \
+    6 \
 }
-typedef struct conf conf_t;
-struct conf {
-    unsigned short      have_filter : 1;
-    unsigned short      have_read : 1;
-    unsigned short      have_input : 1;
-    unsigned short      have_write : 1;
-    unsigned short      have_output : 1;
+typedef struct drool_conf drool_conf_t;
+struct drool_conf {
+    unsigned short  have_filter : 1;
+    unsigned short  have_read : 1;
+    unsigned short  have_input : 1;
+    unsigned short  have_read_mode : 1;
+    /*
+    unsigned short  have_write : 1;
+    unsigned short  have_output : 1;
+    */
 
-    char*               filter;
-    size_t              filter_length;
+    char*                   filter;
+    size_t                  filter_length;
 
-    conf_file_t*        read;
-    conf_interface_t*   input;
+    drool_conf_file_t*      read;
+    drool_conf_interface_t* input;
 
-    conf_file_t         write;
-    conf_interface_t    output;
+    drool_conf_read_mode_t  read_mode;
+    size_t                  read_iter;
 
-    log_t               log;
+    /*
+    drool_conf_file_t       write;
+    drool_conf_interface_t  output;
+    */
+
+    drool_log_t             log;
+
+    drool_timing_mode_t     timing_mode;
+    unsigned long int       timing_increase;
+    unsigned long int       timing_reduce;
+    long double             timing_multiply;
+
+    drool_conf_client_pool_t    client_pool;
+
+    size_t                  context_client_pools; /* TODO */
 };
 
-conf_t* conf_new(void);
-void conf_free(conf_t* conf);
-void conf_release(conf_t* conf);
-int conf_have_filter(const conf_t* conf);
-int conf_have_read(const conf_t* conf);
-int conf_have_input(const conf_t* conf);
-int conf_have_write(const conf_t* conf);
-int conf_have_output(const conf_t* conf);
-const char* conf_filter(const conf_t* conf);
-int conf_set_filter(conf_t* conf, const char* filter, size_t length);
-const size_t conf_filter_length(const conf_t* conf);
-const conf_file_t* conf_read(const conf_t* conf);
-const conf_interface_t* conf_input(const conf_t* conf);
-const conf_file_t* conf_write(const conf_t* conf);
-const conf_interface_t* conf_output(const conf_t* conf);
-int conf_add_read(conf_t* conf, const char* file, size_t length);
-int conf_add_input(conf_t* conf, const char* interface, size_t length);
-int conf_set_write(conf_t* conf, const char* file, size_t length);
-int conf_set_output(conf_t* conf, const char* interface, size_t length);
-const log_t* conf_log(const conf_t* conf);
-log_t* conf_log_rw(conf_t* conf);
+drool_conf_t* conf_new(void);
+void conf_free(drool_conf_t* conf);
+void conf_release(drool_conf_t* conf);
+int conf_have_filter(const drool_conf_t* conf);
+int conf_have_read(const drool_conf_t* conf);
+int conf_have_input(const drool_conf_t* conf);
+int conf_have_read_mode(const drool_conf_t* conf);
+/*
+int conf_have_write(const drool_conf_t* conf);
+int conf_have_output(const drool_conf_t* conf);
+*/
+const char* conf_filter(const drool_conf_t* conf);
+int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length);
+const size_t conf_filter_length(const drool_conf_t* conf);
+const drool_conf_file_t* conf_read(const drool_conf_t* conf);
+const drool_conf_interface_t* conf_input(const drool_conf_t* conf);
+drool_conf_read_mode_t conf_read_mode(const drool_conf_t* conf);
+size_t conf_read_iter(const drool_conf_t* conf);
+/*
+const drool_conf_file_t* conf_write(const drool_conf_t* conf);
+const drool_conf_interface_t* conf_output(const drool_conf_t* conf);
+*/
+drool_timing_mode_t conf_timing_mode(const drool_conf_t* conf);
+unsigned long int conf_timing_increase(const drool_conf_t* conf);
+unsigned long int conf_timing_reduce(const drool_conf_t* conf);
+long double conf_timing_multiply(const drool_conf_t* conf);
+int conf_add_read(drool_conf_t* conf, const char* file, size_t length);
+int conf_add_input(drool_conf_t* conf, const char* interface, size_t length);
+int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode);
+int conf_set_read_iter(drool_conf_t* conf, size_t read_iter);
+/*
+int conf_set_write(drool_conf_t* conf, const char* file, size_t length);
+int conf_set_output(drool_conf_t* conf, const char* interface, size_t length);
+*/
+const drool_log_t* conf_log(const drool_conf_t* conf);
+drool_log_t* conf_log_rw(drool_conf_t* conf);
+const drool_conf_client_pool_t* conf_client_pool(const drool_conf_t* conf);
 
-int conf_parse_file(conf_t* conf, const char* file);
-int conf_parse_text(conf_t* conf, const char* text, const size_t length);
+int conf_parse_file(drool_conf_t* conf, const char* file);
+int conf_parse_text(drool_conf_t* conf, const char* text, const size_t length);
 
 const char* conf_strerr(int errnum);
-
-/*
- * conf token structs
- */
-
-typedef enum conf_token_type conf_token_type_t;
-enum conf_token_type {
-    TOKEN_END = 0,
-    TOKEN_STRING,
-    TOKEN_QSTRING,
-    TOKEN_NUMBER,
-    TOKEN_STRINGS,
-    TOKEN_QSTRINGS,
-    TOKEN_NUMBERS,
-    TOKEN_ANY
-};
-
-typedef struct conf_token conf_token_t;
-struct conf_token {
-    conf_token_type_t           type;
-    const char*                 token;
-    size_t                      length;
-};
-
-typedef int (*conf_token_callback_t)(conf_t* conf, const conf_token_t* tokens, const char** errstr);
-
-typedef struct conf_syntax conf_syntax_t;
-struct conf_syntax {
-    const char*                 token;
-    conf_token_callback_t       callback;
-    const conf_token_type_t     syntax[8];
-};
 
 #endif /* __drool_conf_h */
