@@ -67,16 +67,19 @@ static void usage(void) {
         "  -l facility[:level]\n"
         "                Enable logging for facility, optional log level can be given\n"
         "                to enable just that. Can be given multiple times and will be\n"
-        "                processed in the given order.\n"
+        "                processed in the given order. See drool(1) for available\n"
+        "                facilities and log levels."
         "  -L facility[:level]\n"
-        "                Disable logging for facility, optional log level can be\n"
-        "                given to disable just that. Can be given multiple times and\n"
-        "                will be processed in the given order.\n"
+        "                Same as -l but to disable the given facility and log level.\n"
         "  -f filter     Set the Berkeley Packet Filter to use.\n"
         "  -i interface  Capture packets from interface, can be given multiple times.\n"
         "  -r file.pcap  Read packets from PCAP file, can be given multiple times.\n"
+        "  -R mode       Specify the mode for reading PCAP files, see drool(1) for\n"
+        "                available modes.\n"
+        /*
         "  -o interface  Send packets to interface, may not be given with -w.\n"
         "  -w file.pcap  Write packets to PCAP file, may not be given with -o.\n"
+        */
         "  -v            Enable verbose, a simple way to enable logging. Can be\n"
         "                given multiple times to increase verbosity level.\n"
         "  -h            Print this help and exit\n"
@@ -94,6 +97,7 @@ struct signal_context {
     const drool_conf_t* conf;
     pcap_thread_t*      pcap_thread;
 };
+sig_atomic_t volatile _stop = 0;
 static void* signal_handler_thread(void* arg) {
     struct signal_context* context = (struct signal_context*)arg;
     int sig, err;
@@ -105,6 +109,11 @@ static void* signal_handler_thread(void* arg) {
         log_printf(conf_log(context->conf), LCORE, LDEBUG, "signal %d received", sig);
 
         if (sig == SIGINT) {
+            if (_stop) {
+                /* TODO: Make sure everything stops on first try */
+                exit(DROOL_ESIGRCV);
+            }
+            _stop = 1;
             pcap_thread_stop(context->pcap_thread);
             continue;
         }
@@ -116,15 +125,232 @@ static void* signal_handler_thread(void* arg) {
     return 0;
 }
 
+static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
+    int err;
+    struct timespec ts_start, ts_end, ts_diff;
+    drool_t* contexts = 0;
+    drool_t* context;
+
+    if (conf_have_read(conf)) {
+        const drool_conf_file_t* conf_file = conf_read(conf);
+
+        while (conf_file) {
+            size_t n;
+
+            if (!(context = calloc(1, sizeof(drool_t)))) {
+                log_errno(conf_log(conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
+                exit(DROOL_ENOMEM);
+            }
+
+            context->conf = conf;
+            for (n = 0; n < conf->context_client_pools; n++) { /* TODO */
+                context->client_pool = client_pool_new(conf);
+                context->client_pool->next = context->client_pools;
+                context->client_pools = context->client_pool;
+            }
+            context->next = contexts;
+            contexts = context;
+
+            if ((err = pcap_thread_open_offline(pcap_thread, conf_file_name(conf_file), (void*)context))) {
+                if (err == PCAP_THREAD_ERRNO)
+                    log_errnof(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s", conf_file_name(conf_file), pcap_thread_errbuf(pcap_thread));
+                else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(pcap_thread))
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s: %s: %s", conf_file_name(conf_file), pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread), pcap_statustostr(pcap_thread_status(pcap_thread)));
+                else if (err == PCAP_THREAD_EPCAP)
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s: %s", conf_file_name(conf_file), pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread));
+                else if (err != PCAP_THREAD_OK)
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s", conf_file_name(conf_file), pcap_thread_strerr(err));
+                exit(DROOL_EPCAPT);
+            }
+            conf_file = conf_file_next(conf_file);
+        }
+    }
+
+    if (conf_have_input(conf)) {
+        const drool_conf_interface_t* conf_interface = conf_input(conf);
+
+        while (conf_interface) {
+            size_t n;
+
+            if (!(context = calloc(1, sizeof(drool_t)))) {
+                log_errno(conf_log(conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
+                exit(DROOL_ENOMEM);
+            }
+
+            context->conf = conf;
+            for (n = 0; n < conf->context_client_pools; n++) { /* TODO */
+                context->client_pool = client_pool_new(conf);
+                context->client_pool->next = context->client_pools;
+                context->client_pools = context->client_pool;
+            }
+            context->next = contexts;
+            contexts = context;
+
+            if ((err = pcap_thread_open(pcap_thread, conf_interface_name(conf_interface), (void*)context))) {
+                if (err == PCAP_THREAD_ERRNO)
+                    log_errnof(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s", conf_interface_name(conf_interface), pcap_thread_errbuf(pcap_thread));
+                else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(pcap_thread))
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s: %s: %s", conf_interface_name(conf_interface), pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread), pcap_statustostr(pcap_thread_status(pcap_thread)));
+                else if (err == PCAP_THREAD_EPCAP)
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s: %s", conf_interface_name(conf_interface), pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread));
+                else if (err != PCAP_THREAD_OK)
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s", conf_interface_name(conf_interface), pcap_thread_strerr(err));
+                exit(DROOL_EPCAPT);
+            }
+            conf_interface = conf_interface_next(conf_interface);
+        }
+    }
+
+    /*
+     * Start the engine
+     */
+
+    switch (conf_read_mode(conf)) {
+        case CONF_READ_MODE_LOOP:
+            log_print(conf_log(conf), LCORE, LINFO, "loop start");
+            break;
+
+        case CONF_READ_MODE_ITER:
+            log_print(conf_log(conf), LCORE, LINFO, "iter start");
+            break;
+
+        default:
+            log_print(conf_log(conf), LCORE, LINFO, "start");
+            break;
+    }
+
+    ts_start.tv_sec = 0;
+    ts_start.tv_nsec = 0;
+    ts_end = ts_diff = ts_start;
+    clock_gettime(CLOCK_MONOTONIC, &ts_start);
+
+    /* TODO */
+    for (context = contexts; context; context = context->next) {
+        drool_client_pool_t* client_pool = context->client_pools;
+        for (; client_pool; client_pool = client_pool->next) {
+            client_pool_start(client_pool);
+        }
+    }
+
+    if ((err = pcap_thread_run(pcap_thread)) != PCAP_THREAD_OK) {
+        if (err == PCAP_THREAD_ERRNO)
+            log_errnof(conf_log(conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s", pcap_thread_errbuf(pcap_thread));
+        else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(pcap_thread))
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread), pcap_statustostr(pcap_thread_status(pcap_thread)));
+        else if (err == PCAP_THREAD_EPCAP)
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread));
+        else if (err != PCAP_THREAD_OK)
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s", pcap_thread_strerr(err));
+        exit(DROOL_EPCAPT);
+    }
+
+    /* TODO */
+    for (context = contexts; context; context = context->next) {
+        drool_client_pool_t* client_pool = context->client_pools;
+        for (; client_pool; ) {
+            drool_client_pool_t* item = client_pool;
+            client_pool = client_pool->next;
+            client_pool_stop(item);
+            client_pool_free(item);
+        }
+    }
+
+    /*
+     * Finish
+     */
+
+    clock_gettime(CLOCK_MONOTONIC, &ts_end);
+    log_print(conf_log(conf), LCORE, LINFO, "end");
+
+    {
+        float pkts_fraction = 0;
+        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0, size = 0;
+
+        for (context = contexts; context; context = context->next) {
+            seen += context->packets_seen;
+            sent += context->packets_sent;
+            size += context->packets_size;
+            dropped += context->packets_dropped;
+            ignored += context->packets_ignored;
+        }
+
+        if (ts_end.tv_sec == ts_start.tv_sec && ts_end.tv_nsec >= ts_start.tv_nsec) {
+            pkts_fraction = 1 / (((float)ts_end.tv_nsec - (float)ts_start.tv_nsec) / (float)1000000000);
+            log_printf(conf_log(conf), LCORE, LINFO, "runtime 0.%09ld seconds", ts_end.tv_nsec - ts_start.tv_nsec);
+        }
+        else if (ts_end.tv_sec > ts_start.tv_sec) {
+            long nsec = 1000000000 - ts_start.tv_nsec + ts_end.tv_nsec;
+            long sec = ts_end.tv_sec - ts_start.tv_sec - 1;
+
+            pkts_fraction = 1 / (((float)ts_end.tv_sec - (float)ts_start.tv_sec - 1) + ((float)nsec/(float)1000000000));
+
+            if (nsec > 1000000000) {
+                sec += nsec / 1000000000;
+                nsec %= 1000000000;
+            }
+
+            log_printf(conf_log(conf), LCORE, LINFO, "runtime %ld.%09ld seconds", sec, nsec);
+        }
+        else {
+            log_print(conf_log(conf), LCORE, LINFO, "Unable to compute runtime, clock is behind starting point");
+        }
+
+        log_printf(conf_log(conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
+        log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp", sent, sent*pkts_fraction, (float)size/(float)sent);
+        log_printf(conf_log(conf), LCORE, LINFO, "dropped %lu packets", dropped);
+        log_printf(conf_log(conf), LCORE, LINFO, "ignored %lu packets", ignored);
+    }
+
+    if ((err = pcap_thread_stats(pcap_thread, &drool_stats_callback, (void*)conf)) != PCAP_THREAD_OK) {
+        if (err == PCAP_THREAD_ERRNO)
+            log_errnof(conf_log(conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s", pcap_thread_errbuf(pcap_thread));
+        else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(pcap_thread))
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread), pcap_statustostr(pcap_thread_status(pcap_thread)));
+        else if (err == PCAP_THREAD_EPCAP)
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(pcap_thread));
+        else if (err != PCAP_THREAD_OK)
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s", pcap_thread_strerr(err));
+        exit(DROOL_EPCAPT);
+    }
+
+    if (pcap_thread_was_stopped(pcap_thread)) {
+        pcap_thread_close(pcap_thread);
+        return 0;
+    }
+    pcap_thread_close(pcap_thread);
+
+    switch (conf_read_mode(conf)) {
+        case CONF_READ_MODE_LOOP:
+            return 1;
+
+        case CONF_READ_MODE_ITER:
+            {
+                size_t read_iter = conf_read_iter(conf);
+
+                read_iter--;
+
+                if (!read_iter)
+                    return 0;
+
+                if ((err = conf_set_read_iter(conf, read_iter)) != CONF_OK) {
+                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to set internal iteration: %s", conf_strerr(err));
+                    exit(DROOL_ERROR);
+                }
+                return 1;
+            }
+
+        default:
+            break;
+    }
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
     int opt, err;
     size_t verbose = 0;
     drool_conf_t conf = CONF_T_INIT;
     struct signal_context sigcontext;
     pcap_thread_t pcap_thread = PCAP_THREAD_T_INIT;
-    struct timespec ts_start, ts_end, ts_diff;
-    drool_t* contexts = 0;
-    drool_t* context;
 
     if ((program_name = strrchr(argv[0], '/'))) {
         program_name++;
@@ -133,7 +359,7 @@ int main(int argc, char* argv[]) {
         program_name = argv[0];
     }
 
-    while ((opt = getopt(argc, argv, "c:l:L:f:i:r:o:w:vhV")) != -1) {
+    while ((opt = getopt(argc, argv, "c:l:L:f:i:r:R:" /*"o:w:"*/ "vhV")) != -1) {
         switch (opt) {
             case 'c':
                 if (!strncmp(optarg, "file:", 5)) {
@@ -161,8 +387,8 @@ int main(int argc, char* argv[]) {
                     int all = 0;
 
                     if (level_str) {
-                        level_str++;
                         len = level_str - optarg;
+                        level_str++;
 
                         if (!strcmp(level_str, "debug")) {
                             level = LOG_LEVEL_DEBUG;
@@ -188,18 +414,18 @@ int main(int argc, char* argv[]) {
                         }
                     }
 
-                    if ((len && len == 4 && !strncmp(optarg, "core", 4))
-                        || (!len && strcmp(optarg, "core")))
+                    if ((len == 4 && !strncmp(optarg, "core", 4))
+                        || (!len && !strcmp(optarg, "core")))
                     {
                         facility = LOG_FACILITY_CORE;
                     }
-                    else if ((len && len == 7 && !strncmp(optarg, "network", 7))
-                        || (!len && strcmp(optarg, "network")))
+                    else if ((len == 7 && !strncmp(optarg, "network", 7))
+                        || (!len && !strcmp(optarg, "network")))
                     {
                         facility = LOG_FACILITY_NETWORK;
                     }
-                    else if ((len && len == 3 && !strncmp(optarg, "all", 3))
-                        || (!len && strcmp(optarg, "all")))
+                    else if ((len == 3 && !strncmp(optarg, "all", 3))
+                        || (!len && !strcmp(optarg, "all")))
                     {
                         all = 1;
                     }
@@ -257,6 +483,51 @@ int main(int argc, char* argv[]) {
                 }
                 break;
 
+            case 'R':
+                {
+                    char* optstr = strchr(optarg, ':');
+                    size_t len = 0;
+
+                    if (optstr) {
+                        len = optstr - optarg;
+                        optstr++;
+                    }
+
+                    if (!len && !strcmp(optarg, "loop")) {
+                        if ((err = conf_set_read_mode(&conf, CONF_READ_MODE_LOOP)) != CONF_OK) {
+                            fprintf(stderr, "Unable to set read mode as loop: %s\n", conf_strerr(err));
+                            exit(DROOL_EOPT);
+                        }
+                    }
+                    else if (len == 4 && !strncmp(optarg, "iter", 4) && optstr) {
+                        char* endptr = 0;
+                        size_t read_iter;
+
+                        read_iter = strtoul(optstr, &endptr, 10);
+
+                        if (!read_iter || !endptr || *endptr) {
+                            fprintf(stderr, "Invalid argument for read mode iter: %s\n", optstr);
+                            exit(DROOL_EOPT);
+                        }
+
+                        if ((err = conf_set_read_mode(&conf, CONF_READ_MODE_ITER))
+                            || (err = conf_set_read_iter(&conf, read_iter)))
+                        {
+                            fprintf(stderr, "Unable to set read mode as iter: %s\n", conf_strerr(err));
+                            exit(DROOL_EOPT);
+                        }
+                    }
+                    else {
+                        if (len)
+                            fprintf(stderr, "Invalid read mode %.*s\n", (int)len, optarg);
+                        else
+                            fprintf(stderr, "Invalid read mode %s\n", optarg);
+                        exit(DROOL_EOPT);
+                    }
+                }
+                break;
+
+            /*
             case 'o':
                 if ((err = conf_set_output(&conf, optarg, 0)) != CONF_OK) {
                     fprintf(stderr, "Unable to set interface %s as output: %s\n", optarg, err == CONF_EEXIST ? "Another output already set" : conf_strerr(err));
@@ -270,6 +541,7 @@ int main(int argc, char* argv[]) {
                     exit(DROOL_EOPT);
                 }
                 break;
+            */
 
             case 'v':
                 verbose++;
@@ -301,6 +573,14 @@ int main(int argc, char* argv[]) {
                 usage();
                 exit(DROOL_EOPT);
         }
+    }
+
+    /*
+     * Check config
+     */
+
+    if (conf_have_input(&conf) && conf_have_read_mode(&conf)) {
+        log_print(conf_log(&conf), LCORE, LWARNING, "Using interface as input with read mode has undefined behavior");
     }
 
     /*
@@ -380,179 +660,14 @@ int main(int argc, char* argv[]) {
             log_printf(conf_log(&conf), LCORE, LCRITICAL, "%s: %s", errstr, pcap_thread_strerr(err));
         if (err != PCAP_THREAD_OK)
             exit(DROOL_EPCAPT);
-
-        if (conf_have_read(&conf)) {
-            const drool_conf_file_t* conf_file = conf_read(&conf);
-
-            while (conf_file) {
-                size_t n;
-
-                if (!(context = calloc(1, sizeof(drool_t)))) {
-                    log_errno(conf_log(&conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
-                    exit(DROOL_ENOMEM);
-                }
-
-                context->conf = &conf;
-                for (n = 0; n < conf.context_client_pools; n++) { /* TODO */
-                    context->client_pool = client_pool_new(&conf);
-                    context->client_pool->next = context->client_pools;
-                    context->client_pools = context->client_pool;
-                }
-                context->next = contexts;
-                contexts = context;
-
-                if ((err = pcap_thread_open_offline(&pcap_thread, conf_file_name(conf_file), (void*)context))) {
-                    if (err == PCAP_THREAD_ERRNO)
-                        log_errnof(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s", conf_file_name(conf_file), pcap_thread_errbuf(&pcap_thread));
-                    else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(&pcap_thread))
-                        log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s: %s: %s", conf_file_name(conf_file), pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread), pcap_statustostr(pcap_thread_status(&pcap_thread)));
-                    else if (err == PCAP_THREAD_EPCAP)
-                        log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s: %s", conf_file_name(conf_file), pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread));
-                    else if (err != PCAP_THREAD_OK)
-                        log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread offline file %s: %s", conf_file_name(conf_file), pcap_thread_strerr(err));
-                    exit(DROOL_EPCAPT);
-                }
-                conf_file = conf_file_next(conf_file);
-            }
-        }
-
-        if (conf_have_input(&conf)) {
-            const drool_conf_interface_t* conf_interface = conf_input(&conf);
-
-            while (conf_interface) {
-                size_t n;
-
-                if (!(context = calloc(1, sizeof(drool_t)))) {
-                    log_errno(conf_log(&conf), LCORE, LCRITICAL, "Unable to allocate context with calloc()");
-                    exit(DROOL_ENOMEM);
-                }
-
-                context->conf = &conf;
-                for (n = 0; n < conf.context_client_pools; n++) { /* TODO */
-                    context->client_pool = client_pool_new(&conf);
-                    context->client_pool->next = context->client_pools;
-                    context->client_pools = context->client_pool;
-                }
-                context->next = contexts;
-                contexts = context;
-
-                if ((err = pcap_thread_open(&pcap_thread, conf_interface_name(conf_interface), (void*)context))) {
-                    if (err == PCAP_THREAD_ERRNO)
-                        log_errnof(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s", conf_interface_name(conf_interface), pcap_thread_errbuf(&pcap_thread));
-                    else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(&pcap_thread))
-                        log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s: %s: %s", conf_interface_name(conf_interface), pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread), pcap_statustostr(pcap_thread_status(&pcap_thread)));
-                    else if (err == PCAP_THREAD_EPCAP)
-                        log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s: %s", conf_interface_name(conf_interface), pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread));
-                    else if (err != PCAP_THREAD_OK)
-                        log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to open pcap-thread interface %s: %s", conf_interface_name(conf_interface), pcap_thread_strerr(err));
-                    exit(DROOL_EPCAPT);
-                }
-                conf_interface = conf_interface_next(conf_interface);
-            }
-        }
     }
 
     /*
-     * Start the engine
+     * Run
      */
 
-    log_print(conf_log(&conf), LCORE, LINFO, "start");
-
-    ts_start.tv_sec = 0;
-    ts_start.tv_nsec = 0;
-    ts_end = ts_diff = ts_start;
-    clock_gettime(CLOCK_MONOTONIC, &ts_start);
-
-    /* TODO */
-    for (context = contexts; context; context = context->next) {
-        drool_client_pool_t* client_pool = context->client_pools;
-        for (; client_pool; client_pool = client_pool->next) {
-            client_pool_start(client_pool);
-        }
-    }
-
-    if ((err = pcap_thread_run(&pcap_thread)) != PCAP_THREAD_OK) {
-        if (err == PCAP_THREAD_ERRNO)
-            log_errnof(conf_log(&conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s", pcap_thread_errbuf(&pcap_thread));
-        else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(&pcap_thread))
-            log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread), pcap_statustostr(pcap_thread_status(&pcap_thread)));
-        else if (err == PCAP_THREAD_EPCAP)
-            log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread));
-        else if (err != PCAP_THREAD_OK)
-            log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to run pcap-thread: %s", pcap_thread_strerr(err));
-        exit(DROOL_EPCAPT);
-    }
-
-    /* TODO */
-    for (context = contexts; context; context = context->next) {
-        drool_client_pool_t* client_pool = context->client_pools;
-        for (; client_pool; ) {
-            drool_client_pool_t* item = client_pool;
-            client_pool = client_pool->next;
-            client_pool_stop(item);
-            client_pool_free(item);
-        }
-    }
-
-    /*
-     * Finish
-     */
-
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);
-    log_print(conf_log(&conf), LCORE, LINFO, "end");
-
-    {
-        float pkts_fraction = 0;
-        uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0, size = 0;
-
-        for (context = contexts; context; context = context->next) {
-            seen += context->packets_seen;
-            sent += context->packets_sent;
-            size += context->packets_size;
-            dropped += context->packets_dropped;
-            ignored += context->packets_ignored;
-        }
-
-        if (ts_end.tv_sec == ts_start.tv_sec && ts_end.tv_nsec >= ts_start.tv_nsec) {
-            pkts_fraction = 1 / (((float)ts_end.tv_nsec - (float)ts_start.tv_nsec) / (float)1000000000);
-            log_printf(conf_log(&conf), LCORE, LINFO, "runtime 0.%09ld seconds", ts_end.tv_nsec - ts_start.tv_nsec);
-        }
-        else if (ts_end.tv_sec > ts_start.tv_sec) {
-            long nsec = 1000000000 - ts_start.tv_nsec + ts_end.tv_nsec;
-            long sec = ts_end.tv_sec - ts_start.tv_sec - 1;
-
-            pkts_fraction = 1 / (((float)ts_end.tv_sec - (float)ts_start.tv_sec - 1) + ((float)nsec/(float)1000000000));
-
-            if (nsec > 1000000000) {
-                sec += nsec / 1000000000;
-                nsec %= 1000000000;
-            }
-
-            log_printf(conf_log(&conf), LCORE, LINFO, "runtime %ld.%09ld seconds", sec, nsec);
-        }
-        else {
-            log_print(conf_log(&conf), LCORE, LINFO, "Unable to compute runtime, clock is behind starting point");
-        }
-
-        log_printf(conf_log(&conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
-        log_printf(conf_log(&conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp", sent, sent*pkts_fraction, (float)size/(float)sent);
-        log_printf(conf_log(&conf), LCORE, LINFO, "dropped %lu packets", dropped);
-        log_printf(conf_log(&conf), LCORE, LINFO, "ignored %lu packets", ignored);
-    }
-
-    if ((err = pcap_thread_stats(&pcap_thread, &drool_stats_callback, (void*)&conf)) != PCAP_THREAD_OK) {
-        if (err == PCAP_THREAD_ERRNO)
-            log_errnof(conf_log(&conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s", pcap_thread_errbuf(&pcap_thread));
-        else if (err == PCAP_THREAD_EPCAP && pcap_thread_status(&pcap_thread))
-            log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread), pcap_statustostr(pcap_thread_status(&pcap_thread)));
-        else if (err == PCAP_THREAD_EPCAP)
-            log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s: %s", pcap_thread_strerr(err), pcap_thread_errbuf(&pcap_thread));
-        else if (err != PCAP_THREAD_OK)
-            log_printf(conf_log(&conf), LCORE, LCRITICAL, "Unable to get pcap-thread stats: %s", pcap_thread_strerr(err));
-        exit(DROOL_EPCAPT);
-    }
-
-    pcap_thread_close(&pcap_thread);
+    while (run(&conf, &pcap_thread) && !_stop)
+        ;
 
     return 0;
 }

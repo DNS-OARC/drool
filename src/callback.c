@@ -222,6 +222,12 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "sleep_to %lu.%09lu", sleep_to.tv_sec, sleep_to.tv_nsec);
             */
 
+            if (sleep_to.tv_sec < now.tv_sec
+                || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec))
+            {
+                log_print(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings");
+            }
+
             if (sleep_to.tv_sec || sleep_to.tv_nsec) {
 #if HAVE_CLOCK_NANOSLEEP
                 clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleep_to, 0);
