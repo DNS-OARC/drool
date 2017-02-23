@@ -293,6 +293,8 @@ int client_set_prev(drool_client_t* client, drool_client_t* prev) {
 }
 
 int client_set_fd(drool_client_t* client, int fd) {
+    int flags;
+
     drool_assert(client);
     if (!client) {
         return 1;
@@ -301,7 +303,9 @@ int client_set_fd(drool_client_t* client, int fd) {
         return 1;
     }
 
-    if (fcntl(fd, F_SETFL, O_NONBLOCK)) {
+    if ((flags = fcntl(fd, F_GETFL)) == -1
+        || fcntl(fd, F_SETFL, flags | O_NONBLOCK))
+    {
         client->errnum = errno;
         client->state = CLIENT_ERRNO;
         return 1;
@@ -343,7 +347,7 @@ int client_set_skip_reply(drool_client_t* client) {
  */
 
 int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* addr, socklen_t addrlen, struct ev_loop* loop) {
-    int socket_type;
+    int socket_type, flags;
 
     drool_assert(client);
     if (!client) {
@@ -393,7 +397,9 @@ int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* a
     }
     client->have_fd = 1;
 
-    if (fcntl(client->fd, F_SETFL, O_NONBLOCK)) {
+    if ((flags = fcntl(client->fd, F_GETFL)) == -1
+        || fcntl(client->fd, F_SETFL, flags | O_NONBLOCK))
+    {
         client->errnum = errno;
         client->state = CLIENT_ERRNO;
         return 1;
