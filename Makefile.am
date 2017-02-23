@@ -41,7 +41,7 @@ MAINTAINERCLEANFILES = $(srcdir)/Makefile.in \
 
 SUBDIRS = src
 
-dist_doc_DATA = README.md LICENSE
+dist_doc_DATA = CHANGES README.md LICENSE
 
 EXTRA_DIST = m4
 
