@@ -225,7 +225,12 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             if (sleep_to.tv_sec < now.tv_sec
                 || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec))
             {
-                log_print(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings");
+                log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
+                    pdiff.tv_sec, pdiff.tv_nsec,
+                    diff.tv_sec, diff.tv_usec,
+                    now.tv_sec, now.tv_nsec,
+                    sleep_to.tv_sec, sleep_to.tv_nsec
+                );
             }
 
             if (sleep_to.tv_sec || sleep_to.tv_nsec) {

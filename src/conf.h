@@ -76,7 +76,7 @@ enum drool_conf_read_mode {
     LOG_T_INIT, \
     TIMING_MODE_KEEP, 0, 0, 0.0, \
     CONF_CLIENT_POOL_T_INIT, \
-    6 \
+    1 \
 }
 typedef struct drool_conf drool_conf_t;
 struct drool_conf {
@@ -112,7 +112,7 @@ struct drool_conf {
 
     drool_conf_client_pool_t    client_pool;
 
-    size_t                  context_client_pools; /* TODO */
+    size_t                  context_client_pools;
 };
 
 drool_conf_t* conf_new(void);
@@ -141,6 +141,7 @@ drool_timing_mode_t conf_timing_mode(const drool_conf_t* conf);
 unsigned long int conf_timing_increase(const drool_conf_t* conf);
 unsigned long int conf_timing_reduce(const drool_conf_t* conf);
 long double conf_timing_multiply(const drool_conf_t* conf);
+size_t conf_context_client_pools(const drool_conf_t* conf);
 int conf_add_read(drool_conf_t* conf, const char* file, size_t length);
 int conf_add_input(drool_conf_t* conf, const char* interface, size_t length);
 int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode);
@@ -149,6 +150,7 @@ int conf_set_read_iter(drool_conf_t* conf, size_t read_iter);
 int conf_set_write(drool_conf_t* conf, const char* file, size_t length);
 int conf_set_output(drool_conf_t* conf, const char* interface, size_t length);
 */
+int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pools);
 const drool_log_t* conf_log(const drool_conf_t* conf);
 drool_log_t* conf_log_rw(drool_conf_t* conf);
 const drool_conf_client_pool_t* conf_client_pool(const drool_conf_t* conf);

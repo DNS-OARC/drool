@@ -38,12 +38,15 @@
 #ifndef __drool_conf_client_pool_h
 #define __drool_conf_client_pool_h
 
+#include "client_pool_sendas.h"
+
 #include <stddef.h>
 
 #define CONF_CLIENT_POOL_T_INIT { \
     0, \
     0, 0, 0, 0, \
-    0, 0, 0, 0 \
+    0, 0, 0, 0, \
+    CLIENT_POOL_SENDAS_ORIGINAL \
 }
 typedef struct drool_conf_client_pool drool_conf_client_pool_t;
 struct drool_conf_client_pool {
@@ -54,12 +57,15 @@ struct drool_conf_client_pool {
     unsigned short  have_client_ttl : 1;
     unsigned short  skip_reply : 1;
     unsigned short  have_max_reuse_clients : 1;
+    unsigned short  have_sendas : 1;
 
     char*           target_host;
     char*           target_service;
     size_t          max_clients;
     double          client_ttl;
     size_t          max_reuse_clients;
+
+    drool_client_pool_sendas_t  sendas;
 };
 
 drool_conf_client_pool_t* conf_client_pool_new(void);
@@ -68,6 +74,7 @@ int conf_client_pool_have_target(const drool_conf_client_pool_t* conf_client_poo
 int conf_client_pool_have_max_clients(const drool_conf_client_pool_t* conf_client_pool);
 int conf_client_pool_have_client_ttl(const drool_conf_client_pool_t* conf_client_pool);
 int conf_client_pool_have_max_reuse_clients(const drool_conf_client_pool_t* conf_client_pool);
+int conf_client_pool_have_sendas(const drool_conf_client_pool_t* conf_client_pool);
 const drool_conf_client_pool_t* conf_client_pool_next(const drool_conf_client_pool_t* conf_client_pool);
 const char* conf_client_pool_target_host(const drool_conf_client_pool_t* conf_client_pool);
 const char* conf_client_pool_target_service(const drool_conf_client_pool_t* conf_client_pool);
@@ -75,11 +82,13 @@ size_t conf_client_pool_max_clients(const drool_conf_client_pool_t* conf_client_
 double conf_client_pool_client_ttl(const drool_conf_client_pool_t* conf_client_pool);
 int conf_client_pool_skip_reply(const drool_conf_client_pool_t* conf_client_pool);
 size_t conf_client_pool_max_reuse_clients(const drool_conf_client_pool_t* conf_client_pool);
+drool_client_pool_sendas_t conf_client_pool_sendas(const drool_conf_client_pool_t* conf_client_pool);
 int conf_client_pool_set_next(drool_conf_client_pool_t* conf_client_pool, drool_conf_client_pool_t* next);
 int conf_client_pool_set_target(drool_conf_client_pool_t* conf_client_pool, const char* host, size_t host_length, const char* service, size_t service_length);
 int conf_client_pool_set_max_clients(drool_conf_client_pool_t* conf_client_pool, size_t max_clients);
 int conf_client_pool_set_client_ttl(drool_conf_client_pool_t* conf_client_pool, double client_ttl);
 int conf_client_pool_set_skip_reply(drool_conf_client_pool_t* conf_client_pool);
 int conf_client_pool_set_max_reuse_clients(drool_conf_client_pool_t* conf_client_pool, size_t max_reuse_clients);
+int conf_client_pool_set_sendas(drool_conf_client_pool_t* conf_client_pool, drool_client_pool_sendas_t sendas);
 
 #endif /* __drool_conf_client_pool_h */

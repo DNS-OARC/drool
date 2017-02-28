@@ -53,6 +53,7 @@ enum drool_client_state {
     CLIENT_CONNECTED,
     CLIENT_SENDING,
     CLIENT_RECIVING,
+    CLIENT_CLOSING,
 
     CLIENT_SUCCESS,
     CLIENT_FAILED,
@@ -82,6 +83,7 @@ struct drool_client {
     drool_query_t*          query;
     ev_io                   write_watcher;
     ev_io                   read_watcher;
+    ev_io                   shutdown_watcher;
     drool_client_callback_t callback;
     drool_client_state_t    state;
     int                     errnum;
@@ -109,15 +111,13 @@ int client_is_dgram(const drool_client_t* client);
 int client_is_stream(const drool_client_t* client);
 int client_set_next(drool_client_t* client, drool_client_t* next);
 int client_set_prev(drool_client_t* client, drool_client_t* prev);
-int client_set_fd(drool_client_t* client, int fd);
 int client_set_start(drool_client_t* client, ev_tstamp start);
 int client_set_skip_reply(drool_client_t* client);
+drool_query_t* client_release_query(drool_client_t* client);
 
 int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* addr, socklen_t addlen, struct ev_loop* loop);
-int client_connect_fd(drool_client_t* client, int fd, const struct sockaddr* addr, socklen_t addlen, struct ev_loop* loop);
 int client_send(drool_client_t* client, struct ev_loop* loop);
 int client_reuse(drool_client_t* client, drool_query_t* query);
-int client_abort(drool_client_t* client, struct ev_loop* loop);
-int client_close(drool_client_t* client);
+int client_close(drool_client_t* client, struct ev_loop* loop);
 
 #endif /* __drool_client_h */
