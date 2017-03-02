@@ -43,7 +43,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 #include <pthread.h>
 
 static const drool_log_settings_t* get_facility(const drool_log_t* log, const drool_log_facility_t facility) {
@@ -268,10 +267,9 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
     fflush(stdout);
 }
 
-void log_errnof_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...) {
+void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, int errnum, const char* format, ...) {
     va_list ap;
     char buf[512];
-    int errnum = errno;
 
     drool_assert(log);
     if (!log) {

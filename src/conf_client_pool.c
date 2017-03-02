@@ -79,6 +79,11 @@ inline int conf_client_pool_have_max_reuse_clients(const drool_conf_client_pool_
     return conf_client_pool->have_max_reuse_clients;
 }
 
+inline int conf_client_pool_have_sendas(const drool_conf_client_pool_t* conf_client_pool) {
+    drool_assert(conf_client_pool);
+    return conf_client_pool->have_sendas;
+}
+
 inline const drool_conf_client_pool_t* conf_client_pool_next(const drool_conf_client_pool_t* conf_client_pool) {
     drool_assert(conf_client_pool);
     return conf_client_pool->next;
@@ -112,6 +117,11 @@ inline int conf_client_pool_skip_reply(const drool_conf_client_pool_t* conf_clie
 inline size_t conf_client_pool_max_reuse_clients(const drool_conf_client_pool_t* conf_client_pool) {
     drool_assert(conf_client_pool);
     return conf_client_pool->max_reuse_clients;
+}
+
+inline drool_client_pool_sendas_t conf_client_pool_sendas(const drool_conf_client_pool_t* conf_client_pool) {
+    drool_assert(conf_client_pool);
+    return conf_client_pool->sendas;
 }
 
 int conf_client_pool_set_next(drool_conf_client_pool_t* conf_client_pool, drool_conf_client_pool_t* next) {
@@ -199,6 +209,17 @@ int conf_client_pool_set_max_reuse_clients(drool_conf_client_pool_t* conf_client
 
     conf_client_pool->max_reuse_clients = max_reuse_clients;
     conf_client_pool->have_max_reuse_clients = 1;
+
+    return CONF_OK;
+}
+
+int conf_client_pool_set_sendas(drool_conf_client_pool_t* conf_client_pool, drool_client_pool_sendas_t sendas) {
+    if (!conf_client_pool) {
+        return CONF_EINVAL;
+    }
+
+    conf_client_pool->sendas = sendas;
+    conf_client_pool->have_sendas = 1;
 
     return CONF_OK;
 }

@@ -9,10 +9,14 @@ timing ignore;
 #timing reduce 200;
 #timing multiply 1.5;
 
+#context client_pools 1;
+
 client_pool target "127.0.0.1" "53";
-client_pool max_clients 5000;
+client_pool max_clients 100;
 client_pool client_ttl 0.05;
 #client_pool skip_reply;
+#client_pool max_reuse_clients 20;
+#client_pool sendas tcp;
 
 # Not working yet:
 #write "/path/to/file.pcap";
