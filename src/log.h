@@ -39,6 +39,7 @@
 #define __drool_log_h
 
 #include <stddef.h>
+#include <errno.h>
 
 #define LOG_SETTINGS_T_INIT         { 0, 0, 0, 1, 1, 1 }
 #define LOG_SETTINGS_T_INIT_NONE    { 0, 0, 0, 0, 0, 0 }
@@ -121,10 +122,15 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
 #define log_printf(log, facility, level, format, args...) \
     log_printf_fileline(log, facility, level, __FILE__, __LINE__, format, args)
 
-void log_errnof_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...);
+void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, int errnum, const char* format, ...);
+#define log_errnum(log, facility, level, errnum, text) \
+    log_errnumf_fileline(log, facility, level, __FILE__, __LINE__, errnum, text)
+#define log_errnumf(log, facility, level, errnum, format, args...) \
+    log_errnumf_fileline(log, facility, level, __FILE__, __LINE__, errnum, format, args)
+
 #define log_errno(log, facility, level, text) \
-    log_errnof_fileline(log, facility, level, __FILE__, __LINE__, text)
+    log_errnumf_fileline(log, facility, level, __FILE__, __LINE__, errno, text)
 #define log_errnof(log, facility, level, format, args...) \
-    log_errnof_fileline(log, facility, level, __FILE__, __LINE__, format, args)
+    log_errnumf_fileline(log, facility, level, __FILE__, __LINE__, errno, format, args)
 
 #endif /* __drool_log_h */

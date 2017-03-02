@@ -69,6 +69,9 @@ todo
 \fBtiming\fR multiply MULTIPLY_AS_FLOAT ;
 todo
 .TP
+\fBcontext\fR client_pools NUMBER ;
+todo
+.TP
 \fBclient_pool\fR target " IP_OR_HOSTNAME " " SERVICE_OR_PORT ";
 todo
 .TP
@@ -79,6 +82,12 @@ todo
 todo
 .TP
 \fBclient_pool\fR skip_reply ;
+todo
+.TP
+\fBclient_pool\fR max_reuse_clients NUMBER ;
+todo
+.TP
+\fBclient_pool\fR sendas < original | udp | tcp > ;
 todo
 .TP
 \fBwrite\fR " FILE " ;

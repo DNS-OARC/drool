@@ -42,6 +42,7 @@
 #include "query.h"
 #include "conf.h"
 #include "client.h"
+#include "client_pool_sendas.h"
 
 #include <pthread.h>
 #include <ev.h>
@@ -57,13 +58,6 @@ enum drool_client_pool_state {
     CLIENT_POOL_ERROR
 };
 
-typedef enum drool_client_pool_sendas drool_client_pool_sendas_t;
-enum drool_client_pool_sendas {
-    CLIENT_POOL_SENDAS_ORIGINAL = 0,
-    CLIENT_POOL_SENDAS_UDP,
-    CLIENT_POOL_SENDAS_TCP
-};
-
 typedef struct drool_client_pool drool_client_pool_t;
 struct drool_client_pool {
     drool_client_pool_t* next;
@@ -77,11 +71,14 @@ struct drool_client_pool {
 
     struct ev_loop*             ev_loop;
     sllq_t                      queries;
+    drool_query_t*              query;
     ev_async                    notify_query;
     ev_async                    notify_stop;
     ev_timer                    timeout;
+    ev_timer                    retry;
 
-    drool_client_t*             client_list;
+    drool_client_t*             client_list_first;
+    drool_client_t*             client_list_last;
     size_t                      clients;
     size_t                      max_clients;
     ev_tstamp                   client_ttl;

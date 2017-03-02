@@ -216,6 +216,11 @@ inline long double conf_timing_multiply(const drool_conf_t* conf) {
     return conf->timing_multiply;
 }
 
+inline size_t conf_context_client_pools(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->context_client_pools;
+}
+
 int conf_add_read(drool_conf_t* conf, const char* file, size_t length) {
     drool_conf_file_t* conf_file;
     int err = CONF_OK;
@@ -341,6 +346,19 @@ int conf_set_output(drool_conf_t* conf, const char* interface, size_t length) {
     return ret;
 }
 */
+
+int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pools) {
+    if (!conf) {
+        return CONF_EINVAL;
+    }
+    if (!context_client_pools) {
+        return CONF_EINVAL;
+    }
+
+    conf->context_client_pools = context_client_pools;
+
+    return CONF_OK;
+}
 
 inline const drool_log_t* conf_log(const drool_conf_t* conf) {
     drool_assert(conf);
@@ -616,6 +634,41 @@ static int parse_client_pool_max_reuse_clients(void* user, const parseconf_token
     return conf_client_pool_set_max_reuse_clients(&(conf->client_pool), max_reuse_clients);
 }
 
+static parseconf_token_type_t client_pool_sendas_tokens[] = {
+    PARSECONF_TOKEN_STRING, PARSECONF_TOKEN_END
+};
+
+static int parse_client_pool_sendas(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    drool_client_pool_sendas_t sendas;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (!strncmp(tokens[2].token, "original", tokens[2].length)) {
+        sendas = CLIENT_POOL_SENDAS_ORIGINAL;
+    }
+    else if (!strncmp(tokens[2].token, "udp", tokens[2].length)) {
+        sendas = CLIENT_POOL_SENDAS_UDP;
+    }
+    else if (!strncmp(tokens[2].token, "tcp", tokens[2].length)) {
+        sendas = CLIENT_POOL_SENDAS_TCP;
+    }
+    else {
+        *errstr = "Invalid send as";
+        return 1;
+    }
+
+    return conf_client_pool_set_sendas(&(conf->client_pool), sendas);
+}
+
 static parseconf_syntax_t client_pool_syntax[] = {
     /* client_pool target <host> <port>; */
     { "target", parse_client_pool_target, client_pool_target_tokens, 0 },
@@ -627,6 +680,43 @@ static parseconf_syntax_t client_pool_syntax[] = {
     { "skip_reply", parse_client_pool_skip_reply, client_pool_skip_reply_tokens, 0 },
     /* client_pool max_reuse_clients <num>; */
     { "max_reuse_clients", parse_client_pool_max_reuse_clients, client_pool_max_reuse_clients_tokens, 0 },
+    /* client_pool sendas <what>; */
+    { "sendas", parse_client_pool_sendas, client_pool_sendas_tokens, 0 },
+    PARSECONF_SYNTAX_END
+};
+
+/*
+ * context parsers
+ */
+
+static parseconf_token_type_t context_client_pools_tokens[] = {
+    PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
+};
+
+static int parse_context_client_pools(void* user, const parseconf_token_t* tokens, const char** errstr) {
+    drool_conf_t* conf = (drool_conf_t*)user;
+    size_t client_pools = 0;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    if (parseconf_ulongint(&tokens[2], &client_pools, errstr)) {
+        return 1;
+    }
+
+    return conf_set_context_client_pools(conf, client_pools);
+}
+
+static parseconf_syntax_t context_syntax[] = {
+    /* context client_pools <num>; */
+    { "client_pools", parse_context_client_pools, context_client_pools_tokens, 0 },
     PARSECONF_SYNTAX_END
 };
 
@@ -924,6 +1014,8 @@ static parseconf_syntax_t _syntax2[] = {
     { "timing", 0, nested_tokens, timing_syntax },
     /* client_pool ... ; */
     { "client_pool", 0, nested_tokens, client_pool_syntax },
+    /* context ... ; */
+    { "context", 0, nested_tokens, context_syntax },
     PARSECONF_SYNTAX_END
 };
 
