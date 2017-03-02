@@ -1,3 +1,27 @@
+2017-03-02 Jerry Lundström
+
+    Release 1.0.0-alpha.3
+
+    Reworked some of the client code to better handle stream sockets (TCP),
+    retrys to send query if the system's sockets are exhausted.  Can send
+    queries as the original protocol or force them into UDP or TCP.
+
+    Default number of client pools running per context is now 1, increase
+    this if you want to push UDP queries.  For TCP this has little effect
+    since you will most likely hit system limits before that.
+
+    Config changes:
+    - Added `context client_pools num;`
+    - Added `client_pool max_reuse_clients num;`
+    - Added `client_pool sendas what;`
+
+    Other changes:
+    - Add timing details to warning about not keeping up with timings
+
+    f8805da TCP, send as, proper shutdown
+    800e971 Include CHANGES in dist
+    cae9834 Honor previous fd flags
+
 2017-02-21 Jerry Lundström
 
     Release 1.0.0-alpha.2
