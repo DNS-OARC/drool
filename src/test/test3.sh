@@ -1,3 +1,5 @@
+#!/bin/sh -e
+#
 # DNS Reply Tool (drool)
 #
 # Copyright (c) 2017, OARC, Inc.
@@ -33,49 +35,4 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-CLEANFILES = drool.1
-
-SUBDIRS = test
-
-AM_CFLAGS = -I$(srcdir) \
-    -I$(top_srcdir) \
-    $(PTHREAD_CFLAGS)
-
-EXTRA_DIST = drool.1.in \
-    drool.conf.5.in \
-    drool.conf.example
-
-bin_PROGRAMS = drool
-
-drool_SOURCES = callback.c client.c client_pool.c \
-    conf.c conf_client_pool.c conf_file.c conf_interface.c \
-    drool.c dropback.c log.c query.c stats_callback.c \
-    omg-dns/omg_dns.c \
-    parseconf/parseconf.c \
-    pcap-thread/pcap_thread.c \
-    sllq/sllq.c
-dist_drool_SOURCES = assert.h callback.h client.h client_pool.h \
-    client_pool_sendas.h \
-    conf.h conf_client_pool.h conf_file.h conf_interface.h \
-    drool.h dropback.h log.h query.h stats_callback.h timing.h \
-    omg-dns/omg_dns.h \
-    parseconf/parseconf.h \
-    pcap-thread/pcap_thread.h \
-    sllq/sllq.h
-drool_LDADD = $(PTHREAD_LIBS)
-
-man1_MANS = drool.1
-man5_MANS = drool.conf.5
-
-drool.1: drool.1.in Makefile
-	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < $(srcdir)/drool.1.in > drool.1
-
-drool.conf.5: drool.conf.5.in Makefile
-	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < $(srcdir)/drool.conf.5.in > drool.conf.5
+../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore;" -n -r ./dns.pcap.dist

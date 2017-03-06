@@ -1,3 +1,16 @@
+2017-03-06 Jerry Lundström
+
+    Release 1.0.0-beta.1
+
+    Documentation and packaging for CentOS to prepare for release candidate.
+
+    New command line option:
+    - `-n` to run in dry-run mode
+
+    a61d1fa Fix #9: Documentation
+    ee93ced Impl timing multiply
+    7cfaf84 Tests, dry run and updated SLLQ
+
 2017-03-02 Jerry Lundström
 
     Release 1.0.0-alpha.3

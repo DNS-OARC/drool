@@ -148,6 +148,15 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
 
             // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "diff %lu.%06lu", diff.tv_sec, diff.tv_usec);
 
+            if (conf_timing_mode(context->conf) == TIMING_MODE_MULTIPLY) {
+                diff.tv_sec = (long)((float)diff.tv_sec * conf_timing_multiply(context->conf));
+                diff.tv_usec = (long)((float)diff.tv_usec * conf_timing_multiply(context->conf));
+                if (diff.tv_sec < 0 || diff.tv_usec < 0) {
+                    diff.tv_sec = 0;
+                    diff.tv_usec = 0;
+                }
+            }
+
 #if !defined(HAVE_CLOCK_NANOSLEEP) && defined(HAVE_NANOSLEEP)
             sleep_to = context->last_realtime;
 #else

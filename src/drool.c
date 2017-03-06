@@ -76,6 +76,8 @@ static void usage(void) {
         "  -r file.pcap  Read packets from PCAP file, can be given multiple times.\n"
         "  -R mode       Specify the mode for reading PCAP files, see drool(1) for\n"
         "                available modes.\n"
+        "  -n            Dry run mode, do not allocate any outbound sockets or\n"
+        "                generate any network traffic.\n"
         /*
         "  -o interface  Send packets to interface, may not be given with -w.\n"
         "  -w file.pcap  Write packets to PCAP file, may not be given with -o.\n"
@@ -144,7 +146,10 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
 
             context->conf = conf;
             for (n = 0; n < conf->context_client_pools; n++) { /* TODO */
-                context->client_pool = client_pool_new(conf);
+                if (!(context->client_pool = client_pool_new(conf))) {
+                    log_print(conf_log(conf), LCORE, LCRITICAL, "Unable to allocate client_pool with client_pool_new()");
+                    exit(DROOL_ENOMEM);
+                }
                 context->client_pool->next = context->client_pools;
                 context->client_pools = context->client_pool;
             }
@@ -179,7 +184,10 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
 
             context->conf = conf;
             for (n = 0; n < conf->context_client_pools; n++) { /* TODO */
-                context->client_pool = client_pool_new(conf);
+                if (!(context->client_pool = client_pool_new(conf))) {
+                    log_print(conf_log(conf), LCORE, LCRITICAL, "Unable to allocate client_pool with client_pool_new()");
+                    exit(DROOL_ENOMEM);
+                }
                 context->client_pool->next = context->client_pools;
                 context->client_pools = context->client_pool;
             }
@@ -296,7 +304,7 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
         }
 
         log_printf(conf_log(conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
-        log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp", sent, sent*pkts_fraction, (float)size/(float)sent);
+        log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp%s", sent, sent*pkts_fraction, (float)size/(float)sent, conf_is_dry_run(conf) ? " (DRY RUN)" : "");
         log_printf(conf_log(conf), LCORE, LINFO, "dropped %lu packets", dropped);
         log_printf(conf_log(conf), LCORE, LINFO, "ignored %lu packets", ignored);
     }
@@ -359,7 +367,7 @@ int main(int argc, char* argv[]) {
         program_name = argv[0];
     }
 
-    while ((opt = getopt(argc, argv, "c:l:L:f:i:r:R:" /*"o:w:"*/ "vhV")) != -1) {
+    while ((opt = getopt(argc, argv, "c:l:L:f:i:r:R:" /*"o:w:"*/ "nvhV")) != -1) {
         switch (opt) {
             case 'c':
                 if (!strncmp(optarg, "file:", 5)) {
@@ -542,6 +550,13 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             */
+
+            case 'n':
+                if ((err = conf_set_dry_run(&conf, 1)) != CONF_OK) {
+                    fprintf(stderr, "Unable to set dry run: %s\n", conf_strerr(err));
+                    exit(DROOL_EOPT);
+                }
+                break;
 
             case 'v':
                 verbose++;
