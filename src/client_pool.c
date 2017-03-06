@@ -420,7 +420,15 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         return;
     }
 
-    log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "shift queue, query %p", query);
+
+    if (conf_is_dry_run(client_pool->conf)) {
+        log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "shift queue, query %p (dry-run)", query);
+        ev_async_send(loop, &(client_pool->notify_query));
+        return;
+    }
+    else {
+        log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "shift queue, query %p", query);
+    }
 
     {
         drool_client_t* client = 0;

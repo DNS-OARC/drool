@@ -126,6 +126,11 @@ inline int conf_have_output(const drool_conf_t* conf) {
 }
 */
 
+inline int conf_is_dry_run(const drool_conf_t* conf) {
+    drool_assert(conf);
+    return conf->is_dry_run;
+}
+
 inline const char* conf_filter(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->filter;
@@ -346,6 +351,16 @@ int conf_set_output(drool_conf_t* conf, const char* interface, size_t length) {
     return ret;
 }
 */
+
+int conf_set_dry_run(drool_conf_t* conf, int dry_run) {
+    if (!conf) {
+        return CONF_EINVAL;
+    }
+
+    conf->is_dry_run = dry_run ? 1 : 0;
+
+    return CONF_OK;
+}
 
 int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pools) {
     if (!conf) {
