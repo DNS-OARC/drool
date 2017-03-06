@@ -76,7 +76,7 @@ static void usage(void) {
         "  -r file.pcap  Read packets from PCAP file, can be given multiple times.\n"
         "  -R mode       Specify the mode for reading PCAP files, see drool(1) for\n"
         "                available modes.\n"
-        "  -n            Dry run mode, do not allocate any out bound sockets or\n"
+        "  -n            Dry run mode, do not allocate any outbound sockets or\n"
         "                generate any network traffic.\n"
         /*
         "  -o interface  Send packets to interface, may not be given with -w.\n"
