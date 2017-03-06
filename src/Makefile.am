@@ -65,8 +65,8 @@ dist_drool_SOURCES = assert.h callback.h client.h client_pool.h \
     sllq/sllq.h
 drool_LDADD = $(PTHREAD_LIBS)
 
-man1_MANS = drool.1 \
-    drool.conf.5
+man1_MANS = drool.1
+man5_MANS = drool.conf.5
 
 drool.1: drool.1.in Makefile
 	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
