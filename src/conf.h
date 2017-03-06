@@ -68,7 +68,7 @@ enum drool_conf_read_mode {
 };
 
 #define CONF_T_INIT { \
-    0, 0, 0, 0, /*0, 0,*/ \
+    0, 0, 0, 0, /*0, 0,*/ 0, \
     0, 0, \
     0, 0, \
     0, 0, \
@@ -88,6 +88,7 @@ struct drool_conf {
     unsigned short  have_write : 1;
     unsigned short  have_output : 1;
     */
+    unsigned short  is_dry_run : 1;
 
     char*                   filter;
     size_t                  filter_length;
@@ -126,6 +127,7 @@ int conf_have_read_mode(const drool_conf_t* conf);
 int conf_have_write(const drool_conf_t* conf);
 int conf_have_output(const drool_conf_t* conf);
 */
+int conf_is_dry_run(const drool_conf_t* conf);
 const char* conf_filter(const drool_conf_t* conf);
 int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length);
 const size_t conf_filter_length(const drool_conf_t* conf);
@@ -150,6 +152,7 @@ int conf_set_read_iter(drool_conf_t* conf, size_t read_iter);
 int conf_set_write(drool_conf_t* conf, const char* file, size_t length);
 int conf_set_output(drool_conf_t* conf, const char* interface, size_t length);
 */
+int conf_set_dry_run(drool_conf_t* conf, int dry_run);
 int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pools);
 const drool_log_t* conf_log(const drool_conf_t* conf);
 drool_log_t* conf_log_rw(drool_conf_t* conf);

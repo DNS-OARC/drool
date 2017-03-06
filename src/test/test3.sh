@@ -1,3 +1,5 @@
+#!/bin/sh -e
+#
 # DNS Reply Tool (drool)
 #
 # Copyright (c) 2017, OARC, Inc.
@@ -33,24 +35,4 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-
-CLEANFILES = test*.log test*.trs \
-    test2.conf.dist \
-    dns.pcap.dist
-
-TESTS = test1.sh test2.sh test3.sh
-
-test2.sh: test2.conf.dist
-
-test2.conf.dist: test2.conf
-	cp "$(srcdir)/test2.conf" test2.conf.dist
-
-test3.sh: dns.pcap.dist
-
-dns.pcap.dist: dns.pcap
-	cp "$(srcdir)/dns.pcap" dns.pcap.dist
-
-EXTRA_DIST = $(TESTS) \
-    test2.conf \
-    dns.pcap
+../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore;" -n -r ./dns.pcap.dist
