@@ -1,0 +1,52 @@
+Name:           drool
+Version:        1.0.0.beta.1
+Release:        1%{?dist}
+Summary:        DNS Replay Tool
+
+License:        BSD-3-Clause
+URL:            https://github.com/DNS-OARC/drool
+Source0:        %{name}_%{version}.orig.tar.gz
+
+BuildRequires:  libpcap-devel libev-devel
+BuildRequires:  autoconf
+BuildRequires:  automake
+BuildRequires:  libtool
+
+%description
+DNS Replay Tool
+
+
+%prep
+%setup -q -n %{name}_%{version}
+
+
+%build
+sh autogen.sh
+%configure
+make %{?_smp_mflags}
+
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT
+
+
+%check
+make test
+
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+
+%files
+%defattr(-,root,root)
+%{_bindir}/*
+%{_datadir}/doc/*
+%{_mandir}/man1/*
+%{_mandir}/man5/*
+
+
+%changelog
+* Mon Mar 06 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.beta.1-1
+- Initial package
