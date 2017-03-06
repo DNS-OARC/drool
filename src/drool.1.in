@@ -84,7 +84,7 @@ drool \- DNS Replay Tool
 .\" .I file.pcap
 .\" ]
 [
-.B \-vhV
+.B \-nvhV
 ]
 .SH DESCRIPTION
 todo
@@ -125,6 +125,10 @@ available modes.
 .\" \fB\-w\fR \fIfile.pcap\fR
 .\" todo
 .\" .TP
+.B \-n
+Dry run mode, do not allocate any outbound sockets or
+generate any network traffic.
+.TP
 .B \-v
 Enable verbose, a simple way to enable logging. Can be
 given multiple times to increase verbosity level.
@@ -135,10 +139,50 @@ Print help and exit.
 .B \-V
 Print version and exit.
 .SH LOGGING
-todo facilities: core, network, all. level: debug, info, notice, warning,
-error, critical.
+Logging is enabled and disabled in the order specified on the command line
+which allows for enabling of all logging and disabling of specific, for
+example:
 
   drool -l all -L network:debug
+
+The following logging facilities exists:
+.TP
+\fBcore\fR
+Log messages about initializing, configuration and start up.
+.TP
+\fBnetwork\fR
+Log messages about network related tasks.
+.TP
+\fBall\fR
+Log messages for all facilities, this is only used to configure logging.
+.LP
+The following logging level exists for all facilities:
+.TP
+\fBdebug\fR
+Log messages about the very inner workings, use with caution since it
+generates a lot of messages.
+.TP
+\fBinfo\fR
+Log messages of the informational kind that may not be interesting in normal
+operation.
+.TP
+\fBnotice\fR
+Log messages of the informational kind that may be interesting in normal
+operation.
+.TP
+\fBwarning\fR
+Log message of the warning kind that indicates possible disruption in
+operation.
+.TP
+\fBerror\fR
+Log messages of the error kind that will most likely result in termination
+of operation.
+.TP
+\fBcritical\fR
+Log messages of the critical kind that indicates termination of operation.
+.TP
+\fBall\fR
+Log messages for all levels, this is only used to configure logging.
 .SH READ MODES
 .TP
 \fBloop\fR
@@ -149,7 +193,7 @@ Iterate the given file(s) for \fInumber\fR of times.
 .SH EXITING
 \fBdrool\fR will exit once processing of PCAP files is complete or if
 interrupted (CTRL-C or SIGINT). If any interface is being processed or
-if loop read mode is being used, then \fBdrool\fR must be interruped in
+if loop read mode is being used, then \fBdrool\fR must be interrupted in
 order to exit.
 
 \fBdrool\fR can be forcefully exited by interrupting (CTRL-C or SIGINT) twice.

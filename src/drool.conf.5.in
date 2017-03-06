@@ -37,64 +37,132 @@
 .SH NAME
 drool.conf \- Configuration for DNS Replay Tool
 .SH DESCRIPTION
+With these configuration options for \fIdrool\fR you can control all
+aspects of generating/replaying DNS traffic. Some options are also
+available as command line options.
 .SH CONFIGURATION
 .TP
 \fBlog\fR FACILITY [ LEVEL ] ;
-todo
+Enable logging for \fIfacility\fR, optional log \fIlevel\fR can be given
+to enable just that. Can be given multiple times and will be
+processed in the given order. See LOGGING for more information.
 .TP
 \fBnolog\fR FACILITY [ LEVEL ] ;
-todo
+Disable logging for \fIfacility\fR, optional log \fIlevel\fR can be
+given to disable just that. Can be given multiple times and
+will be processed in the given order. See LOGGING for more information.
 .TP
 \fBread\fR " FILE " ;
-todo
+Read packets from PCAP file, can be given multiple times.
 .TP
 \fBinput\fR " INTERFACE " ;
-todo
+Capture packets from interface, can be given multiple times.
 .TP
 \fBfilter\fR " FILTER " ;
-todo
+Set the Berkeley Packet Filter to use.
 .TP
 \fBtiming\fR ignore ;
-todo
+Set the timing mode to ignore all timings and try to send traffic as fast
+as possible.
 .TP
 \fBtiming\fR keep ;
-todo
+Set the timing mode to try and keep up with interval between the traffic
+received, will give a warning if it can't keep up sending it out at the
+same rate.
 .TP
 \fBtiming\fR add NANOSECONDS ;
-todo
+Set the timing mode to add the given nanoseconds to the interval between
+the traffic received.
 .TP
 \fBtiming\fR reduce NANOSECONDS ;
-todo
+Set the timing mode to reduce the interval between the traffic received
+with the given nano seconds, will give a warning if it can't keep up
+sending it out at the new rate.
 .TP
 \fBtiming\fR multiply MULTIPLY_AS_FLOAT ;
-todo
+Set the timing mode to multiply the interval between the traffic received,
+this can be thought as percent with 1.00 being 100% of the interval, 2.00
+being 200%, 0.10 being 10% and so on. Will give a warning if it can't keep
+up sending it out at the new rate.
 .TP
 \fBcontext\fR client_pools NUMBER ;
-todo
+Set the number of client pools to use per context (a context is a \fIread\fR
+or \fIinterface\fR), default is one.
 .TP
 \fBclient_pool\fR target " IP_OR_HOSTNAME " " SERVICE_OR_PORT ";
-todo
+Set the target of the client pools, where to send the traffic.
 .TP
 \fBclient_pool\fR max_clients NUMBER ;
-todo
+Set the maximum clients each client pool can have.
 .TP
 \fBclient_pool\fR client_ttl SECONDS_AS_FLOAT ;
-todo
+Set the time a client lives for, this is used to timeout clients in case
+the target does not answer. Specified as a float meaning 0.05 would be 50
+milliseconds.
 .TP
 \fBclient_pool\fR skip_reply ;
-todo
+Enables a mode where replies are ignored and client is considered successful
+after just sending.
 .TP
 \fBclient_pool\fR max_reuse_clients NUMBER ;
-todo
+Set the maximum clients to save for reuse, this only applies to protocol that
+can be reused.
 .TP
 \fBclient_pool\fR sendas < original | udp | tcp > ;
-todo
+Set how to send the traffic, default is original which sends the traffic with
+the same protocol it was received with.
+.\" .TP
+.\" \fBwrite\fR " FILE " ;
+.\" todo
+.\" .TP
+.\" \fBoutput\fR " INTERFACE " ;
+.\" todo
+.SH LOGGING
+Logging is enabled and disabled in the order specified in the configuration
+which allows for enabling of all logging and disabling of specific, for
+example:
+
+  log all;
+  nolog network debug;
+
+The following logging facilities exists:
 .TP
-\fBwrite\fR " FILE " ;
-todo
+\fBcore\fR
+Log messages about initializing, configuration and start up.
 .TP
-\fBoutput\fR " INTERFACE " ;
-todo
+\fBnetwork\fR
+Log messages about network related tasks.
+.TP
+\fBall\fR
+Log messages for all facilities, this is only used to configure logging.
+.LP
+The following logging level exists for all facilities:
+.TP
+\fBdebug\fR
+Log messages about the very inner workings, use with caution since it
+generates a lot of messages.
+.TP
+\fBinfo\fR
+Log messages of the informational kind that may not be interesting in normal
+operation.
+.TP
+\fBnotice\fR
+Log messages of the informational kind that may be interesting in normal
+operation.
+.TP
+\fBwarning\fR
+Log message of the warning kind that indicates possible disruption in
+operation.
+.TP
+\fBerror\fR
+Log messages of the error kind that will most likely result in termination
+of operation.
+.TP
+\fBcritical\fR
+Log messages of the critical kind that indicates termination of operation.
+.TP
+\fBall\fR
+Log messages for all levels, this is only used to configure logging.
 .SH SEE ALSO
 drool(1)
 .SH AUTHORS
