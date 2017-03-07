@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <time.h>
 
 static const drool_log_settings_t* get_facility(const drool_log_t* log, const drool_log_facility_t facility) {
     drool_assert(log);
@@ -245,6 +246,16 @@ inline int log_disable(drool_log_t* log, const drool_log_facility_t facility, co
 
 void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...) {
     va_list ap;
+    char buf[1024];
+    size_t s;
+    int n, n2;
+#if LOG_FILENAME_LINE && LOG_SHORT_FILENAME
+    char *filep;
+#endif
+#if LOG_DATETIME
+    struct tm tm;
+    time_t t;
+#endif
 
     drool_assert(log);
     if (!log) {
@@ -259,17 +270,70 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
         return;
     }
 
-    printf("%s:%06lu t:%lu %s %s: ", file, line, pthread_self(), log_facility_name(facility), log_level_name(level));
-    va_start(ap, format);
-    vprintf(format, ap);
-    va_end(ap);
-    printf("\n");
+#if LOG_DATETIME
+    memset(&tm, 0, sizeof(tm));
+    time(&t);
+    localtime_r(&t, &tm);
+#endif
+
+    s = sizeof(buf) - 2;
+    n = snprintf(buf, s,
+#if LOG_DATETIME
+        "%d-%02d-%02d %02d:%02d:%02d "
+#endif
+#if LOG_FILENAME_LINE
+        "%s:%04lu "
+#endif
+#if LOG_THREAD_ID
+        "t:%lu "
+#endif
+        "%s %s: ",
+#if LOG_DATETIME
+        1900+tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+#endif
+#if LOG_FILENAME_LINE
+#if LOG_SHORT_FILENAME
+        (filep = strrchr(file, '/')) ? (filep+1) : file,
+#else
+        file,
+#endif
+        line,
+#endif
+#if LOG_THREAD_ID
+        pthread_self(),
+#endif
+        log_facility_name(facility), log_level_name(level)
+    );
+    if (n < 1) {
+        printf("log_printf_fileline(): snprintf() failed with %d\n", n);
+        return;
+    }
+    if (n < s) {
+        va_start(ap, format);
+        n2 = vsnprintf(&buf[n], s - n, format, ap);
+        va_end(ap);
+        if (n2 < 1) {
+            printf("log_printf_fileline(): vsnprintf() failed with %d\n", n2);
+            return;
+        }
+    }
+    fprintf(stdout, "%s\n", buf);
     fflush(stdout);
 }
 
 void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, int errnum, const char* format, ...) {
     va_list ap;
-    char buf[512];
+    char errbuf[512];
+    char buf[1024];
+    size_t s;
+    int n, n2;
+#if LOG_FILENAME_LINE && LOG_SHORT_FILENAME
+    char *filep;
+#endif
+#if LOG_DATETIME
+    struct tm tm;
+    time_t t;
+#endif
 
     drool_assert(log);
     if (!log) {
@@ -284,28 +348,71 @@ void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t fac
         return;
     }
 
-    memset(buf, 0, sizeof(buf));
+    memset(errbuf, 0, sizeof(errbuf));
 
 #if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE) || defined(__FreeBSD__) || defined(__OpenBSD__)
     /* XSI-compliant version */
     {
-        int ret = strerror_r(errnum, buf, sizeof(buf));
+        int ret = strerror_r(errnum, errbuf, sizeof(errbuf));
         if (ret > 0) {
-            (void)strerror_r(ret, buf, sizeof(buf));
+            (void)strerror_r(ret, errbuf, sizeof(errbuf));
         }
         else {
-            (void)strerror_r(errno, buf, sizeof(buf));
+            (void)strerror_r(errno, errbuf, sizeof(errbuf));
         }
     }
 #else
     /* GNU-specific version */
-    buf = strerror_r(errnum, buf, sizeof(buf));
+    errbuf = strerror_r(errnum, errbuf, sizeof(errbuf));
 #endif
 
-    printf("%s:%06lu t:%lu %s %s: ", file, line, pthread_self(), log_facility_name(facility), log_level_name(level));
-    va_start(ap, format);
-    vprintf(format, ap);
-    va_end(ap);
-    printf(": %s\n", buf);
+#if LOG_DATETIME
+    memset(&tm, 0, sizeof(tm));
+    time(&t);
+    localtime_r(&t, &tm);
+#endif
+
+    s = sizeof(buf) - 2;
+    n = snprintf(buf, s,
+#if LOG_DATETIME
+        "%d-%02d-%02d %02d:%02d:%02d "
+#endif
+#if LOG_FILENAME_LINE
+        "%s:%04lu "
+#endif
+#if LOG_THREAD_ID
+        "t:%lu "
+#endif
+        "%s %s: ",
+#if LOG_DATETIME
+        1900+tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+#endif
+#if LOG_FILENAME_LINE
+#if LOG_SHORT_FILENAME
+        (filep = strrchr(file, '/')) ? (filep+1) : file,
+#else
+        file,
+#endif
+        line,
+#endif
+#if LOG_THREAD_ID
+        pthread_self(),
+#endif
+        log_facility_name(facility), log_level_name(level)
+    );
+    if (n < 1) {
+        printf("log_printf_fileline(): snprintf() failed with %d\n", n);
+        return;
+    }
+    if (n < s) {
+        va_start(ap, format);
+        n2 = vsnprintf(&buf[n], s - n, format, ap);
+        va_end(ap);
+        if (n2 < 1) {
+            printf("log_printf_fileline(): vsnprintf() failed with %d\n", n2);
+            return;
+        }
+    }
+    fprintf(stdout, "%s: %s\n", buf, errbuf);
     fflush(stdout);
 };

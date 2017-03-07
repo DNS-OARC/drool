@@ -41,6 +41,19 @@
 #include <stddef.h>
 #include <errno.h>
 
+#ifndef LOG_DATETIME
+#define LOG_DATETIME 1
+#endif
+#ifndef LOG_FILENAME_LINE
+#define LOG_FILENAME_LINE 1
+#endif
+#ifndef LOG_SHORT_FILENAME
+#define LOG_SHORT_FILENAME 1
+#endif
+#ifndef LOG_THREAD_ID
+#define LOG_THREAD_ID 0
+#endif
+
 #define LOG_SETTINGS_T_INIT         { 0, 0, 0, 1, 1, 1 }
 #define LOG_SETTINGS_T_INIT_NONE    { 0, 0, 0, 0, 0, 0 }
 #define LOG_SETTINGS_T_INIT_ALL     { 1, 1, 1, 1, 1, 1 }
