@@ -1112,7 +1112,7 @@ int conf_parse_file(drool_conf_t* conf, const char* file) {
 
     log_printf(conf_log(conf), LCORE, LDEBUG, "Opening config file %s", file);
     if ((err = parseconf_file((void*)conf, file, _syntax2, parseconf_error)) != PARSECONF_OK) {
-        log_printf(conf_log(conf), LCORE, LERROR, "Parsing file %s failed: %s", file, parseconf_strerr(err));
+        log_printf(conf_log(conf), LCORE, LERROR, "Parsing file %s failed: %s", file, parseconf_strerror(err));
         return CONF_ERROR;
     }
 
@@ -1133,7 +1133,7 @@ int conf_parse_text(drool_conf_t* conf, const char* text, size_t length) {
     }
 
     if ((err = parseconf_text((void*)conf, text, length, _syntax2, parseconf_error)) != PARSECONF_OK) {
-        log_printf(conf_log(conf), LCORE, LERROR, "Parsing text failed: %s", parseconf_strerr(err));
+        log_printf(conf_log(conf), LCORE, LERROR, "Parsing text failed: %s", parseconf_strerror(err));
         return CONF_ERROR;
     }
 

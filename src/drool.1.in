@@ -87,7 +87,19 @@ drool \- DNS Replay Tool
 .B \-nvhV
 ]
 .SH DESCRIPTION
-todo
+\fBdrool\fR can replay DNS traffic from packet capture (PCAP) files and send
+it to a specified server, with options such as to manipulate the timing
+between packets, as well as loop packets infinitely or for a set number
+of iterations. This tool's goal is to be able to produce a high amount
+of UDP packets per second and TCP sessions per second on common hardware.
+
+The purpose can be to simulate Distributed Denial of Service (DDoS) attacks
+on the DNS and measure normal DNS querying. For example, the tool could
+enable you to take a snapshot of a DDoS and be able to replay it later
+to test if new code or hardening techniques are useful, safe & effective.
+Another example is to be able to replay a packet stream for a
+bug that is sequence- and/or timing-related in order to validate the
+efficacy of subsequent bug fixes.
 .SH OPTIONS
 .TP
 \fB\-c\fR [\fItype\fR:]\fIconfig\fR

@@ -1,3 +1,14 @@
+2017-03-25 Jerry Lundström
+
+    Release 1.0.0-beta.2
+
+    Some minor changes and documentation updates prior to making the
+    repository public.
+
+    79ce5cc Add description
+    3f63cff Update all submodules to latest develop
+    0bbe9dc Log format
+
 2017-03-06 Jerry Lundström
 
     Release 1.0.0-beta.1
