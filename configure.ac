@@ -56,6 +56,7 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 
 # Checks for functions
+AC_SEARCH_LIBS([clock_gettime],[rt])
 AC_CHECK_FUNCS([clock_nanosleep nanosleep])
 
 # Checks for libraries/headers.
