@@ -106,7 +106,10 @@ static void* signal_handler_thread(void* arg) {
 
     while (1) {
         sig = 0;
-        err = sigwait(&(context->set), &sig);
+        if ((err = sigwait(&(context->set), &sig))) {
+            log_errnum(conf_log(context->conf), LCORE, LCRITICAL, err, "sigwait()");
+            exit(DROOL_ERROR);
+        }
 
         log_printf(conf_log(context->conf), LCORE, LDEBUG, "signal %d received", sig);
 

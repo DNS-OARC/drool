@@ -209,6 +209,9 @@ int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, 
             if (settings->critical)
                 return 1;
             break;
+
+        default:
+            break;
     }
 
     return 0;
