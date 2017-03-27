@@ -1,5 +1,7 @@
 # DNS Replay Tool (drool)
 
+[![Build Status](https://travis-ci.org/DNS-OARC/drool.svg?branch=develop)](https://travis-ci.org/DNS-OARC/drool) [![Coverity Scan Build Status](https://scan.coverity.com/projects/12202/badge.svg)](https://scan.coverity.com/projects/dns-oarc-drool)
+
 `drool` can replay DNS traffic from packet capture (PCAP) files and send
 it to a specified server, with options such as to manipulate the timing
 between packets, as well as loop packets infinitely or for a set number
