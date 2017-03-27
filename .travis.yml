@@ -1,19 +1,19 @@
 language: c
 compiler:
-  - clang
   - gcc
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libpcap-dev libev-dev
-install: ./autogen.sh
-script:
-  - ./configure
-  - make dist
-  - tar zxvf *.tar.gz
-  - cd drool-[0-9]*
-  - mkdir build
-  - cd build
-  - ../configure
-  - make
-  - make test
-  - src/drool -h
+env:
+  global:
+   - secure: "WrUQnRG7SemEkOCt+wr30Y3buPozoKfMNKrHITHNNNYoYYMcKFfFWFl2bJy49iFhcZIZGdPE6MCO15Yxf+9ox6tvRblixeaWMaqObp4wexlpXpkI5egd3Dnv9YgRBQaYXp0m195KL5wpZXbMQZ8Lf2lYZ6TeurbJbmm5eG7RgwBLcG4lWZVZsTqVEURT7lNFrL1SbgYtQKf6b41J/nlpxyRB+Augj3m6TjK1tOROxU8QvcBMQVXIY+Q5Q/plAQFeV93aXsKpTwRGV85aVJHo+CQfbOY+909cpakyzWcuYNh8nhXBWZcGyKYephtRePFIrsHzTeViEAVUaS2uKo/OPtxQrx5yjCDk3rO7bKdMWUbxW6dKguLjTIoaidKHMpYXi4UNhcJ1PwJI22akJqTQ20f3VVGC/WyiAHTk54/1FFkYg1qB0/Wsg3yCLyLr2K3DTwzLBIs2xQkvysk/hghOh4NtAGOGrF9WXOtQjCXGS93Tyngzk1AUYZc+so04qxgCaShUbL5FML1TDgHzOoRIzFf2vY2Df1AGOeaPxzNN5EQrOf67VOM8Yvb3mOS7e7YjCqo4ZByiZQjKMZtC6USGWvlLMD2JF2delEnnlbHLQYoHaA0f5B3KDjfpVZYvgs5GcsXnkDzLRQyFA+CbwKL7B8xzEi0JV3CTs9aqUIbAVLc="
+addons:
+  coverity_scan:
+    project:
+      name: "DNS-OARC/drool"
+      description: "Build submitted via Travis CI"
+    notification_email: lundstrom.jerry@gmail.com
+    build_command_prepend: "./autogen.sh && ./configure && make clean"
+    build_command: "make"
+    branch_pattern: coverity_scan
+script: true
