@@ -164,7 +164,7 @@ int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length) {
     return CONF_OK;
 }
 
-inline const size_t conf_filter_length(const drool_conf_t* conf) {
+inline size_t conf_filter_length(const drool_conf_t* conf) {
     drool_assert(conf);
     return conf->filter_length;
 }
