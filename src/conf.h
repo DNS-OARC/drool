@@ -130,7 +130,7 @@ int conf_have_output(const drool_conf_t* conf);
 int conf_is_dry_run(const drool_conf_t* conf);
 const char* conf_filter(const drool_conf_t* conf);
 int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length);
-const size_t conf_filter_length(const drool_conf_t* conf);
+size_t conf_filter_length(const drool_conf_t* conf);
 const drool_conf_file_t* conf_read(const drool_conf_t* conf);
 const drool_conf_interface_t* conf_input(const drool_conf_t* conf);
 drool_conf_read_mode_t conf_read_mode(const drool_conf_t* conf);
