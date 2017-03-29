@@ -43,6 +43,7 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <sys/time.h>
 
 #define DROOL_ERROR     1
 #define DROOL_EOPT      2
