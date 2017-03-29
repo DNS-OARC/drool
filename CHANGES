@@ -1,3 +1,25 @@
+2017-03-29 Jerry Lundström
+
+    Release 1.0.0-beta.3
+
+    Various compatibility fixes across GNU/Linux, FreeBSD, OpenBSD and
+    OS X, along with a bugfix in pcap-thread.
+
+    Special thanks to Brian Carpenter (@geeknik) for fuzzing drool.
+
+    82273cc Fix #50: Compat for OS X
+    fc9d87c Issue #50: Update pcap-thread to v2.1.2
+    04817f0 const not needed on size_t
+    7ab1811 Update submodules: sllq v1.0.0, parseconf v1.0.0 and omg-dns
+            v1.0.0
+    242c67a Fix CID 1421861
+    9f3914f Add Travis and Coverity badges
+    ae33c90 Check for `clock_gettime()` in librt, needed for older glibc
+    594c877 Add Travis-CI
+    b7e19a2 Fix compiler warnings and check errors from `sigwait()`
+    3b9f2dc Fix #43, fix #44, fix #45: Update pcap-thread to fix one off
+            in IP layer
+
 2017-03-25 Jerry Lundström
 
     Release 1.0.0-beta.2
