@@ -34,7 +34,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 AC_PREREQ(2.61)
-AC_INIT([drool], [1.0.0-beta.2], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
+AC_INIT([drool], [1.0.0-beta.3], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/drool.c])
 AC_CONFIG_HEADER([src/config.h])
@@ -56,6 +56,7 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 
 # Checks for functions
+AC_SEARCH_LIBS([clock_gettime],[rt])
 AC_CHECK_FUNCS([clock_nanosleep nanosleep])
 
 # Checks for libraries/headers.

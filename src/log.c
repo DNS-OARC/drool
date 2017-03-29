@@ -209,6 +209,9 @@ int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, 
             if (settings->critical)
                 return 1;
             break;
+
+        default:
+            break;
     }
 
     return 0;
@@ -350,7 +353,7 @@ void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t fac
 
     memset(errbuf, 0, sizeof(errbuf));
 
-#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
     /* XSI-compliant version */
     {
         int ret = strerror_r(errnum, errbuf, sizeof(errbuf));

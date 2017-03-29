@@ -106,7 +106,10 @@ static void* signal_handler_thread(void* arg) {
 
     while (1) {
         sig = 0;
-        err = sigwait(&(context->set), &sig);
+        if ((err = sigwait(&(context->set), &sig))) {
+            log_errnum(conf_log(context->conf), LCORE, LCRITICAL, err, "sigwait()");
+            exit(DROOL_ERROR);
+        }
 
         log_printf(conf_log(context->conf), LCORE, LDEBUG, "signal %d received", sig);
 
@@ -304,7 +307,10 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
         }
 
         log_printf(conf_log(conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
-        log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp%s", sent, sent*pkts_fraction, (float)size/(float)sent, conf_is_dry_run(conf) ? " (DRY RUN)" : "");
+        if (sent)
+            log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp%s", sent, sent*pkts_fraction, (float)size/(float)sent, conf_is_dry_run(conf) ? " (DRY RUN)" : "");
+        else
+            log_printf(conf_log(conf), LCORE, LINFO, "sent 0 packets%s", conf_is_dry_run(conf) ? " (DRY RUN)" : "");
         log_printf(conf_log(conf), LCORE, LINFO, "dropped %lu packets", dropped);
         log_printf(conf_log(conf), LCORE, LINFO, "ignored %lu packets", ignored);
     }
