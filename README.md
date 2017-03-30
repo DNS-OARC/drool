@@ -30,6 +30,32 @@ drool \
   -r file.pcap
 ```
 
+## Dependencies
+
+`drool` requires the PCAP library and the event engine EV.
+
+To install the dependencies under Debian/Ubuntu:
+```
+apt-get install -y libpcap-dev libev-dev
+```
+
+To install the dependencies under CentOS (with EPEL enabled):
+```
+yum install -y libpcap-devel libev-devel
+```
+
+To install the dependencies under FreeBSD 11+ using `pkg`:
+```
+pkg install -y libpcap libev
+```
+
+For OpenBSD 6.0+ it is recommended to install a later version of the PCAP
+library then the system provides, rest of the dependencies can be installed
+using `pkg_add`:
+```
+pkg_add libev
+```
+
 ## Build from GitHub
 
 ```
