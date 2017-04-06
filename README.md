@@ -30,30 +30,41 @@ drool \
   -r file.pcap
 ```
 
-## Dependencies
+## Dependencies and build tools
 
-`drool` requires the PCAP library and the event engine EV.
+`drool` requires the PCAP library and the event engine EV along with system
+build tools.
 
-To install the dependencies under Debian/Ubuntu:
+To install the dependencies and build tools under Debian 8+/Ubuntu 14.04+:
 ```
-apt-get install -y libpcap-dev libev-dev
+apt-get install -y libpcap-dev libev-dev build-essential autoconf automake libtool
 ```
 
-To install the dependencies under CentOS (with EPEL enabled):
+To install the dependencies and build tools under CentOS 7+ (with EPEL enabled):
 ```
 yum install -y libpcap-devel libev-devel
+yum group install -y "Development Tools"
 ```
 
-To install the dependencies under FreeBSD 11+ using `pkg`:
+To install the dependencies, build tools and setup the environment for
+FreeBSD 11+ using `pkg`:
 ```
-pkg install -y libpcap libev
+pkg install -y libpcap libev gmake autoconf automake libtool gcc
+export AUTOCONF_VERSION=2.69 \
+  AUTOMAKE_VERSION=1.15 \
+  CFLAGS="-I/usr/local/include" \
+  LDFLAGS="-L/usr/local/lib"
 ```
 
 For OpenBSD 6.0+ it is recommended to install a later version of the PCAP
 library then the system provides, rest of the dependencies can be installed
-using `pkg_add`:
+using `pkg_add` (based on 6.0, package versions may be different for others):
 ```
-pkg_add libev
+pkg_add libev gcc autoconf-2.69p2 automake-1.15p0 gmake-4.2.1 libtool-2.4.2p0
+export AUTOCONF_VERSION=2.69 \
+  AUTOMAKE_VERSION=1.15 \
+  CFLAGS="-I/usr/local/include" \
+  LDFLAGS="-L/usr/local/lib"
 ```
 
 ## Build from GitHub
