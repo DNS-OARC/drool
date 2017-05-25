@@ -2,6 +2,7 @@ Name:           drool
 Version:        1.0.0.beta.3
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
+Group:          Productivity/Networking/DNS/Utilities
 
 License:        BSD-3-Clause
 URL:            https://github.com/DNS-OARC/drool
