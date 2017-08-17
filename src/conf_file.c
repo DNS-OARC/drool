@@ -44,19 +44,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-drool_conf_file_t* conf_file_new(void) {
+drool_conf_file_t* conf_file_new(void)
+{
     drool_conf_file_t* conf_file = calloc(1, sizeof(drool_conf_file_t));
     return conf_file;
 }
 
-void conf_file_free(drool_conf_file_t* conf_file) {
+void conf_file_free(drool_conf_file_t* conf_file)
+{
     if (conf_file) {
         conf_file_release(conf_file);
         free(conf_file);
     }
 }
 
-void conf_file_release(drool_conf_file_t* conf_file) {
+void conf_file_release(drool_conf_file_t* conf_file)
+{
     if (conf_file) {
         if (conf_file->name) {
             free(conf_file->name);
@@ -65,12 +68,14 @@ void conf_file_release(drool_conf_file_t* conf_file) {
     }
 }
 
-inline const drool_conf_file_t* conf_file_next(const drool_conf_file_t* conf_file) {
+inline const drool_conf_file_t* conf_file_next(const drool_conf_file_t* conf_file)
+{
     drool_assert(conf_file);
     return conf_file->next;
 }
 
-int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next) {
+int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next)
+{
     if (!conf_file) {
         return CONF_EINVAL;
     }
@@ -83,12 +88,14 @@ int conf_file_set_next(drool_conf_file_t* conf_file, drool_conf_file_t* next) {
     return CONF_OK;
 }
 
-inline const char* conf_file_name(const drool_conf_file_t* conf_file) {
+inline const char* conf_file_name(const drool_conf_file_t* conf_file)
+{
     drool_assert(conf_file);
     return conf_file->name;
 }
 
-int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t length) {
+int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t length)
+{
     if (!conf_file) {
         return CONF_EINVAL;
     }
@@ -103,8 +110,7 @@ int conf_file_set_name(drool_conf_file_t* conf_file, const char* name, size_t le
         if (!(conf_file->name = strndup(name, length))) {
             return CONF_ENOMEM;
         }
-    }
-    else {
+    } else {
         if (!(conf_file->name = strdup(name))) {
             return CONF_ENOMEM;
         }

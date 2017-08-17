@@ -40,11 +40,14 @@
 
 #include <stddef.h>
 
-#define CONF_FILE_T_INIT { 0, 0 }
+#define CONF_FILE_T_INIT \
+    {                    \
+        0, 0             \
+    }
 typedef struct drool_conf_file drool_conf_file_t;
 struct drool_conf_file {
-    drool_conf_file_t*  next;
-    char*               name;
+    drool_conf_file_t* next;
+    char*              name;
 };
 
 drool_conf_file_t* conf_file_new(void);

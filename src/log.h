@@ -54,27 +54,36 @@
 #define LOG_THREAD_ID 0
 #endif
 
-#define LOG_SETTINGS_T_INIT         { 0, 0, 0, 1, 1, 1 }
-#define LOG_SETTINGS_T_INIT_NONE    { 0, 0, 0, 0, 0, 0 }
-#define LOG_SETTINGS_T_INIT_ALL     { 1, 1, 1, 1, 1, 1 }
+#define LOG_SETTINGS_T_INIT \
+    {                       \
+        0, 0, 0, 1, 1, 1    \
+    }
+#define LOG_SETTINGS_T_INIT_NONE \
+    {                            \
+        0, 0, 0, 0, 0, 0         \
+    }
+#define LOG_SETTINGS_T_INIT_ALL \
+    {                           \
+        1, 1, 1, 1, 1, 1        \
+    }
 typedef struct drool_log_settings drool_log_settings_t;
 struct drool_log_settings {
-    unsigned short      debug : 1;
-    unsigned short      info : 1;
-    unsigned short      notice : 1;
-    unsigned short      warning : 1;
-    unsigned short      error : 1;
-    unsigned short      critical : 1;
+    unsigned short debug : 1;
+    unsigned short info : 1;
+    unsigned short notice : 1;
+    unsigned short warning : 1;
+    unsigned short error : 1;
+    unsigned short critical : 1;
 };
 
-#define LOG_LEVEL_UNKNOWN_STR   "unknown"
-#define LOG_LEVEL_DEBUG_STR     "debug"
-#define LOG_LEVEL_INFO_STR      "info"
-#define LOG_LEVEL_NOTICE_STR    "notice"
-#define LOG_LEVEL_WARNING_STR   "warning"
-#define LOG_LEVEL_ERROR_STR     "error"
-#define LOG_LEVEL_CRITICAL_STR  "critical"
-#define LOG_LEVEL_ALL_STR       "all"
+#define LOG_LEVEL_UNKNOWN_STR "unknown"
+#define LOG_LEVEL_DEBUG_STR "debug"
+#define LOG_LEVEL_INFO_STR "info"
+#define LOG_LEVEL_NOTICE_STR "notice"
+#define LOG_LEVEL_WARNING_STR "warning"
+#define LOG_LEVEL_ERROR_STR "error"
+#define LOG_LEVEL_CRITICAL_STR "critical"
+#define LOG_LEVEL_ALL_STR "all"
 typedef enum drool_log_level drool_log_level_t;
 enum drool_log_level {
     LOG_LEVEL_DEBUG,
@@ -86,43 +95,44 @@ enum drool_log_level {
 
     LOG_LEVEL_ALL
 };
-#define LDEBUG      LOG_LEVEL_DEBUG
-#define LINFO       LOG_LEVEL_INFO
-#define LNOTICE     LOG_LEVEL_NOTICE
-#define LWARNING    LOG_LEVEL_WARNING
-#define LERROR      LOG_LEVEL_ERROR
-#define LCRITICAL   LOG_LEVEL_CRITICAL
+#define LDEBUG LOG_LEVEL_DEBUG
+#define LINFO LOG_LEVEL_INFO
+#define LNOTICE LOG_LEVEL_NOTICE
+#define LWARNING LOG_LEVEL_WARNING
+#define LERROR LOG_LEVEL_ERROR
+#define LCRITICAL LOG_LEVEL_CRITICAL
 
 int log_level_enable(drool_log_settings_t* settings, const drool_log_level_t level);
 int log_level_disable(drool_log_settings_t* settings, const drool_log_level_t level);
 const char* log_level_name(const drool_log_level_t level);
 
-#define LOG_FACILITY_UNKNOWN_STR    "unknown"
-#define LOG_FACILITY_NONE_STR       "none"
-#define LOG_FACILITY_CORE_STR       "core"
-#define LOG_FACILITY_NETWORK_STR    "network"
+#define LOG_FACILITY_UNKNOWN_STR "unknown"
+#define LOG_FACILITY_NONE_STR "none"
+#define LOG_FACILITY_CORE_STR "core"
+#define LOG_FACILITY_NETWORK_STR "network"
 typedef enum drool_log_facility drool_log_facility_t;
 enum drool_log_facility {
     LOG_FACILITY_NONE = 0,
     LOG_FACILITY_CORE,
     LOG_FACILITY_NETWORK
 };
-#define LNONE       LOG_FACILITY_NONE
-#define LCORE       LOG_FACILITY_CORE
-#define LNETWORK    LOG_FACILITY_NETWORK
+#define LNONE LOG_FACILITY_NONE
+#define LCORE LOG_FACILITY_CORE
+#define LNETWORK LOG_FACILITY_NETWORK
 
 const char* log_facility_name(const drool_log_facility_t facility);
 
-#define LOG_T_INIT { \
-    LOG_SETTINGS_T_INIT_ALL, \
-    LOG_SETTINGS_T_INIT, \
-    LOG_SETTINGS_T_INIT, \
-}
+#define LOG_T_INIT               \
+    {                            \
+        LOG_SETTINGS_T_INIT_ALL, \
+            LOG_SETTINGS_T_INIT, \
+            LOG_SETTINGS_T_INIT, \
+    }
 typedef struct drool_log drool_log_t;
 struct drool_log {
-    drool_log_settings_t    none;
-    drool_log_settings_t    core;
-    drool_log_settings_t    network;
+    drool_log_settings_t none;
+    drool_log_settings_t core;
+    drool_log_settings_t network;
 };
 
 int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level);

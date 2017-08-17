@@ -42,7 +42,8 @@
 #include "log.h"
 #include "assert.h"
 
-void drool_stats_callback(u_char* user, const struct pcap_stat* stats, const char* name, int dlt) {
+void drool_stats_callback(u_char* user, const struct pcap_stat* stats, const char* name, int dlt)
+{
     const drool_conf_t* conf = (drool_conf_t*)user;
 
     drool_assert(conf);

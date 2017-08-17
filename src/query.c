@@ -47,11 +47,13 @@
  * New/Free
  */
 
-drool_query_t* query_new(void) {
+drool_query_t* query_new(void)
+{
     return calloc(1, sizeof(drool_query_t));
 }
 
-void query_free(drool_query_t* query) {
+void query_free(drool_query_t* query)
+{
     drool_assert(query);
     if (query) {
         if (query->raw) {
@@ -65,32 +67,38 @@ void query_free(drool_query_t* query) {
  * Have functions
  */
 
-inline int query_is_udp(const drool_query_t* query) {
+inline int query_is_udp(const drool_query_t* query)
+{
     drool_assert(query);
     return query->is_udp;
 }
 
-inline int query_is_tcp(const drool_query_t* query) {
+inline int query_is_tcp(const drool_query_t* query)
+{
     drool_assert(query);
     return query->is_tcp;
 }
 
-inline int query_have_ipv4(const drool_query_t* query) {
+inline int query_have_ipv4(const drool_query_t* query)
+{
     drool_assert(query);
     return query->have_ipv4;
 }
 
-inline int query_have_ipv6(const drool_query_t* query) {
+inline int query_have_ipv6(const drool_query_t* query)
+{
     drool_assert(query);
     return query->have_ipv6;
 }
 
-inline int query_have_port(const drool_query_t* query) {
+inline int query_have_port(const drool_query_t* query)
+{
     drool_assert(query);
     return query->have_port;
 }
 
-inline int query_have_raw(const drool_query_t* query) {
+inline int query_have_raw(const drool_query_t* query)
+{
     drool_assert(query);
     return query->have_raw;
 }
@@ -99,7 +107,8 @@ inline int query_have_raw(const drool_query_t* query) {
  * Get functions
  */
 
-inline const struct in_addr* query_ip(const drool_query_t* query) {
+inline const struct in_addr* query_ip(const drool_query_t* query)
+{
     drool_assert(query);
 
     if (!query->have_ipv4)
@@ -108,7 +117,8 @@ inline const struct in_addr* query_ip(const drool_query_t* query) {
     return &(query->addr.ip_dst);
 }
 
-inline const struct in6_addr* query_ip6(const drool_query_t* query) {
+inline const struct in6_addr* query_ip6(const drool_query_t* query)
+{
     drool_assert(query);
 
     if (!query->have_ipv6)
@@ -117,17 +127,20 @@ inline const struct in6_addr* query_ip6(const drool_query_t* query) {
     return &(query->addr.ip6_dst);
 }
 
-inline uint16_t query_port(const drool_query_t* query) {
+inline uint16_t query_port(const drool_query_t* query)
+{
     drool_assert(query);
     return query->port;
 }
 
-inline size_t query_length(const drool_query_t* query) {
+inline size_t query_length(const drool_query_t* query)
+{
     drool_assert(query);
     return query->length;
 }
 
-inline const u_char* query_raw(const drool_query_t* query) {
+inline const u_char* query_raw(const drool_query_t* query)
+{
     drool_assert(query);
     return query->raw ? query->raw : query->small;
 }
@@ -136,7 +149,8 @@ inline const u_char* query_raw(const drool_query_t* query) {
  * Set functions
  */
 
-int query_set_udp(drool_query_t* query) {
+int query_set_udp(drool_query_t* query)
+{
     drool_assert(query);
     if (!query) {
         return 1;
@@ -150,7 +164,8 @@ int query_set_udp(drool_query_t* query) {
     return 0;
 }
 
-int query_set_tcp(drool_query_t* query) {
+int query_set_tcp(drool_query_t* query)
+{
     drool_assert(query);
     if (!query) {
         return 1;
@@ -164,7 +179,8 @@ int query_set_tcp(drool_query_t* query) {
     return 0;
 }
 
-int query_set_ip(drool_query_t* query, const struct in_addr* addr) {
+int query_set_ip(drool_query_t* query, const struct in_addr* addr)
+{
     drool_assert(query);
     if (!query) {
         return 1;
@@ -182,7 +198,8 @@ int query_set_ip(drool_query_t* query, const struct in_addr* addr) {
     return 0;
 }
 
-int query_set_ip6(drool_query_t* query, const struct in6_addr* addr) {
+int query_set_ip6(drool_query_t* query, const struct in6_addr* addr)
+{
     drool_assert(query);
     if (!addr) {
         return 1;
@@ -197,7 +214,8 @@ int query_set_ip6(drool_query_t* query, const struct in6_addr* addr) {
     return 0;
 }
 
-int query_set_port(drool_query_t* query, uint16_t port) {
+int query_set_port(drool_query_t* query, uint16_t port)
+{
     drool_assert(query);
     if (!query) {
         return 1;
@@ -211,7 +229,8 @@ int query_set_port(drool_query_t* query, uint16_t port) {
     return 0;
 }
 
-int query_set_raw(drool_query_t* query, const u_char* raw, size_t length) {
+int query_set_raw(drool_query_t* query, const u_char* raw, size_t length)
+{
     drool_assert(query);
     if (!query) {
         return 1;
@@ -225,8 +244,8 @@ int query_set_raw(drool_query_t* query, const u_char* raw, size_t length) {
 
     if (query->raw) {
         free(query->raw);
-        query->raw = 0;
-        query->length = 0;
+        query->raw      = 0;
+        query->length   = 0;
         query->have_raw = 0;
     }
     if (length > sizeof(query->small)) {
@@ -234,11 +253,10 @@ int query_set_raw(drool_query_t* query, const u_char* raw, size_t length) {
             return 1;
         }
         memcpy(query->raw, raw, length);
-    }
-    else {
+    } else {
         memcpy(query->small, raw, length);
     }
-    query->length = length;
+    query->length   = length;
     query->have_raw = 1;
 
     return 0;

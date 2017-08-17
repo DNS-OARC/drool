@@ -62,34 +62,34 @@ typedef struct drool_client_pool drool_client_pool_t;
 struct drool_client_pool {
     drool_client_pool_t* next;
 
-    unsigned short  have_queued_queries : 1;
-    unsigned short  is_stopping : 1;
+    unsigned short have_queued_queries : 1;
+    unsigned short is_stopping : 1;
 
-    const drool_conf_t*         conf;
-    drool_client_pool_state_t   state;
-    pthread_t                   thread_id;
+    const drool_conf_t*       conf;
+    drool_client_pool_state_t state;
+    pthread_t                 thread_id;
 
-    struct ev_loop*             ev_loop;
-    sllq_t                      queries;
-    drool_query_t*              query;
-    ev_async                    notify_query;
-    ev_async                    notify_stop;
-    ev_timer                    timeout;
-    ev_timer                    retry;
+    struct ev_loop* ev_loop;
+    sllq_t          queries;
+    drool_query_t*  query;
+    ev_async        notify_query;
+    ev_async        notify_stop;
+    ev_timer        timeout;
+    ev_timer        retry;
 
-    drool_client_t*             client_list_first;
-    drool_client_t*             client_list_last;
-    size_t                      clients;
-    size_t                      max_clients;
-    ev_tstamp                   client_ttl;
+    drool_client_t* client_list_first;
+    drool_client_t* client_list_last;
+    size_t          clients;
+    size_t          max_clients;
+    ev_tstamp       client_ttl;
 
-    struct addrinfo*            addrinfo;
+    struct addrinfo* addrinfo;
 
-    drool_client_t*             reuse_client_list;
-    size_t                      reuse_clients;
-    size_t                      max_reuse_clients;
+    drool_client_t* reuse_client_list;
+    size_t          reuse_clients;
+    size_t          max_reuse_clients;
 
-    drool_client_pool_sendas_t  sendas;
+    drool_client_pool_sendas_t sendas;
 };
 
 drool_client_pool_t* client_pool_new(const drool_conf_t* conf);

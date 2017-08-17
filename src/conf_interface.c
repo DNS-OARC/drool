@@ -44,19 +44,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-drool_conf_interface_t* conf_interface_new(void) {
+drool_conf_interface_t* conf_interface_new(void)
+{
     drool_conf_interface_t* conf_interface = calloc(1, sizeof(drool_conf_interface_t));
     return conf_interface;
 }
 
-void conf_interface_free(drool_conf_interface_t* conf_interface) {
+void conf_interface_free(drool_conf_interface_t* conf_interface)
+{
     if (conf_interface) {
         conf_interface_release(conf_interface);
         free(conf_interface);
     }
 }
 
-void conf_interface_release(drool_conf_interface_t* conf_interface) {
+void conf_interface_release(drool_conf_interface_t* conf_interface)
+{
     if (conf_interface) {
         if (conf_interface->name) {
             free(conf_interface->name);
@@ -65,12 +68,14 @@ void conf_interface_release(drool_conf_interface_t* conf_interface) {
     }
 }
 
-inline const drool_conf_interface_t* conf_interface_next(const drool_conf_interface_t* conf_interface) {
+inline const drool_conf_interface_t* conf_interface_next(const drool_conf_interface_t* conf_interface)
+{
     drool_assert(conf_interface);
     return conf_interface->next;
 }
 
-int conf_interface_set_next(drool_conf_interface_t* conf_interface, drool_conf_interface_t* next) {
+int conf_interface_set_next(drool_conf_interface_t* conf_interface, drool_conf_interface_t* next)
+{
     if (!conf_interface) {
         return CONF_EINVAL;
     }
@@ -83,12 +88,14 @@ int conf_interface_set_next(drool_conf_interface_t* conf_interface, drool_conf_i
     return CONF_OK;
 }
 
-inline const char* conf_interface_name(const drool_conf_interface_t* conf_interface) {
+inline const char* conf_interface_name(const drool_conf_interface_t* conf_interface)
+{
     drool_assert(conf_interface);
     return conf_interface->name;
 }
 
-int conf_interface_set_name(drool_conf_interface_t* conf_interface, const char* name, size_t length) {
+int conf_interface_set_name(drool_conf_interface_t* conf_interface, const char* name, size_t length)
+{
     if (!conf_interface) {
         return CONF_EINVAL;
     }
@@ -103,8 +110,7 @@ int conf_interface_set_name(drool_conf_interface_t* conf_interface, const char* 
         if (!(conf_interface->name = strndup(name, length))) {
             return CONF_ENOMEM;
         }
-    }
-    else {
+    } else {
         if (!(conf_interface->name = strdup(name))) {
             return CONF_ENOMEM;
         }

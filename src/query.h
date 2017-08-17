@@ -44,22 +44,22 @@
 
 typedef struct drool_query drool_query_t;
 struct drool_query {
-    unsigned short  is_udp : 1;
-    unsigned short  is_tcp : 1;
-    unsigned short  have_ipv4 : 1;
-    unsigned short  have_ipv6 : 1;
-    unsigned short  have_port : 1;
-    unsigned short  have_raw : 1;
+    unsigned short is_udp : 1;
+    unsigned short is_tcp : 1;
+    unsigned short have_ipv4 : 1;
+    unsigned short have_ipv6 : 1;
+    unsigned short have_port : 1;
+    unsigned short have_raw : 1;
 
     union {
         struct in_addr  ip_dst;
         struct in6_addr ip6_dst;
     } addr;
-    uint16_t    port;
+    uint16_t port;
 
-    u_char      small[64];
-    u_char*     raw;
-    size_t      length;
+    u_char  small[64];
+    u_char* raw;
+    size_t  length;
 };
 
 drool_query_t* query_new(void);
