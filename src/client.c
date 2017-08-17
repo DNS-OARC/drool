@@ -51,9 +51,10 @@
  * EV callbacks
  */
 
-static void client_shutdown(struct ev_loop* loop, ev_io* w, int revents) {
+static void client_shutdown(struct ev_loop* loop, ev_io* w, int revents)
+{
     drool_client_t* client;
-    char buf[512];
+    char            buf[512];
 
     /* TODO: Check revents for EV_ERROR */
 
@@ -70,10 +71,11 @@ static void client_shutdown(struct ev_loop* loop, ev_io* w, int revents) {
     client->callback(client, loop);
 }
 
-static void client_read(struct ev_loop* loop, ev_io* w, int revents) {
+static void client_read(struct ev_loop* loop, ev_io* w, int revents)
+{
     drool_client_t* client;
-    ssize_t nrecv;
-    char buf[64*1024];
+    ssize_t         nrecv;
+    char            buf[64 * 1024];
 
     /* TODO: Check revents for EV_ERROR */
 
@@ -93,27 +95,27 @@ static void client_read(struct ev_loop* loop, ev_io* w, int revents) {
     nrecv = recvfrom(client->fd, buf, sizeof(buf), 0, 0, 0);
     if (nrecv < 0) {
         switch (errno) {
-            case EAGAIN:
+        case EAGAIN:
 #if EAGAIN != EWOULDBLOCK
-            case EWOULDBLOCK:
+        case EWOULDBLOCK:
 #endif
-                return;
+            return;
 
-            case ECONNREFUSED:
-            case ENETUNREACH:
-                client->state = CLIENT_FAILED;
-                break;
+        case ECONNREFUSED:
+        case ENETUNREACH:
+            client->state = CLIENT_FAILED;
+            break;
 
-            default:
-                client->errnum = errno;
-                client->state = CLIENT_ERRNO;
-                break;
+        default:
+            client->errnum = errno;
+            client->state  = CLIENT_ERRNO;
+            break;
         }
         ev_io_stop(loop, w);
         client->callback(client, loop);
         return;
     }
-/* TODO:
+    /* TODO:
     else if (nrecv > 0) {
     }
 */
@@ -123,9 +125,10 @@ static void client_read(struct ev_loop* loop, ev_io* w, int revents) {
     client->callback(client, loop);
 }
 
-static void client_write(struct ev_loop* loop, ev_io* w, int revents) {
+static void client_write(struct ev_loop* loop, ev_io* w, int revents)
+{
     drool_client_t* client;
-    ssize_t nsent;
+    ssize_t         nsent;
 
     /* TODO: Check revents for EV_ERROR */
 
@@ -135,30 +138,28 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents) {
     drool_assert(client);
 
     if (client->state == CLIENT_CONNECTING) {
-        int err = 0;
+        int       err = 0;
         socklen_t len = sizeof(err);
 
         ev_io_stop(loop, w);
 
         if (getsockopt(client->fd, SOL_SOCKET, SO_ERROR, (void*)&err, &len) < 0) {
             client->errnum = errno;
-            client->state = CLIENT_ERRNO;
-        }
-        else if (err) {
+            client->state  = CLIENT_ERRNO;
+        } else if (err) {
             switch (err) {
-                case ECONNREFUSED:
-                case ENETUNREACH:
-                    client->state = CLIENT_FAILED;
-                    break;
+            case ECONNREFUSED:
+            case ENETUNREACH:
+                client->state = CLIENT_FAILED;
+                break;
 
-                default:
-                    client->errnum = err;
-                    client->state = CLIENT_ERRNO;
-                    break;
+            default:
+                client->errnum = err;
+                client->state  = CLIENT_ERRNO;
+                break;
             }
-        }
-        else {
-            client->state = CLIENT_CONNECTED;
+        } else {
+            client->state        = CLIENT_CONNECTED;
             client->is_connected = 1;
         }
 
@@ -172,19 +173,19 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents) {
         nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, 0, 0);
     if (nsent < 0) {
         switch (errno) {
-            case EAGAIN:
+        case EAGAIN:
 #if EAGAIN != EWOULDBLOCK
-            case EWOULDBLOCK:
+        case EWOULDBLOCK:
 #endif
-                return;
+            return;
 
-            default:
-                break;
+        default:
+            break;
         }
 
         ev_io_stop(loop, w);
         client->errnum = errno;
-        client->state = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
+        client->state  = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
         client->callback(client, loop);
         return;
     }
@@ -207,7 +208,8 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents) {
  * New/free functions
  */
 
-drool_client_t* client_new(drool_query_t* query, drool_client_callback_t callback) {
+drool_client_t* client_new(drool_query_t* query, drool_client_callback_t callback)
+{
     drool_client_t* client;
 
     drool_assert(query);
@@ -224,8 +226,8 @@ drool_client_t* client_new(drool_query_t* query, drool_client_callback_t callbac
     }
 
     if ((client = calloc(1, sizeof(drool_client_t)))) {
-        client->query = query;
-        client->callback = callback;
+        client->query              = query;
+        client->callback           = callback;
         client->write_watcher.data = (void*)client;
         ev_init(&(client->write_watcher), &client_write);
         client->read_watcher.data = (void*)client;
@@ -237,7 +239,8 @@ drool_client_t* client_new(drool_query_t* query, drool_client_callback_t callbac
     return client;
 }
 
-void client_free(drool_client_t* client) {
+void client_free(drool_client_t* client)
+{
     if (client) {
         if (client->have_fd) {
             if (client->is_connected) {
@@ -256,57 +259,68 @@ void client_free(drool_client_t* client) {
  * Get/set functions
  */
 
-inline drool_client_t* client_next(drool_client_t* client) {
+inline drool_client_t* client_next(drool_client_t* client)
+{
     drool_assert(client);
     return client->next;
 }
 
-inline drool_client_t* client_prev(drool_client_t* client) {
+inline drool_client_t* client_prev(drool_client_t* client)
+{
     drool_assert(client);
     return client->prev;
 }
 
-inline int client_fd(const drool_client_t* client) {
+inline int client_fd(const drool_client_t* client)
+{
     drool_assert(client);
     return client->fd;
 }
 
-inline const drool_query_t* client_query(const drool_client_t* client) {
+inline const drool_query_t* client_query(const drool_client_t* client)
+{
     drool_assert(client);
     return client->query;
 }
 
-inline drool_client_state_t client_state(const drool_client_t* client) {
+inline drool_client_state_t client_state(const drool_client_t* client)
+{
     drool_assert(client);
     return client->state;
 }
 
-inline int client_is_connected(const drool_client_t* client) {
+inline int client_is_connected(const drool_client_t* client)
+{
     drool_assert(client);
     return client->is_connected;
 }
 
-inline int client_errno(const drool_client_t* client) {
+inline int client_errno(const drool_client_t* client)
+{
     drool_assert(client);
     return client->errnum;
 }
 
-inline ev_tstamp client_start(const drool_client_t* client) {
+inline ev_tstamp client_start(const drool_client_t* client)
+{
     drool_assert(client);
     return client->start;
 }
 
-inline int client_is_dgram(const drool_client_t* client) {
+inline int client_is_dgram(const drool_client_t* client)
+{
     drool_assert(client);
     return client->is_dgram;
 }
 
-inline int client_is_stream(const drool_client_t* client) {
+inline int client_is_stream(const drool_client_t* client)
+{
     drool_assert(client);
     return client->is_stream;
 }
 
-int client_set_next(drool_client_t* client, drool_client_t* next) {
+int client_set_next(drool_client_t* client, drool_client_t* next)
+{
     drool_assert(client);
     if (!client) {
         return 1;
@@ -317,7 +331,8 @@ int client_set_next(drool_client_t* client, drool_client_t* next) {
     return 0;
 }
 
-int client_set_prev(drool_client_t* client, drool_client_t* prev) {
+int client_set_prev(drool_client_t* client, drool_client_t* prev)
+{
     drool_assert(client);
     if (!client) {
         return 1;
@@ -328,7 +343,8 @@ int client_set_prev(drool_client_t* client, drool_client_t* prev) {
     return 0;
 }
 
-int client_set_start(drool_client_t* client, ev_tstamp start) {
+int client_set_start(drool_client_t* client, ev_tstamp start)
+{
     drool_assert(client);
     if (!client) {
         return 1;
@@ -339,7 +355,8 @@ int client_set_start(drool_client_t* client, ev_tstamp start) {
     return 0;
 }
 
-int client_set_skip_reply(drool_client_t* client) {
+int client_set_skip_reply(drool_client_t* client)
+{
     drool_assert(client);
     if (!client) {
         return 1;
@@ -350,7 +367,8 @@ int client_set_skip_reply(drool_client_t* client) {
     return 0;
 }
 
-drool_query_t* client_release_query(drool_client_t* client) {
+drool_query_t* client_release_query(drool_client_t* client)
+{
     drool_query_t* query;
 
     drool_assert(client);
@@ -358,7 +376,7 @@ drool_query_t* client_release_query(drool_client_t* client) {
         return 0;
     }
 
-    query = client->query;
+    query         = client->query;
     client->query = 0;
 
     return query;
@@ -368,7 +386,8 @@ drool_query_t* client_release_query(drool_client_t* client) {
  * Control functions
  */
 
-int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* addr, socklen_t addrlen, struct ev_loop* loop) {
+int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* addr, socklen_t addrlen, struct ev_loop* loop)
+{
     int socket_type, flags;
 
     drool_assert(client);
@@ -395,35 +414,34 @@ int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* a
     }
 
     switch (ipproto) {
-        case IPPROTO_UDP:
-            socket_type = SOCK_DGRAM;
-            memcpy(&(client->to_addr), addr, addrlen);
-            client->to_addrlen = addrlen;
-            client->have_to_addr = 1;
-            client->is_dgram = 1;
-            break;
+    case IPPROTO_UDP:
+        socket_type = SOCK_DGRAM;
+        memcpy(&(client->to_addr), addr, addrlen);
+        client->to_addrlen   = addrlen;
+        client->have_to_addr = 1;
+        client->is_dgram     = 1;
+        break;
 
-        case IPPROTO_TCP:
-            socket_type = SOCK_STREAM;
-            client->is_stream = 1;
-            break;
+    case IPPROTO_TCP:
+        socket_type       = SOCK_STREAM;
+        client->is_stream = 1;
+        break;
 
-        default:
-            return 1;
+    default:
+        return 1;
     }
 
     if ((client->fd = socket(addr->sa_family, socket_type, ipproto)) < 0) {
         client->errnum = errno;
-        client->state = CLIENT_ERRNO;
+        client->state  = CLIENT_ERRNO;
         return 1;
     }
     client->have_fd = 1;
 
     if ((flags = fcntl(client->fd, F_GETFL)) == -1
-        || fcntl(client->fd, F_SETFL, flags | O_NONBLOCK))
-    {
+        || fcntl(client->fd, F_SETFL, flags | O_NONBLOCK)) {
         client->errnum = errno;
-        client->state = CLIENT_ERRNO;
+        client->state  = CLIENT_ERRNO;
         return 1;
     }
 
@@ -433,30 +451,31 @@ int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* a
 
     if (socket_type == SOCK_STREAM && connect(client->fd, addr, addrlen) < 0) {
         switch (errno) {
-            case EINPROGRESS:
-                ev_io_start(loop, &(client->write_watcher));
-                client->state = CLIENT_CONNECTING;
-                return 0;
+        case EINPROGRESS:
+            ev_io_start(loop, &(client->write_watcher));
+            client->state = CLIENT_CONNECTING;
+            return 0;
 
-            case ECONNREFUSED:
-            case ENETUNREACH:
-                client->state = CLIENT_FAILED;
-                break;
+        case ECONNREFUSED:
+        case ENETUNREACH:
+            client->state = CLIENT_FAILED;
+            break;
 
-            default:
-                client->errnum = errno;
-                client->state = CLIENT_ERRNO;
-                break;
+        default:
+            client->errnum = errno;
+            client->state  = CLIENT_ERRNO;
+            break;
         }
         return 1;
     }
 
-    client->state = CLIENT_CONNECTED;
+    client->state        = CLIENT_CONNECTED;
     client->is_connected = 1;
     return 0;
 }
 
-int client_send(drool_client_t* client, struct ev_loop* loop) {
+int client_send(drool_client_t* client, struct ev_loop* loop)
+{
     ssize_t nsent;
 
     drool_assert(client);
@@ -477,20 +496,20 @@ int client_send(drool_client_t* client, struct ev_loop* loop) {
         nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, 0, 0);
     if (nsent < 0) {
         switch (errno) {
-            case EAGAIN:
+        case EAGAIN:
 #if EAGAIN != EWOULDBLOCK
-            case EWOULDBLOCK:
+        case EWOULDBLOCK:
 #endif
-                ev_io_start(loop, &(client->write_watcher));
-                client->state = CLIENT_SENDING;
-                return 0;
+            ev_io_start(loop, &(client->write_watcher));
+            client->state = CLIENT_SENDING;
+            return 0;
 
-            default:
-                break;
+        default:
+            break;
         }
 
         client->errnum = errno;
-        client->state = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
+        client->state  = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
         return 1;
     }
 
@@ -511,7 +530,8 @@ int client_send(drool_client_t* client, struct ev_loop* loop) {
     return 0;
 }
 
-int client_reuse(drool_client_t* client, drool_query_t* query) {
+int client_reuse(drool_client_t* client, drool_query_t* query)
+{
     drool_assert(client);
     if (!client) {
         return 1;
@@ -527,14 +547,15 @@ int client_reuse(drool_client_t* client, drool_query_t* query) {
     if (client->query)
         query_free(client->query);
     client->query = query;
-    client->sent = 0;
-    client->recv = 0;
+    client->sent  = 0;
+    client->recv  = 0;
     client->state = CLIENT_CONNECTED;
 
     return 0;
 }
 
-int client_close(drool_client_t* client, struct ev_loop* loop) {
+int client_close(drool_client_t* client, struct ev_loop* loop)
+{
     drool_assert(client);
     if (!client) {
         return 1;
@@ -545,18 +566,18 @@ int client_close(drool_client_t* client, struct ev_loop* loop) {
     }
 
     switch (client->state) {
-        case CLIENT_CONNECTING:
-        case CLIENT_SENDING:
-        case CLIENT_RECIVING:
-            ev_io_stop(loop, &(client->write_watcher));
-            ev_io_stop(loop, &(client->read_watcher));
-            break;
+    case CLIENT_CONNECTING:
+    case CLIENT_SENDING:
+    case CLIENT_RECIVING:
+        ev_io_stop(loop, &(client->write_watcher));
+        ev_io_stop(loop, &(client->read_watcher));
+        break;
 
-        case CLIENT_CLOSING:
-            return 0;
+    case CLIENT_CLOSING:
+        return 0;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     if (client->have_fd) {

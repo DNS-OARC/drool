@@ -49,7 +49,8 @@
 /*
  * List helpers
  */
-static inline void client_list_add(drool_client_pool_t* client_pool, drool_client_t* client, struct ev_loop* loop) {
+static inline void client_list_add(drool_client_pool_t* client_pool, drool_client_t* client, struct ev_loop* loop)
+{
     if (client_pool->client_list_last) {
         client_set_next(client_pool->client_list_last, client);
         client_set_prev(client, client_pool->client_list_last);
@@ -72,7 +73,8 @@ static inline void client_list_add(drool_client_pool_t* client_pool, drool_clien
     }
 }
 
-static inline void client_list_remove(drool_client_pool_t* client_pool, drool_client_t* client, struct ev_loop* loop) {
+static inline void client_list_remove(drool_client_pool_t* client_pool, drool_client_t* client, struct ev_loop* loop)
+{
     if (client == client_pool->client_list_first) {
         client_pool->client_list_first = client_next(client);
     }
@@ -98,7 +100,8 @@ static inline void client_list_remove(drool_client_pool_t* client_pool, drool_cl
     }
 }
 
-static inline void client_close_free(drool_client_pool_t* client_pool, drool_client_t* client, struct ev_loop* loop) {
+static inline void client_close_free(drool_client_pool_t* client_pool, drool_client_t* client, struct ev_loop* loop)
+{
     if (client_state(client) == CLIENT_CLOSED) {
         client_free(client);
         return;
@@ -112,20 +115,21 @@ static inline void client_close_free(drool_client_pool_t* client_pool, drool_cli
 
     if (client_state(client) == CLIENT_CLOSING) {
         client_list_add(client_pool, client, loop);
-    }
-    else {
+    } else {
         client_free(client);
     }
 }
 
-static inline void client_reuse_add(drool_client_pool_t* client_pool, drool_client_t* client) {
+static inline void client_reuse_add(drool_client_pool_t* client_pool, drool_client_t* client)
+{
     client_set_next(client, client_pool->reuse_client_list);
     client_set_prev(client, 0);
     client_pool->reuse_client_list = client;
     client_pool->reuse_clients++;
 }
 
-static inline drool_client_t* client_reuse_get(drool_client_pool_t* client_pool) {
+static inline drool_client_t* client_reuse_get(drool_client_pool_t* client_pool)
+{
     drool_client_t* client = client_pool->reuse_client_list;
 
     if (client) {
@@ -147,7 +151,8 @@ static inline drool_client_t* client_reuse_get(drool_client_pool_t* client_pool)
 
 static sllq_t client_pool_sllq_init = SLLQ_T_INIT;
 
-drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
+drool_client_pool_t* client_pool_new(const drool_conf_t* conf)
+{
     drool_client_pool_t* client_pool;
 
     drool_assert(conf);
@@ -161,13 +166,13 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
 
     if ((client_pool = calloc(1, sizeof(drool_client_pool_t)))) {
         struct addrinfo hints;
-        int err;
+        int             err;
 
-        client_pool->conf = conf;
-        client_pool->max_clients = 100;
-        client_pool->client_ttl = 0.05;
+        client_pool->conf              = conf;
+        client_pool->max_clients       = 100;
+        client_pool->client_ttl        = 0.05;
         client_pool->max_reuse_clients = 20;
-        client_pool->sendas = CLIENT_POOL_SENDAS_ORIGINAL;
+        client_pool->sendas            = CLIENT_POOL_SENDAS_ORIGINAL;
 
         if (conf_client_pool_have_max_clients(conf_client_pool(conf)))
             client_pool->max_clients = conf_client_pool_max_clients(conf_client_pool(conf));
@@ -210,13 +215,15 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf) {
     return client_pool;
 }
 
-static void client_pool_free_query(void* vp) {
+static void client_pool_free_query(void* vp)
+{
     if (vp) {
         query_free((drool_query_t*)vp);
     }
 }
 
-void client_pool_free(drool_client_pool_t* client_pool) {
+void client_pool_free(drool_client_pool_t* client_pool)
+{
     if (client_pool) {
         sllq_flush(&(client_pool->queries), &client_pool_free_query);
         sllq_destroy(&(client_pool->queries));
@@ -225,7 +232,7 @@ void client_pool_free(drool_client_pool_t* client_pool) {
         if (client_pool->addrinfo)
             freeaddrinfo(client_pool->addrinfo);
         while (client_pool->reuse_client_list) {
-            drool_client_t* client = client_pool->reuse_client_list;
+            drool_client_t* client         = client_pool->reuse_client_list;
             client_pool->reuse_client_list = client_next(client);
             client_free(client);
         }
@@ -237,7 +244,8 @@ void client_pool_free(drool_client_pool_t* client_pool) {
  * Engine
  */
 
-static void* client_pool_engine(void* vp) {
+static void* client_pool_engine(void* vp)
+{
     drool_client_pool_t* client_pool = (drool_client_pool_t*)vp;
 
     drool_assert(client_pool);
@@ -251,7 +259,8 @@ static void* client_pool_engine(void* vp) {
     return 0;
 }
 
-static void client_pool_client_callback(drool_client_t* client, struct ev_loop* loop) {
+static void client_pool_client_callback(drool_client_t* client, struct ev_loop* loop)
+{
     drool_client_pool_t* client_pool = (drool_client_pool_t*)ev_userdata(loop);
 
     drool_assert(client);
@@ -268,8 +277,7 @@ static void client_pool_client_callback(drool_client_t* client, struct ev_loop* 
         log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client connected");
         if (client_send(client, loop)) {
             log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "client failed to send");
-        }
-        else if (client_state(client) == CLIENT_RECIVING) {
+        } else if (client_state(client) == CLIENT_RECIVING) {
             return;
         }
     }
@@ -277,49 +285,48 @@ static void client_pool_client_callback(drool_client_t* client, struct ev_loop* 
     client_list_remove(client_pool, client, loop);
 
     switch (client_state(client)) {
-        case CLIENT_SUCCESS:
-            log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client success");
+    case CLIENT_SUCCESS:
+        log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client success");
 
-            if (client_is_dgram(client)
-                && client_pool->reuse_clients < client_pool->max_reuse_clients)
-            {
-                client_reuse_add(client_pool, client);
-                log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client added to reuse (%lu/%lu)", client_pool->reuse_clients, client_pool->max_reuse_clients);
-            }
-            else {
-                client_close_free(client_pool, client, loop);
-            }
-            break;
-
-        case CLIENT_FAILED:
-            /* TODO */
-            log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client failed");
+        if (client_is_dgram(client)
+            && client_pool->reuse_clients < client_pool->max_reuse_clients) {
+            client_reuse_add(client_pool, client);
+            log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client added to reuse (%lu/%lu)", client_pool->reuse_clients, client_pool->max_reuse_clients);
+        } else {
             client_close_free(client_pool, client, loop);
-            break;
+        }
+        break;
 
-        case CLIENT_ERRNO:
-            log_errnum(conf_log(client_pool->conf), LNETWORK, LERROR, client_errno(client), "client errno");
-            client_close_free(client_pool, client, loop);
-            break;
+    case CLIENT_FAILED:
+        /* TODO */
+        log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client failed");
+        client_close_free(client_pool, client, loop);
+        break;
 
-        case CLIENT_CLOSED:
-            log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client closed");
-            client_free(client);
-            break;
+    case CLIENT_ERRNO:
+        log_errnum(conf_log(client_pool->conf), LNETWORK, LERROR, client_errno(client), "client errno");
+        client_close_free(client_pool, client, loop);
+        break;
 
-        default:
-            log_printf(conf_log(client_pool->conf), LNETWORK, LERROR, "client state %d", client_state(client));
-            client_close_free(client_pool, client, loop);
-            break;
+    case CLIENT_CLOSED:
+        log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client closed");
+        client_free(client);
+        break;
+
+    default:
+        log_printf(conf_log(client_pool->conf), LNETWORK, LERROR, "client state %d", client_state(client));
+        client_close_free(client_pool, client, loop);
+        break;
     }
 
     ev_async_send(loop, &(client_pool->notify_query));
 }
 
-static void client_pool_engine_timeout(struct ev_loop* loop, ev_timer* w, int revents) {
+static void client_pool_engine_timeout(struct ev_loop* loop, ev_timer* w, int revents)
+{
     drool_client_pool_t* client_pool = (drool_client_pool_t*)ev_userdata(loop);
-    ev_tstamp timeout;
-    drool_client_t* client;
+    ev_tstamp            timeout;
+    drool_client_t*      client;
 
     /* TODO: Check revents for EV_ERROR */
 
@@ -345,7 +352,8 @@ static void client_pool_engine_timeout(struct ev_loop* loop, ev_timer* w, int re
     ev_async_send(loop, &(client_pool->notify_query));
 }
 
-static void client_pool_engine_retry(struct ev_loop* loop, ev_timer* w, int revents) {
+static void client_pool_engine_retry(struct ev_loop* loop, ev_timer* w, int revents)
+{
     drool_client_pool_t* client_pool = (drool_client_pool_t*)ev_userdata(loop);
 
     /* TODO: Check revents for EV_ERROR */
@@ -362,10 +370,11 @@ static void client_pool_engine_retry(struct ev_loop* loop, ev_timer* w, int reve
         ev_timer_stop(loop, w);
 }
 
-static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int revents) {
+static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int revents)
+{
     drool_client_pool_t* client_pool = (drool_client_pool_t*)ev_userdata(loop);
-    drool_query_t* query;
-    int err;
+    drool_query_t*       query;
+    int                  err;
 
     /* TODO: Check revents for EV_ERROR */
 
@@ -385,10 +394,9 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
      *   do not add async
      */
     if (client_pool->query) {
-        query = client_pool->query;
+        query              = client_pool->query;
         client_pool->query = 0;
-    }
-    else {
+    } else {
         err = sllq_shift(&(client_pool->queries), (void**)&query, 0);
 
         if (err == SLLQ_EMPTY) {
@@ -398,16 +406,13 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
                 ev_timer_stop(loop, &(client_pool->retry));
             }
             return;
-        }
-        else if (err == SLLQ_EAGAIN) {
+        } else if (err == SLLQ_EAGAIN) {
             ev_async_send(loop, &(client_pool->notify_query));
             return;
-        }
-        else if (err) {
+        } else if (err) {
             if (err == SLLQ_ERRNO) {
                 log_errnof(conf_log(client_pool->conf), LNETWORK, LERROR, "shift queue error %d: ", err);
-            }
-            else {
+            } else {
                 log_printf(conf_log(client_pool->conf), LNETWORK, LERROR, "shift queue error %d", err);
             }
             return;
@@ -420,49 +425,44 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
         return;
     }
 
-
     if (conf_is_dry_run(client_pool->conf)) {
         log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "shift queue, query %p (dry-run)", query);
         ev_async_send(loop, &(client_pool->notify_query));
         return;
-    }
-    else {
+    } else {
         log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "shift queue, query %p", query);
     }
 
     {
         drool_client_t* client = 0;
-        int proto = -1;
+        int             proto  = -1;
 
         switch (client_pool->sendas) {
-            case CLIENT_POOL_SENDAS_UDP:
+        case CLIENT_POOL_SENDAS_UDP:
+            proto = IPPROTO_UDP;
+            break;
+
+        case CLIENT_POOL_SENDAS_TCP:
+            proto = IPPROTO_TCP;
+            break;
+
+        default:
+            if (query_is_udp(query)) {
                 proto = IPPROTO_UDP;
-                break;
-
-            case CLIENT_POOL_SENDAS_TCP:
+            } else if (query_is_tcp(query)) {
                 proto = IPPROTO_TCP;
-                break;
-
-            default:
-                if (query_is_udp(query)) {
-                    proto = IPPROTO_UDP;
-                }
-                else if (query_is_tcp(query)) {
-                    proto = IPPROTO_TCP;
-                }
-                break;
+            }
+            break;
         }
 
         if (proto == IPPROTO_UDP
-            && client_pool->reuse_client_list)
-        {
+            && client_pool->reuse_client_list) {
             client = client_reuse_get(client_pool);
             if (client_reuse(client, query)) {
                 log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "reuse client failed");
                 client_close_free(client_pool, client, loop);
                 client = 0;
-            }
-            else {
+            } else {
                 /* client have taken ownership of query */
                 query = 0;
             }
@@ -483,8 +483,7 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
 
             if (client_set_start(client, ev_now(loop))
                 || (conf_client_pool_skip_reply(conf_client_pool(client_pool->conf)) && client_set_skip_reply(client))
-                || client_connect(client, proto, client_pool->addrinfo->ai_addr, client_pool->addrinfo->ai_addrlen, loop))
-            {
+                || client_connect(client, proto, client_pool->addrinfo->ai_addr, client_pool->addrinfo->ai_addrlen, loop)) {
                 if (client_state(client) == CLIENT_ERRNO)
                     log_errnum(conf_log(client_pool->conf), LNETWORK, LERROR, client_errno(client), "client start/connect failed");
                 else
@@ -499,36 +498,30 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
             if (client_state(client) == CLIENT_CONNECTED && client_send(client, loop)) {
                 log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "client send failed");
                 client_close_free(client_pool, client, loop);
-            }
-            else {
+            } else {
                 if (client_state(client) == CLIENT_SUCCESS) {
                     log_print(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client success");
 
                     if (client_is_dgram(client)
-                        && client_pool->reuse_clients < client_pool->max_reuse_clients)
-                    {
+                        && client_pool->reuse_clients < client_pool->max_reuse_clients) {
                         client_reuse_add(client_pool, client);
                         log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "client added to reuse (%lu/%lu)", client_pool->reuse_clients, client_pool->max_reuse_clients);
-                    }
-                    else {
+                    } else {
                         client_close_free(client_pool, client, loop);
                     }
-                }
-                else {
+                } else {
                     client_list_add(client_pool, client, loop);
                     log_printf(conf_log(client_pool->conf), LNETWORK, LDEBUG, "new client (%lu/%lu)", client_pool->clients, client_pool->max_clients);
                 }
             }
-        }
-        else if (query) {
+        } else if (query) {
             log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "unable to create client, query requeued");
             client_pool->query = query;
             if (!ev_is_active(&(client_pool->retry))) {
                 ev_timer_start(loop, &(client_pool->retry));
             }
             return;
-        }
-        else {
+        } else {
             log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "unable to create client, query lost");
         }
     }
@@ -537,7 +530,8 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
     ev_async_send(loop, &(client_pool->notify_query));
 }
 
-static void client_pool_engine_stop(struct ev_loop* loop, ev_async* w, int revents) {
+static void client_pool_engine_stop(struct ev_loop* loop, ev_async* w, int revents)
+{
     drool_client_pool_t* client_pool = (drool_client_pool_t*)ev_userdata(loop);
 
     /* TODO: Check revents for EV_ERROR */
@@ -557,7 +551,8 @@ static void client_pool_engine_stop(struct ev_loop* loop, ev_async* w, int reven
  * Start/stop
  */
 
-int client_pool_start(drool_client_pool_t* client_pool) {
+int client_pool_start(drool_client_pool_t* client_pool)
+{
     int err;
 
     drool_assert(client_pool);
@@ -583,7 +578,7 @@ int client_pool_start(drool_client_pool_t* client_pool) {
 
     if ((err = pthread_create(&(client_pool->thread_id), 0, &client_pool_engine, (void*)client_pool))) {
         client_pool->state = CLIENT_POOL_ERROR;
-        errno = err;
+        errno              = err;
         return 1;
     }
     client_pool->state = CLIENT_POOL_RUNNING;
@@ -591,7 +586,8 @@ int client_pool_start(drool_client_pool_t* client_pool) {
     return 0;
 }
 
-int client_pool_stop(drool_client_pool_t* client_pool) {
+int client_pool_stop(drool_client_pool_t* client_pool)
+{
     int err;
 
     drool_assert(client_pool);
@@ -609,7 +605,7 @@ int client_pool_stop(drool_client_pool_t* client_pool) {
 
     if ((err = pthread_join(client_pool->thread_id, 0))) {
         client_pool->state = CLIENT_POOL_ERROR;
-        errno = err;
+        errno              = err;
         return 1;
     }
 
@@ -624,7 +620,8 @@ int client_pool_stop(drool_client_pool_t* client_pool) {
  * Query/process
  */
 
-int client_pool_query(drool_client_pool_t* client_pool, drool_query_t* query) {
+int client_pool_query(drool_client_pool_t* client_pool, drool_query_t* query)
+{
     int err;
 
     drool_assert(client_pool);
@@ -656,8 +653,7 @@ int client_pool_query(drool_client_pool_t* client_pool, drool_query_t* query) {
     if (err) {
         if (err == SLLQ_ERRNO) {
             log_errnof(conf_log(client_pool->conf), LNETWORK, LERROR, "client pool query failed %d: ", err);
-        }
-        else {
+        } else {
             log_printf(conf_log(client_pool->conf), LNETWORK, LERROR, "client pool query failed %d", err);
         }
         return 1;

@@ -42,30 +42,32 @@
 
 #include <stddef.h>
 
+/* clang-format off */
 #define CONF_CLIENT_POOL_T_INIT { \
     0, \
     0, 0, 0, 0, \
     0, 0, 0, 0, \
     CLIENT_POOL_SENDAS_ORIGINAL \
 }
+/* clang-format on */
 typedef struct drool_conf_client_pool drool_conf_client_pool_t;
 struct drool_conf_client_pool {
-    drool_conf_client_pool_t*   next;
+    drool_conf_client_pool_t* next;
 
-    unsigned short  have_target : 1;
-    unsigned short  have_max_clients : 1;
-    unsigned short  have_client_ttl : 1;
-    unsigned short  skip_reply : 1;
-    unsigned short  have_max_reuse_clients : 1;
-    unsigned short  have_sendas : 1;
+    unsigned short have_target : 1;
+    unsigned short have_max_clients : 1;
+    unsigned short have_client_ttl : 1;
+    unsigned short skip_reply : 1;
+    unsigned short have_max_reuse_clients : 1;
+    unsigned short have_sendas : 1;
 
-    char*           target_host;
-    char*           target_service;
-    size_t          max_clients;
-    double          client_ttl;
-    size_t          max_reuse_clients;
+    char*  target_host;
+    char*  target_service;
+    size_t max_clients;
+    double client_ttl;
+    size_t max_reuse_clients;
 
-    drool_client_pool_sendas_t  sendas;
+    drool_client_pool_sendas_t sendas;
 };
 
 drool_conf_client_pool_t* conf_client_pool_new(void);
