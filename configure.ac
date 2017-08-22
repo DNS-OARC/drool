@@ -61,7 +61,7 @@ AC_CHECK_FUNCS([clock_nanosleep nanosleep])
 
 # Checks for libraries/headers.
 AC_CHECK_LIB([ev], [ev_now], [], AC_MSG_ERROR([libev not found]))
-AC_CHECK_HEADER([ev.h], [], [AC_MSG_ERROR([libev header not found])])
+AC_CHECK_HEADER([ev.h], [AC_CHECK_HEADERS([ev.h])], [AC_CHECK_HEADER([libev/ev.h], [AC_CHECK_HEADERS([libev/ev.h])], [AC_MSG_ERROR([libev header not found])])])
 
 # Check for OS specific libraries
 # case "$host_os" in
