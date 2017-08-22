@@ -41,7 +41,11 @@
 #include "query.h"
 #include "conf.h"
 
+#ifdef HAVE_LIBEV_EV_H
+#include <libev/ev.h>
+#else
 #include <ev.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -67,17 +71,17 @@ enum drool_client_state {
 typedef struct drool_client drool_client_t;
 typedef void (*drool_client_callback_t)(drool_client_t* client, struct ev_loop* loop);
 struct drool_client {
-    unsigned short  have_to_addr : 1;
-    unsigned short  have_from_addr : 1;
-    unsigned short  have_fd : 1;
-    unsigned short  is_connected : 1;
-    unsigned short  skip_reply : 1;
-    unsigned short  is_dgram : 1;
-    unsigned short  is_stream : 1;
+    unsigned short have_to_addr : 1;
+    unsigned short have_from_addr : 1;
+    unsigned short have_fd : 1;
+    unsigned short is_connected : 1;
+    unsigned short skip_reply : 1;
+    unsigned short is_dgram : 1;
+    unsigned short is_stream : 1;
 
-    ev_tstamp               start;
-    drool_client_t*         next;
-    drool_client_t*         prev;
+    ev_tstamp       start;
+    drool_client_t* next;
+    drool_client_t* prev;
 
     int                     fd;
     drool_query_t*          query;
@@ -90,10 +94,10 @@ struct drool_client {
     size_t                  sent;
     size_t                  recv;
 
-    struct sockaddr         to_addr;
-    socklen_t               to_addrlen;
-    struct sockaddr         from_addr;
-    socklen_t               from_addrlen;
+    struct sockaddr to_addr;
+    socklen_t       to_addrlen;
+    struct sockaddr from_addr;
+    socklen_t       from_addrlen;
 };
 
 drool_client_t* client_new(drool_query_t* query, drool_client_callback_t callback);

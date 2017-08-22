@@ -45,10 +45,11 @@
 #include "client_pool.h"
 #include "assert.h"
 
-static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length) {
-    omg_dns_t dns = OMG_DNS_T_INIT;
-    int ret;
-    drool_query_t* query;
+static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
+    omg_dns_t                   dns = OMG_DNS_T_INIT;
+    int                         ret;
+    drool_query_t*              query;
     const pcap_thread_packet_t* walkpkt;
 
     if ((ret = omg_dns_parse_header(&dns, payload, length))) {
@@ -100,7 +101,8 @@ static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, cons
     context->packets_size += length;
 }
 
-static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length) {
+static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
     const pcap_thread_packet_t* walkpkt;
 
     for (walkpkt = packet; walkpkt; walkpkt = walkpkt->prevpkt) {
@@ -109,7 +111,7 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
         }
     }
     if (walkpkt) {
-       struct timespec now = { 0, 0 };
+        struct timespec now = { 0, 0 };
 
         // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "pkthdr.ts %lu.%06lu", walkpkt->pkthdr.ts.tv_sec, walkpkt->pkthdr.ts.tv_usec);
         // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "last_packet %lu.%06lu", context->last_packet.tv_sec, context->last_packet.tv_usec);
@@ -121,10 +123,9 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
         if ((context->last_time_queue.tv_sec || context->last_time_queue.tv_nsec)
             && context->last_packet.tv_sec
             && (context->last_time.tv_sec || context->last_time.tv_nsec)
-            && timercmp(&(walkpkt->pkthdr.ts), &(context->last_packet), >))
-        {
+            && timercmp(&(walkpkt->pkthdr.ts), &(context->last_packet), >)) {
             struct timespec pdiff = { 0, 0 };
-            struct timeval diff;
+            struct timeval  diff;
             struct timespec sleep_to;
 
             if (now.tv_sec > context->last_time_queue.tv_sec)
@@ -149,10 +150,10 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "diff %lu.%06lu", diff.tv_sec, diff.tv_usec);
 
             if (conf_timing_mode(context->conf) == TIMING_MODE_MULTIPLY) {
-                diff.tv_sec = (long)((float)diff.tv_sec * conf_timing_multiply(context->conf));
+                diff.tv_sec  = (long)((float)diff.tv_sec * conf_timing_multiply(context->conf));
                 diff.tv_usec = (long)((float)diff.tv_usec * conf_timing_multiply(context->conf));
                 if (diff.tv_sec < 0 || diff.tv_usec < 0) {
-                    diff.tv_sec = 0;
+                    diff.tv_sec  = 0;
                     diff.tv_usec = 0;
                 }
             }
@@ -181,43 +182,39 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
                 else if (sleep_to.tv_sec) {
                     sleep_to.tv_sec -= 1;
                     sleep_to.tv_nsec += 1000000000 - pdiff.tv_nsec;
-                }
-                else
+                } else
                     sleep_to.tv_nsec = 0;
             }
 
             switch (conf_timing_mode(context->conf)) {
-                case TIMING_MODE_INCREASE:
-                    sleep_to.tv_nsec += conf_timing_increase(context->conf);
-                    break;
+            case TIMING_MODE_INCREASE:
+                sleep_to.tv_nsec += conf_timing_increase(context->conf);
+                break;
 
-                case TIMING_MODE_REDUCE:
-                    {
-                        unsigned long int nsec = conf_timing_reduce(context->conf);
+            case TIMING_MODE_REDUCE: {
+                unsigned long int nsec = conf_timing_reduce(context->conf);
 
-                        if (nsec > 999999999) {
-                            unsigned long int sec = nsec/1000000000;
-                            if (sleep_to.tv_sec > sec)
-                                sleep_to.tv_sec -= sec;
-                            else
-                                sleep_to.tv_sec = 0;
-                            nsec %= 1000000000;
-                        }
-                        if (nsec) {
-                            if (sleep_to.tv_nsec >= nsec)
-                                sleep_to.tv_nsec -= nsec;
-                            else if (sleep_to.tv_sec) {
-                                sleep_to.tv_sec -= 1;
-                                sleep_to.tv_nsec += 1000000000 - nsec;
-                            }
-                            else
-                                sleep_to.tv_nsec = 0;
-                        }
-                    }
-                    break;
+                if (nsec > 999999999) {
+                    unsigned long int sec = nsec / 1000000000;
+                    if (sleep_to.tv_sec > sec)
+                        sleep_to.tv_sec -= sec;
+                    else
+                        sleep_to.tv_sec = 0;
+                    nsec %= 1000000000;
+                }
+                if (nsec) {
+                    if (sleep_to.tv_nsec >= nsec)
+                        sleep_to.tv_nsec -= nsec;
+                    else if (sleep_to.tv_sec) {
+                        sleep_to.tv_sec -= 1;
+                        sleep_to.tv_nsec += 1000000000 - nsec;
+                    } else
+                        sleep_to.tv_nsec = 0;
+                }
+            } break;
 
-                default:
-                    break;
+            default:
+                break;
             }
 
             if (sleep_to.tv_nsec > 999999999) {
@@ -232,14 +229,12 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             */
 
             if (sleep_to.tv_sec < now.tv_sec
-                || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec))
-            {
+                || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec)) {
                 log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
                     pdiff.tv_sec, pdiff.tv_nsec,
                     diff.tv_sec, diff.tv_usec,
                     now.tv_sec, now.tv_nsec,
-                    sleep_to.tv_sec, sleep_to.tv_nsec
-                );
+                    sleep_to.tv_sec, sleep_to.tv_nsec);
             }
 
             if (sleep_to.tv_sec || sleep_to.tv_nsec) {
@@ -256,16 +251,16 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
 
         if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time))) {
             log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-            context->last_time.tv_sec = 0;
+            context->last_time.tv_sec  = 0;
             context->last_time.tv_nsec = 0;
         }
 #ifdef SAVE_REALTIME
         if (clock_gettime(CLOCK_REALTIME, &(context->last_realtime))) {
             log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-            context->last_realtime.tv_sec = 0;
+            context->last_realtime.tv_sec  = 0;
             context->last_realtime.tv_nsec = 0;
-            context->last_time.tv_sec = 0;
-            context->last_time.tv_nsec = 0;
+            context->last_time.tv_sec      = 0;
+            context->last_time.tv_nsec     = 0;
         }
 #endif
 
@@ -276,12 +271,13 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
 
     if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time_queue))) {
         log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-        context->last_time_queue.tv_sec = 0;
+        context->last_time_queue.tv_sec  = 0;
         context->last_time_queue.tv_nsec = 0;
     }
 }
 
-void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length) {
+void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
     drool_t* context = (drool_t*)user;
 
     drool_assert(context);
@@ -299,7 +295,8 @@ void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char
     do_timing(context, packet, payload, length);
 }
 
-void callback_tcp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length) {
+void callback_tcp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
     drool_t* context = (drool_t*)user;
 
     drool_assert(context);

@@ -45,6 +45,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+/* clang-format off */
+
 #define DROOL_ERROR     1
 #define DROOL_EOPT      2
 #define DROOL_ECONF     3
@@ -53,30 +55,34 @@
 #define DROOL_EPCAPT    6
 #define DROOL_ENOMEM    7
 
+/* clang-format on */
+
+/* clang-format off */
 #define DROOL_T_INIT { \
     0, \
     0, 0, 0, 0, 0, \
     { 0, 0 }, { 0, 0 }, { 0, 0 }, \
     0, 0 \
 }
+/* clang-format on */
 typedef struct drool drool_t;
 struct drool {
-    drool_t*                next;
+    drool_t* next;
 
-    const drool_conf_t*     conf;
-    uint64_t                packets_seen;
-    uint64_t                packets_sent;
-    uint64_t                packets_size;
-    uint64_t                packets_dropped;
-    uint64_t                packets_ignored;
+    const drool_conf_t* conf;
+    uint64_t            packets_seen;
+    uint64_t            packets_sent;
+    uint64_t            packets_size;
+    uint64_t            packets_dropped;
+    uint64_t            packets_ignored;
 
-    struct timeval          last_packet;
-    struct timespec         last_time;
-    struct timespec         last_realtime;
-    struct timespec         last_time_queue;
+    struct timeval  last_packet;
+    struct timespec last_time;
+    struct timespec last_realtime;
+    struct timespec last_time_queue;
 
-    drool_client_pool_t*    client_pool;
-    drool_client_pool_t*    client_pools;
+    drool_client_pool_t* client_pool;
+    drool_client_pool_t* client_pools;
 };
 
 #endif /* __drool_drool_h */

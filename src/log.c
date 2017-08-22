@@ -46,126 +46,132 @@
 #include <pthread.h>
 #include <time.h>
 
-static const drool_log_settings_t* get_facility(const drool_log_t* log, const drool_log_facility_t facility) {
+static const drool_log_settings_t* get_facility(const drool_log_t* log, const drool_log_facility_t facility)
+{
     drool_assert(log);
     switch (facility) {
-        case LOG_FACILITY_CORE:
-            return &(log->core);
-        case LOG_FACILITY_NETWORK:
-            return &(log->network);
-        default:
-            break;
+    case LOG_FACILITY_CORE:
+        return &(log->core);
+    case LOG_FACILITY_NETWORK:
+        return &(log->network);
+    default:
+        break;
     }
     return &(log->none);
 }
 
-inline int log_level_enable(drool_log_settings_t* settings, const drool_log_level_t level) {
+inline int log_level_enable(drool_log_settings_t* settings, const drool_log_level_t level)
+{
     drool_assert(settings);
 
     switch (level) {
-        case LOG_LEVEL_DEBUG:
-            settings->debug = 1;
-            return 0;
-        case LOG_LEVEL_INFO:
-            settings->info = 1;
-            return 0;
-        case LOG_LEVEL_NOTICE:
-            settings->notice = 1;
-            return 0;
-        case LOG_LEVEL_WARNING:
-            settings->warning = 1;
-            return 0;
-        case LOG_LEVEL_ERROR:
-            settings->error = 1;
-            return 0;
-        case LOG_LEVEL_CRITICAL:
-            settings->critical = 1;
-            return 0;
-        case LOG_LEVEL_ALL:
-            settings->debug = 1;
-            settings->info = 1;
-            settings->notice = 1;
-            settings->warning = 1;
-            settings->error = 1;
-            settings->critical = 1;
-            return 0;
-        default:
-            break;
+    case LOG_LEVEL_DEBUG:
+        settings->debug = 1;
+        return 0;
+    case LOG_LEVEL_INFO:
+        settings->info = 1;
+        return 0;
+    case LOG_LEVEL_NOTICE:
+        settings->notice = 1;
+        return 0;
+    case LOG_LEVEL_WARNING:
+        settings->warning = 1;
+        return 0;
+    case LOG_LEVEL_ERROR:
+        settings->error = 1;
+        return 0;
+    case LOG_LEVEL_CRITICAL:
+        settings->critical = 1;
+        return 0;
+    case LOG_LEVEL_ALL:
+        settings->debug    = 1;
+        settings->info     = 1;
+        settings->notice   = 1;
+        settings->warning  = 1;
+        settings->error    = 1;
+        settings->critical = 1;
+        return 0;
+    default:
+        break;
     }
 
     return -1;
 }
 
-inline int log_level_disable(drool_log_settings_t* settings, const drool_log_level_t level) {
+inline int log_level_disable(drool_log_settings_t* settings, const drool_log_level_t level)
+{
     drool_assert(settings);
 
     switch (level) {
-        case LOG_LEVEL_DEBUG:
-            settings->debug = 0;
-            return 0;
-        case LOG_LEVEL_INFO:
-            settings->info = 0;
-            return 0;
-        case LOG_LEVEL_NOTICE:
-            settings->notice = 0;
-            return 0;
-        case LOG_LEVEL_WARNING:
-            settings->warning = 0;
-            return 0;
-        case LOG_LEVEL_ERROR:
-            settings->error = 0;
-            return 0;
-        case LOG_LEVEL_CRITICAL:
-            settings->critical = 0;
-            return 0;
-        case LOG_LEVEL_ALL:
-            settings->debug = 0;
-            settings->info = 0;
-            settings->notice = 0;
-            settings->warning = 0;
-            settings->error = 0;
-            settings->critical = 0;
-            return 0;
-        default:
-            break;
+    case LOG_LEVEL_DEBUG:
+        settings->debug = 0;
+        return 0;
+    case LOG_LEVEL_INFO:
+        settings->info = 0;
+        return 0;
+    case LOG_LEVEL_NOTICE:
+        settings->notice = 0;
+        return 0;
+    case LOG_LEVEL_WARNING:
+        settings->warning = 0;
+        return 0;
+    case LOG_LEVEL_ERROR:
+        settings->error = 0;
+        return 0;
+    case LOG_LEVEL_CRITICAL:
+        settings->critical = 0;
+        return 0;
+    case LOG_LEVEL_ALL:
+        settings->debug    = 0;
+        settings->info     = 0;
+        settings->notice   = 0;
+        settings->warning  = 0;
+        settings->error    = 0;
+        settings->critical = 0;
+        return 0;
+    default:
+        break;
     }
 
     return -1;
 }
 
-const char* log_level_name(const drool_log_level_t level) {
+const char* log_level_name(const drool_log_level_t level)
+{
     switch (level) {
-        case LOG_LEVEL_DEBUG:
-            return LOG_LEVEL_DEBUG_STR;
-        case LOG_LEVEL_INFO:
-            return LOG_LEVEL_INFO_STR;
-        case LOG_LEVEL_NOTICE:
-            return LOG_LEVEL_NOTICE_STR;
-        case LOG_LEVEL_WARNING:
-            return LOG_LEVEL_WARNING_STR;
-        case LOG_LEVEL_ERROR:
-            return LOG_LEVEL_ERROR_STR;
-        case LOG_LEVEL_CRITICAL:
-            return LOG_LEVEL_CRITICAL_STR;
-        case LOG_LEVEL_ALL:
-            return LOG_LEVEL_ALL_STR;
+    case LOG_LEVEL_DEBUG:
+        return LOG_LEVEL_DEBUG_STR;
+    case LOG_LEVEL_INFO:
+        return LOG_LEVEL_INFO_STR;
+    case LOG_LEVEL_NOTICE:
+        return LOG_LEVEL_NOTICE_STR;
+    case LOG_LEVEL_WARNING:
+        return LOG_LEVEL_WARNING_STR;
+    case LOG_LEVEL_ERROR:
+        return LOG_LEVEL_ERROR_STR;
+    case LOG_LEVEL_CRITICAL:
+        return LOG_LEVEL_CRITICAL_STR;
+    case LOG_LEVEL_ALL:
+        return LOG_LEVEL_ALL_STR;
     }
     return LOG_LEVEL_UNKNOWN_STR;
 }
 
-const char* log_facility_name(const drool_log_facility_t facility) {
+const char* log_facility_name(const drool_log_facility_t facility)
+{
     switch (facility) {
-        case LOG_FACILITY_CORE:
-            return LOG_FACILITY_CORE_STR;
-        case LOG_FACILITY_NETWORK:
-            return LOG_FACILITY_NETWORK_STR;
-        case LOG_FACILITY_NONE:
-            return LOG_FACILITY_NONE_STR;
+    case LOG_FACILITY_CORE:
+        return LOG_FACILITY_CORE_STR;
+    case LOG_FACILITY_NETWORK:
+        return LOG_FACILITY_NETWORK_STR;
+    case LOG_FACILITY_NONE:
+        return LOG_FACILITY_NONE_STR;
     }
     return LOG_FACILITY_UNKNOWN_STR;
 }
 
-int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level) {
+int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level)
+{
     const drool_log_settings_t* settings;
 
     drool_assert(log);
@@ -180,84 +186,87 @@ int log_is_enabled(const drool_log_t* log, const drool_log_facility_t facility, 
     }
 
     switch (level) {
-        case LOG_LEVEL_DEBUG:
-            if (settings->debug)
-                return 1;
-            break;
+    case LOG_LEVEL_DEBUG:
+        if (settings->debug)
+            return 1;
+        break;
 
-        case LOG_LEVEL_INFO:
-            if (settings->info)
-                return 1;
-            break;
+    case LOG_LEVEL_INFO:
+        if (settings->info)
+            return 1;
+        break;
 
-        case LOG_LEVEL_NOTICE:
-            if (settings->notice)
-                return 1;
-            break;
+    case LOG_LEVEL_NOTICE:
+        if (settings->notice)
+            return 1;
+        break;
 
-        case LOG_LEVEL_WARNING:
-            if (settings->warning)
-                return 1;
-            break;
+    case LOG_LEVEL_WARNING:
+        if (settings->warning)
+            return 1;
+        break;
 
-        case LOG_LEVEL_ERROR:
-            if (settings->error)
-                return 1;
-            break;
+    case LOG_LEVEL_ERROR:
+        if (settings->error)
+            return 1;
+        break;
 
-        case LOG_LEVEL_CRITICAL:
-            if (settings->critical)
-                return 1;
-            break;
+    case LOG_LEVEL_CRITICAL:
+        if (settings->critical)
+            return 1;
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     return 0;
 }
 
-inline int log_enable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level) {
+inline int log_enable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level)
+{
     drool_assert(log);
 
     switch (facility) {
-        case LOG_FACILITY_CORE:
-            return log_level_enable(&(log->core), level);
-        case LOG_FACILITY_NETWORK:
-            return log_level_enable(&(log->network), level);
-        default:
-            break;
+    case LOG_FACILITY_CORE:
+        return log_level_enable(&(log->core), level);
+    case LOG_FACILITY_NETWORK:
+        return log_level_enable(&(log->network), level);
+    default:
+        break;
     }
 
     return -1;
 }
 
-inline int log_disable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level) {
+inline int log_disable(drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level)
+{
     drool_assert(log);
 
     switch (facility) {
-        case LOG_FACILITY_CORE:
-            return log_level_disable(&(log->core), level);
-        case LOG_FACILITY_NETWORK:
-            return log_level_disable(&(log->network), level);
-        default:
-            break;
+    case LOG_FACILITY_CORE:
+        return log_level_disable(&(log->core), level);
+    case LOG_FACILITY_NETWORK:
+        return log_level_disable(&(log->network), level);
+    default:
+        break;
     }
 
     return -1;
 }
 
-void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...) {
+void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, const char* format, ...)
+{
     va_list ap;
-    char buf[1024];
-    size_t s;
-    int n, n2;
+    char    buf[1024];
+    size_t  s;
+    int     n, n2;
 #if LOG_FILENAME_LINE && LOG_SHORT_FILENAME
-    char *filep;
+    char* filep;
 #endif
 #if LOG_DATETIME
     struct tm tm;
-    time_t t;
+    time_t    t;
 #endif
 
     drool_assert(log);
@@ -292,11 +301,11 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
 #endif
         "%s %s: ",
 #if LOG_DATETIME
-        1900+tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        1900 + tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
 #endif
 #if LOG_FILENAME_LINE
 #if LOG_SHORT_FILENAME
-        (filep = strrchr(file, '/')) ? (filep+1) : file,
+        (filep = strrchr(file, '/')) ? (filep + 1) : file,
 #else
         file,
 #endif
@@ -305,8 +314,7 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
 #if LOG_THREAD_ID
         pthread_self(),
 #endif
-        log_facility_name(facility), log_level_name(level)
-    );
+        log_facility_name(facility), log_level_name(level));
     if (n < 1) {
         printf("log_printf_fileline(): snprintf() failed with %d\n", n);
         return;
@@ -324,18 +332,19 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
     fflush(stdout);
 }
 
-void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, int errnum, const char* format, ...) {
+void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t facility, const drool_log_level_t level, const char* file, size_t line, int errnum, const char* format, ...)
+{
     va_list ap;
-    char errbuf[512];
-    char buf[1024];
-    size_t s;
-    int n, n2;
+    char    errbuf[512];
+    char    buf[1024];
+    size_t  s;
+    int     n, n2;
 #if LOG_FILENAME_LINE && LOG_SHORT_FILENAME
-    char *filep;
+    char* filep;
 #endif
 #if LOG_DATETIME
     struct tm tm;
-    time_t t;
+    time_t    t;
 #endif
 
     drool_assert(log);
@@ -353,14 +362,13 @@ void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t fac
 
     memset(errbuf, 0, sizeof(errbuf));
 
-#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && ! _GNU_SOURCE) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
+#if ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
     /* XSI-compliant version */
     {
         int ret = strerror_r(errnum, errbuf, sizeof(errbuf));
         if (ret > 0) {
             (void)strerror_r(ret, errbuf, sizeof(errbuf));
-        }
-        else {
+        } else {
             (void)strerror_r(errno, errbuf, sizeof(errbuf));
         }
     }
@@ -388,11 +396,11 @@ void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t fac
 #endif
         "%s %s: ",
 #if LOG_DATETIME
-        1900+tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        1900 + tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
 #endif
 #if LOG_FILENAME_LINE
 #if LOG_SHORT_FILENAME
-        (filep = strrchr(file, '/')) ? (filep+1) : file,
+        (filep = strrchr(file, '/')) ? (filep + 1) : file,
 #else
         file,
 #endif
@@ -401,8 +409,7 @@ void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t fac
 #if LOG_THREAD_ID
         pthread_self(),
 #endif
-        log_facility_name(facility), log_level_name(level)
-    );
+        log_facility_name(facility), log_level_name(level));
     if (n < 1) {
         printf("log_printf_fileline(): snprintf() failed with %d\n", n);
         return;

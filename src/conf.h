@@ -46,6 +46,8 @@
 
 #include <stddef.h>
 
+/* clang-format off */
+
 #define CONF_EEXIST     -4
 #define CONF_ENOMEM     -3
 #define CONF_EINVAL     -2
@@ -60,6 +62,8 @@
 #define CONF_EINVAL_STR "Invalid arguments"
 #define CONF_ERROR_STR  "Generic error"
 
+/* clang-format on */
+
 typedef enum drool_conf_read_mode drool_conf_read_mode_t;
 enum drool_conf_read_mode {
     CONF_READ_MODE_NONE = 0,
@@ -67,6 +71,7 @@ enum drool_conf_read_mode {
     CONF_READ_MODE_ITER
 };
 
+/* clang-format off */
 #define CONF_T_INIT { \
     0, 0, 0, 0, /*0, 0,*/ 0, \
     0, 0, \
@@ -78,42 +83,43 @@ enum drool_conf_read_mode {
     CONF_CLIENT_POOL_T_INIT, \
     1 \
 }
+/* clang-format on */
 typedef struct drool_conf drool_conf_t;
 struct drool_conf {
-    unsigned short  have_filter : 1;
-    unsigned short  have_read : 1;
-    unsigned short  have_input : 1;
-    unsigned short  have_read_mode : 1;
+    unsigned short have_filter : 1;
+    unsigned short have_read : 1;
+    unsigned short have_input : 1;
+    unsigned short have_read_mode : 1;
     /*
     unsigned short  have_write : 1;
     unsigned short  have_output : 1;
     */
-    unsigned short  is_dry_run : 1;
+    unsigned short is_dry_run : 1;
 
-    char*                   filter;
-    size_t                  filter_length;
+    char*  filter;
+    size_t filter_length;
 
     drool_conf_file_t*      read;
     drool_conf_interface_t* input;
 
-    drool_conf_read_mode_t  read_mode;
-    size_t                  read_iter;
+    drool_conf_read_mode_t read_mode;
+    size_t                 read_iter;
 
     /*
     drool_conf_file_t       write;
     drool_conf_interface_t  output;
     */
 
-    drool_log_t             log;
+    drool_log_t log;
 
-    drool_timing_mode_t     timing_mode;
-    unsigned long int       timing_increase;
-    unsigned long int       timing_reduce;
-    long double             timing_multiply;
+    drool_timing_mode_t timing_mode;
+    unsigned long int   timing_increase;
+    unsigned long int   timing_reduce;
+    long double         timing_multiply;
 
-    drool_conf_client_pool_t    client_pool;
+    drool_conf_client_pool_t client_pool;
 
-    size_t                  context_client_pools;
+    size_t context_client_pools;
 };
 
 drool_conf_t* conf_new(void);

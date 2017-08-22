@@ -40,7 +40,10 @@
 
 #include <stddef.h>
 
-#define CONF_INTERFACE_T_INIT { 0, 0 }
+#define CONF_INTERFACE_T_INIT \
+    {                         \
+        0, 0                  \
+    }
 typedef struct drool_conf_interface drool_conf_interface_t;
 struct drool_conf_interface {
     drool_conf_interface_t* next;

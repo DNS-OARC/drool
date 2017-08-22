@@ -1,0 +1,157 @@
+drool (1.0.0.beta.4-1~unstable+1) unstable; urgency=low
+
+  * Release 1.0.0-beta.4
+
+    Compatibility fixes and packaging.
+
+    f6b6251 Fix #66: Check for libev/ev.h also
+    8dff723 Code formatting
+    a5af21d Update pcap-thread to v2.1.3
+    e622612 Prepare SPEC for OSB/COPR
+    3c8fbb0 Fix #57: Update README with build tools and environment setup
+    456d586 Add debian packaging files
+    a0a74cb Add dependencies
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Tue, 22 Aug 2017 14:13:10 +0200
+
+drool (1.0.0.beta.3-1~unstable+1) unstable; urgency=low
+
+  * Release 1.0.0-beta.3
+
+    Various compatibility fixes across GNU/Linux, FreeBSD, OpenBSD and
+    OS X, along with a bugfix in pcap-thread.
+
+    Special thanks to Brian Carpenter (@geeknik) for fuzzing drool.
+
+    82273cc Fix #50: Compat for OS X
+    fc9d87c Issue #50: Update pcap-thread to v2.1.2
+    04817f0 const not needed on size_t
+    7ab1811 Update submodules: sllq v1.0.0, parseconf v1.0.0 and omg-dns
+            v1.0.0
+    242c67a Fix CID 1421861
+    9f3914f Add Travis and Coverity badges
+    ae33c90 Check for `clock_gettime()` in librt, needed for older glibc
+    594c877 Add Travis-CI
+    b7e19a2 Fix compiler warnings and check errors from `sigwait()`
+    3b9f2dc Fix #43, fix #44, fix #45: Update pcap-thread to fix one off
+            in IP layer
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Thu, 30 Mar 2017 16:34:13 +0200
+
+drool (1.0.0.beta.2-1~unstable+1) unstable; urgency=low
+
+    Release 1.0.0-beta.2
+
+    Some minor changes and documentation updates prior to making the
+    repository public.
+
+    79ce5cc Add description
+    3f63cff Update all submodules to latest develop
+    0bbe9dc Log format
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Sat, 25 Mar 2017 00:00:00 +0200
+
+drool (1.0.0.beta.1-1~unstable+1) unstable; urgency=low
+
+    Release 1.0.0-beta.1
+
+    Documentation and packaging for CentOS to prepare for release candidate.
+
+    New command line option:
+    - `-n` to run in dry-run mode
+
+    a61d1fa Fix #9: Documentation
+    ee93ced Impl timing multiply
+    7cfaf84 Tests, dry run and updated SLLQ
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Mon, 06 Mar 2017 00:00:00 +0200
+
+drool (1.0.0.alpha.3-1~unstable+1) unstable; urgency=low
+
+    Release 1.0.0-alpha.3
+
+    Reworked some of the client code to better handle stream sockets (TCP),
+    retrys to send query if the system's sockets are exhausted.  Can send
+    queries as the original protocol or force them into UDP or TCP.
+
+    Default number of client pools running per context is now 1, increase
+    this if you want to push UDP queries.  For TCP this has little effect
+    since you will most likely hit system limits before that.
+
+    Config changes:
+    - Added `context client_pools num;`
+    - Added `client_pool max_reuse_clients num;`
+    - Added `client_pool sendas what;`
+
+    Other changes:
+    - Add timing details to warning about not keeping up with timings
+
+    f8805da TCP, send as, proper shutdown
+    800e971 Include CHANGES in dist
+    cae9834 Honor previous fd flags
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Thu, 02 Mar 2017 00:00:00 +0200
+
+drool (1.0.0.alpha.2-1~unstable+1) unstable; urgency=low
+
+    Release 1.0.0-alpha.2
+
+    This release implements the core engine and most of the network code
+    which consists of:
+    - parsing DNS packet from input using omg-dns
+    - sending queries to a client pool using sllq
+    - processing queries using client objects and libev event loops
+
+    Handling results/responses have yet been implemented.
+
+    Command line option changes:
+    - Added `-R` to specify read mode for PCAP files
+    - Removed `-w` and `-o`
+
+    Config changes:
+    - Added `timing ignore;`
+    - Added `timing keep;`
+    - Added `timing add nanoseconds;`
+    - Added `timing reduce nanoseconds;`
+    - Added `timing multiply float;`, note: no logic added yet
+    - Added `client_pool target "ip" "port";`
+    - Added `client_pool max_clients num;`
+    - Added `client_pool client_ttl float;`
+    - Added `client_pool skip_reply;`
+    - Removed `read`, `input`, `write` and `output`
+
+    246c9ad Update README with example, build info and copyright etc
+    94ce650 Loop/iteration read, lag detect and documentation
+    7bda852 Send as, multi client pools per context
+    e233f51 Tweaks
+    3d0dae4 Rework network code
+    5d2e492 Update conf example and man-page
+    9d2b4a3 Split conf, skip reply
+    c9cc5a2 Use parseconf submodule
+    64241b8 Check for `clock_nanosleep()`, `nanosleep()` and use what it
+            available
+    bbdcb07 A lot of more stuff
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Tue, 21 Feb 2017 00:00:00 +0200
+
+drool (1.0.0.alpha.1-1~unstable+1) unstable; urgency=low
+
+    Release 1.0.0-alpha.1
+
+    First release, has command line options, conf file handling, logging,
+    man-pages, can capture/read interface/pcaps and will display some
+    statistics at exit.
+
+    $ src/drool -h
+    $ src/drool -vv -r file.pcap
+    $ man src/drool.1
+    $ man src/drool.conf.5
+
+    bb5602c Fix #3
+    a46d040 Fix #13: Add license
+    5b43516 Fix #4: Basic layout for opts, conf, logging, skeleton man-pages
+            and tests
+    a9b6ab5 Fix #1: Add initial files and directories
+    aca355b Initial commit
+
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Fri, 20 Jan 2017 00:00:00 +0200

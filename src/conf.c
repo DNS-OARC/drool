@@ -45,19 +45,22 @@
 #include <string.h>
 #include <stdio.h>
 
-drool_conf_t* conf_new(void) {
+drool_conf_t* conf_new(void)
+{
     drool_conf_t* conf = calloc(1, sizeof(drool_conf_t));
     return conf;
 }
 
-void conf_free(drool_conf_t* conf) {
+void conf_free(drool_conf_t* conf)
+{
     if (conf) {
         conf_release(conf);
         free(conf);
     }
 }
 
-void conf_release(drool_conf_t* conf) {
+void conf_release(drool_conf_t* conf)
+{
     if (conf) {
         if (conf->have_filter) {
             free(conf->filter);
@@ -94,22 +97,26 @@ void conf_release(drool_conf_t* conf) {
     }
 }
 
-inline int conf_have_filter(const drool_conf_t* conf) {
+inline int conf_have_filter(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->have_filter;
 }
 
-inline int conf_have_read(const drool_conf_t* conf) {
+inline int conf_have_read(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->have_read;
 }
 
-inline int conf_have_input(const drool_conf_t* conf) {
+inline int conf_have_input(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->have_input;
 }
 
-inline int conf_have_read_mode(const drool_conf_t* conf) {
+inline int conf_have_read_mode(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->have_read_mode;
 }
@@ -126,17 +133,20 @@ inline int conf_have_output(const drool_conf_t* conf) {
 }
 */
 
-inline int conf_is_dry_run(const drool_conf_t* conf) {
+inline int conf_is_dry_run(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->is_dry_run;
 }
 
-inline const char* conf_filter(const drool_conf_t* conf) {
+inline const char* conf_filter(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->filter;
 }
 
-int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length) {
+int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length)
+{
     if (!conf) {
         return CONF_EINVAL;
     }
@@ -152,8 +162,7 @@ int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length) {
             return CONF_ENOMEM;
         }
         conf->filter_length = length;
-    }
-    else {
+    } else {
         if (!(conf->filter = strdup(filter))) {
             return CONF_ENOMEM;
         }
@@ -164,27 +173,32 @@ int conf_set_filter(drool_conf_t* conf, const char* filter, size_t length) {
     return CONF_OK;
 }
 
-inline size_t conf_filter_length(const drool_conf_t* conf) {
+inline size_t conf_filter_length(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->filter_length;
 }
 
-inline const drool_conf_file_t* conf_read(const drool_conf_t* conf) {
+inline const drool_conf_file_t* conf_read(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->read;
 }
 
-inline const drool_conf_interface_t* conf_input(const drool_conf_t* conf) {
+inline const drool_conf_interface_t* conf_input(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->input;
 }
 
-inline drool_conf_read_mode_t conf_read_mode(const drool_conf_t* conf) {
+inline drool_conf_read_mode_t conf_read_mode(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->read_mode;
 }
 
-inline size_t conf_read_iter(const drool_conf_t* conf) {
+inline size_t conf_read_iter(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->read_iter;
 }
@@ -201,34 +215,40 @@ inline const drool_conf_interface_t* conf_output(const drool_conf_t* conf) {
 }
 */
 
-inline drool_timing_mode_t conf_timing_mode(const drool_conf_t* conf) {
+inline drool_timing_mode_t conf_timing_mode(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->timing_mode;
 }
 
-inline unsigned long int conf_timing_increase(const drool_conf_t* conf) {
+inline unsigned long int conf_timing_increase(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->timing_increase;
 }
 
-inline unsigned long int conf_timing_reduce(const drool_conf_t* conf) {
+inline unsigned long int conf_timing_reduce(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->timing_reduce;
 }
 
-inline long double conf_timing_multiply(const drool_conf_t* conf) {
+inline long double conf_timing_multiply(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->timing_multiply;
 }
 
-inline size_t conf_context_client_pools(const drool_conf_t* conf) {
+inline size_t conf_context_client_pools(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return conf->context_client_pools;
 }
 
-int conf_add_read(drool_conf_t* conf, const char* file, size_t length) {
+int conf_add_read(drool_conf_t* conf, const char* file, size_t length)
+{
     drool_conf_file_t* conf_file;
-    int err = CONF_OK;
+    int                err = CONF_OK;
 
     if (!conf) {
         return CONF_EINVAL;
@@ -245,18 +265,18 @@ int conf_add_read(drool_conf_t* conf, const char* file, size_t length) {
     if (err == CONF_OK && conf->read)
         err = conf_file_set_next(conf_file, conf->read);
     if (err == CONF_OK) {
-        conf->read = conf_file;
+        conf->read      = conf_file;
         conf->have_read = 1;
-    }
-    else
+    } else
         conf_file_free(conf_file);
 
     return err;
 }
 
-int conf_add_input(drool_conf_t* conf, const char* interface, size_t length) {
+int conf_add_input(drool_conf_t* conf, const char* interface, size_t length)
+{
     drool_conf_interface_t* conf_interface;
-    int err = CONF_OK;
+    int                     err = CONF_OK;
 
     if (!conf) {
         return CONF_EINVAL;
@@ -273,16 +293,16 @@ int conf_add_input(drool_conf_t* conf, const char* interface, size_t length) {
     if (err == CONF_OK && conf->input)
         err = conf_interface_set_next(conf_interface, conf->input);
     if (err == CONF_OK) {
-        conf->input = conf_interface;
+        conf->input      = conf_interface;
         conf->have_input = 1;
-    }
-    else
+    } else
         conf_interface_free(conf_interface);
 
     return CONF_OK;
 }
 
-int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode) {
+int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode)
+{
     if (!conf) {
         return CONF_EINVAL;
     }
@@ -296,7 +316,8 @@ int conf_set_read_mode(drool_conf_t* conf, drool_conf_read_mode_t read_mode) {
     return CONF_OK;
 }
 
-int conf_set_read_iter(drool_conf_t* conf, size_t read_iter) {
+int conf_set_read_iter(drool_conf_t* conf, size_t read_iter)
+{
     if (!conf) {
         return CONF_EINVAL;
     }
@@ -352,7 +373,8 @@ int conf_set_output(drool_conf_t* conf, const char* interface, size_t length) {
 }
 */
 
-int conf_set_dry_run(drool_conf_t* conf, int dry_run) {
+int conf_set_dry_run(drool_conf_t* conf, int dry_run)
+{
     if (!conf) {
         return CONF_EINVAL;
     }
@@ -362,7 +384,8 @@ int conf_set_dry_run(drool_conf_t* conf, int dry_run) {
     return CONF_OK;
 }
 
-int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pools) {
+int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pools)
+{
     if (!conf) {
         return CONF_EINVAL;
     }
@@ -375,17 +398,20 @@ int conf_set_context_client_pools(drool_conf_t* conf, size_t context_client_pool
     return CONF_OK;
 }
 
-inline const drool_log_t* conf_log(const drool_conf_t* conf) {
+inline const drool_log_t* conf_log(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return &(conf->log);
 }
 
-inline drool_log_t* conf_log_rw(drool_conf_t* conf) {
+inline drool_log_t* conf_log_rw(drool_conf_t* conf)
+{
     drool_assert(conf);
     return &(conf->log);
 }
 
-inline const drool_conf_client_pool_t* conf_client_pool(const drool_conf_t* conf) {
+inline const drool_conf_client_pool_t* conf_client_pool(const drool_conf_t* conf)
+{
     drool_assert(conf);
     return &(conf->client_pool);
 }
@@ -398,7 +424,8 @@ static parseconf_token_type_t timing_ignore_tokens[] = {
     PARSECONF_TOKEN_END
 };
 
-static int parse_timing_ignore(void* user, const parseconf_token_t* tokens, const char** errstr) {
+static int parse_timing_ignore(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
     drool_conf_t* conf = (drool_conf_t*)user;
 
     if (!conf) {
@@ -420,7 +447,8 @@ static parseconf_token_type_t timing_keep_tokens[] = {
     PARSECONF_TOKEN_END
 };
 
-static int parse_timing_keep(void* user, const parseconf_token_t* tokens, const char** errstr) {
+static int parse_timing_keep(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
     drool_conf_t* conf = (drool_conf_t*)user;
 
     if (!conf) {
@@ -442,8 +470,9 @@ static parseconf_token_type_t timing_increase_tokens[] = {
     PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
 };
 
-static int parse_timing_increase(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
+static int parse_timing_increase(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t*     conf        = (drool_conf_t*)user;
     unsigned long int nanoseconds = 0;
 
     if (!conf) {
@@ -460,7 +489,7 @@ static int parse_timing_increase(void* user, const parseconf_token_t* tokens, co
         return 1;
     }
 
-    conf->timing_mode = TIMING_MODE_INCREASE;
+    conf->timing_mode     = TIMING_MODE_INCREASE;
     conf->timing_increase = nanoseconds;
 
     return 0;
@@ -470,8 +499,9 @@ static parseconf_token_type_t timing_reduce_tokens[] = {
     PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
 };
 
-static int parse_timing_reduce(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
+static int parse_timing_reduce(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t*     conf        = (drool_conf_t*)user;
     unsigned long int nanoseconds = 0;
 
     if (!conf) {
@@ -488,7 +518,7 @@ static int parse_timing_reduce(void* user, const parseconf_token_t* tokens, cons
         return 1;
     }
 
-    conf->timing_mode = TIMING_MODE_REDUCE;
+    conf->timing_mode   = TIMING_MODE_REDUCE;
     conf->timing_reduce = nanoseconds;
 
     return 0;
@@ -498,9 +528,10 @@ static parseconf_token_type_t timing_multiply_tokens[] = {
     PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
 };
 
-static int parse_timing_multiply(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
-    long double multiply = 0;
+static int parse_timing_multiply(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t* conf     = (drool_conf_t*)user;
+    long double   multiply = 0;
 
     if (!conf) {
         return 1;
@@ -516,7 +547,7 @@ static int parse_timing_multiply(void* user, const parseconf_token_t* tokens, co
         return 1;
     }
 
-    conf->timing_mode = TIMING_MODE_MULTIPLY;
+    conf->timing_mode     = TIMING_MODE_MULTIPLY;
     conf->timing_multiply = multiply;
 
     return 0;
@@ -544,7 +575,8 @@ static parseconf_token_type_t client_pool_target_tokens[] = {
     PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
 };
 
-static int parse_client_pool_target(void* user, const parseconf_token_t* tokens, const char** errstr) {
+static int parse_client_pool_target(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
     drool_conf_t* conf = (drool_conf_t*)user;
 
     if (!conf) {
@@ -564,9 +596,10 @@ static parseconf_token_type_t client_pool_max_clients_tokens[] = {
     PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
 };
 
-static int parse_client_pool_max_clients(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
-    size_t max_clients = 0;
+static int parse_client_pool_max_clients(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t* conf        = (drool_conf_t*)user;
+    size_t        max_clients = 0;
 
     if (!conf) {
         return 1;
@@ -589,9 +622,10 @@ static parseconf_token_type_t client_pool_client_ttl_tokens[] = {
     PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
 };
 
-static int parse_client_pool_client_ttl(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
-    double client_ttl = 0.;
+static int parse_client_pool_client_ttl(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t* conf       = (drool_conf_t*)user;
+    double        client_ttl = 0.;
 
     if (!conf) {
         return 1;
@@ -614,7 +648,8 @@ static parseconf_token_type_t client_pool_skip_reply_tokens[] = {
     PARSECONF_TOKEN_FLOAT, PARSECONF_TOKEN_END
 };
 
-static int parse_client_pool_skip_reply(void* user, const parseconf_token_t* tokens, const char** errstr) {
+static int parse_client_pool_skip_reply(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
     drool_conf_t* conf = (drool_conf_t*)user;
 
     if (!conf) {
@@ -628,9 +663,10 @@ static parseconf_token_type_t client_pool_max_reuse_clients_tokens[] = {
     PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
 };
 
-static int parse_client_pool_max_reuse_clients(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
-    size_t max_reuse_clients = 0;
+static int parse_client_pool_max_reuse_clients(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t* conf              = (drool_conf_t*)user;
+    size_t        max_reuse_clients = 0;
 
     if (!conf) {
         return 1;
@@ -653,8 +689,9 @@ static parseconf_token_type_t client_pool_sendas_tokens[] = {
     PARSECONF_TOKEN_STRING, PARSECONF_TOKEN_END
 };
 
-static int parse_client_pool_sendas(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
+static int parse_client_pool_sendas(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t*              conf = (drool_conf_t*)user;
     drool_client_pool_sendas_t sendas;
 
     if (!conf) {
@@ -669,14 +706,11 @@ static int parse_client_pool_sendas(void* user, const parseconf_token_t* tokens,
 
     if (!strncmp(tokens[2].token, "original", tokens[2].length)) {
         sendas = CLIENT_POOL_SENDAS_ORIGINAL;
-    }
-    else if (!strncmp(tokens[2].token, "udp", tokens[2].length)) {
+    } else if (!strncmp(tokens[2].token, "udp", tokens[2].length)) {
         sendas = CLIENT_POOL_SENDAS_UDP;
-    }
-    else if (!strncmp(tokens[2].token, "tcp", tokens[2].length)) {
+    } else if (!strncmp(tokens[2].token, "tcp", tokens[2].length)) {
         sendas = CLIENT_POOL_SENDAS_TCP;
-    }
-    else {
+    } else {
         *errstr = "Invalid send as";
         return 1;
     }
@@ -708,9 +742,10 @@ static parseconf_token_type_t context_client_pools_tokens[] = {
     PARSECONF_TOKEN_NUMBER, PARSECONF_TOKEN_END
 };
 
-static int parse_context_client_pools(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
-    size_t client_pools = 0;
+static int parse_context_client_pools(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t* conf         = (drool_conf_t*)user;
+    size_t        client_pools = 0;
 
     if (!conf) {
         return 1;
@@ -743,11 +778,12 @@ static parseconf_token_type_t log_tokens[] = {
     PARSECONF_TOKEN_STRINGS, PARSECONF_TOKEN_END
 };
 
-static int parse_log(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
+static int parse_log(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t*        conf     = (drool_conf_t*)user;
     drool_log_facility_t facility = LOG_FACILITY_NONE;
-    drool_log_level_t level = LOG_LEVEL_ALL;
-    int all = 0;
+    drool_log_level_t    level    = LOG_LEVEL_ALL;
+    int                  all      = 0;
 
     if (!conf) {
         return 1;
@@ -761,14 +797,11 @@ static int parse_log(void* user, const parseconf_token_t* tokens, const char** e
 
     if (!strncmp(tokens[1].token, "core", tokens[1].length)) {
         facility = LOG_FACILITY_CORE;
-    }
-    else if (!strncmp(tokens[1].token, "network", tokens[1].length)) {
+    } else if (!strncmp(tokens[1].token, "network", tokens[1].length)) {
         facility = LOG_FACILITY_NETWORK;
-    }
-    else if (!strncmp(tokens[1].token, "all", tokens[1].length)) {
+    } else if (!strncmp(tokens[1].token, "all", tokens[1].length)) {
         all = 1;
-    }
-    else {
+    } else {
         *errstr = "Invalid log facility";
         return 1;
     }
@@ -776,23 +809,18 @@ static int parse_log(void* user, const parseconf_token_t* tokens, const char** e
     if (tokens[2].type == PARSECONF_TOKEN_STRING) {
         if (!strncmp(tokens[2].token, "debug", tokens[2].length)) {
             level = LOG_LEVEL_DEBUG;
-        }
-        else if (!strncmp(tokens[2].token, "info", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "info", tokens[2].length)) {
             level = LOG_LEVEL_INFO;
-        }
-        else if (!strncmp(tokens[2].token, "notice", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "notice", tokens[2].length)) {
             level = LOG_LEVEL_NOTICE;
-        }
-        else if (!strncmp(tokens[2].token, "warning", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "warning", tokens[2].length)) {
             level = LOG_LEVEL_WARNING;
-        }
-        else if (!strncmp(tokens[2].token, "error", tokens[2].length)) {
-            level = LOG_LEVEL_ERROR;;
-        }
-        else if (!strncmp(tokens[2].token, "critical", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "error", tokens[2].length)) {
+            level = LOG_LEVEL_ERROR;
+            ;
+        } else if (!strncmp(tokens[2].token, "critical", tokens[2].length)) {
             level = LOG_LEVEL_CRITICAL;
-        }
-        else {
+        } else {
             *errstr = "Invalid log level";
             return 1;
         }
@@ -800,13 +828,11 @@ static int parse_log(void* user, const parseconf_token_t* tokens, const char** e
 
     if (all) {
         if (log_enable(conf_log_rw(conf), LOG_FACILITY_CORE, level)
-            || log_enable(conf_log_rw(conf), LOG_FACILITY_NETWORK, level))
-        {
+            || log_enable(conf_log_rw(conf), LOG_FACILITY_NETWORK, level)) {
             *errstr = "Unable to enable log facility (and level)";
             return 1;
         }
-    }
-    else {
+    } else {
         if (log_enable(conf_log_rw(conf), facility, level)) {
             *errstr = "Unable to enable log facility (and level)";
             return 1;
@@ -820,11 +846,12 @@ static parseconf_token_type_t nolog_tokens[] = {
     PARSECONF_TOKEN_STRINGS, PARSECONF_TOKEN_END
 };
 
-static int parse_nolog(void* user, const parseconf_token_t* tokens, const char** errstr) {
-    drool_conf_t* conf = (drool_conf_t*)user;
+static int parse_nolog(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t*        conf     = (drool_conf_t*)user;
     drool_log_facility_t facility = LOG_FACILITY_NONE;
-    drool_log_level_t level = LOG_LEVEL_ALL;
-    int all = 0;
+    drool_log_level_t    level    = LOG_LEVEL_ALL;
+    int                  all      = 0;
 
     if (!conf) {
         return 1;
@@ -838,14 +865,11 @@ static int parse_nolog(void* user, const parseconf_token_t* tokens, const char**
 
     if (!strncmp(tokens[1].token, "core", tokens[1].length)) {
         facility = LOG_FACILITY_CORE;
-    }
-    else if (!strncmp(tokens[1].token, "network", tokens[1].length)) {
+    } else if (!strncmp(tokens[1].token, "network", tokens[1].length)) {
         facility = LOG_FACILITY_NETWORK;
-    }
-    else if (!strncmp(tokens[1].token, "all", tokens[1].length)) {
+    } else if (!strncmp(tokens[1].token, "all", tokens[1].length)) {
         all = 1;
-    }
-    else {
+    } else {
         *errstr = "Invalid log facility";
         return 1;
     }
@@ -853,23 +877,18 @@ static int parse_nolog(void* user, const parseconf_token_t* tokens, const char**
     if (tokens[2].type == PARSECONF_TOKEN_STRING) {
         if (!strncmp(tokens[2].token, "debug", tokens[2].length)) {
             level = LOG_LEVEL_DEBUG;
-        }
-        else if (!strncmp(tokens[2].token, "info", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "info", tokens[2].length)) {
             level = LOG_LEVEL_INFO;
-        }
-        else if (!strncmp(tokens[2].token, "notice", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "notice", tokens[2].length)) {
             level = LOG_LEVEL_NOTICE;
-        }
-        else if (!strncmp(tokens[2].token, "warning", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "warning", tokens[2].length)) {
             level = LOG_LEVEL_WARNING;
-        }
-        else if (!strncmp(tokens[2].token, "error", tokens[2].length)) {
-            level = LOG_LEVEL_ERROR;;
-        }
-        else if (!strncmp(tokens[2].token, "critical", tokens[2].length)) {
+        } else if (!strncmp(tokens[2].token, "error", tokens[2].length)) {
+            level = LOG_LEVEL_ERROR;
+            ;
+        } else if (!strncmp(tokens[2].token, "critical", tokens[2].length)) {
             level = LOG_LEVEL_CRITICAL;
-        }
-        else {
+        } else {
             *errstr = "Invalid log level";
             return 1;
         }
@@ -877,13 +896,11 @@ static int parse_nolog(void* user, const parseconf_token_t* tokens, const char**
 
     if (all) {
         if (log_disable(conf_log_rw(conf), LOG_FACILITY_CORE, level)
-            || log_disable(conf_log_rw(conf), LOG_FACILITY_NETWORK, level))
-        {
+            || log_disable(conf_log_rw(conf), LOG_FACILITY_NETWORK, level)) {
             *errstr = "Unable to disable log facility (and level)";
             return 1;
         }
-    }
-    else {
+    } else {
         if (log_disable(conf_log_rw(conf), facility, level)) {
             *errstr = "Unable to disable log facility (and level)";
             return 1;
@@ -951,9 +968,10 @@ static parseconf_token_type_t filter_tokens[] = {
     PARSECONF_TOKEN_QSTRING, PARSECONF_TOKEN_END
 };
 
-static int parse_filter(void* user, const parseconf_token_t* tokens, const char** errstr) {
+static int parse_filter(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
     drool_conf_t* conf = (drool_conf_t*)user;
-    int err;
+    int           err;
 
     if (!conf) {
         return 1;
@@ -1034,7 +1052,8 @@ static parseconf_syntax_t _syntax2[] = {
     PARSECONF_SYNTAX_END
 };
 
-static void parseconf_error(void* user, parseconf_error_t error, size_t line, size_t token, const parseconf_token_t* tokens, const char* errstr) {
+static void parseconf_error(void* user, parseconf_error_t error, size_t line, size_t token, const parseconf_token_t* tokens, const char* errstr)
+{
     drool_conf_t* conf = (drool_conf_t*)user;
 
     if (!conf) {
@@ -1042,65 +1061,66 @@ static void parseconf_error(void* user, parseconf_error_t error, size_t line, si
     }
 
     switch (error) {
-        case PARSECONF_ERROR_INTERNAL:
-            log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu", line);
-            break;
+    case PARSECONF_ERROR_INTERNAL:
+        log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu", line);
+        break;
 
-        case PARSECONF_ERROR_EXPECT_STRING:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a string", line, token);
-            break;
+    case PARSECONF_ERROR_EXPECT_STRING:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a string", line, token);
+        break;
 
-        case PARSECONF_ERROR_EXPECT_NUMBER:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a number", line, token);
-            break;
+    case PARSECONF_ERROR_EXPECT_NUMBER:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a number", line, token);
+        break;
 
-        case PARSECONF_ERROR_EXPECT_QSTRING:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a quoted string", line, token);
-            break;
+    case PARSECONF_ERROR_EXPECT_QSTRING:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a quoted string", line, token);
+        break;
 
-        case PARSECONF_ERROR_EXPECT_FLOAT:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a float", line, token);
-            break;
+    case PARSECONF_ERROR_EXPECT_FLOAT:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected a float", line, token);
+        break;
 
-        case PARSECONF_ERROR_EXPECT_ANY:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected any type", line, token);
-            break;
+    case PARSECONF_ERROR_EXPECT_ANY:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, expected any type", line, token);
+        break;
 
-        case PARSECONF_ERROR_UNKNOWN:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, unknown configuration", line, token);
-            break;
+    case PARSECONF_ERROR_UNKNOWN:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu for argument %lu, unknown configuration", line, token);
+        break;
 
-        case PARSECONF_ERROR_NO_NESTED:
-            log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, no nested conf", line, token);
-            break;
+    case PARSECONF_ERROR_NO_NESTED:
+        log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, no nested conf", line, token);
+        break;
 
-        case PARSECONF_ERROR_NO_CALLBACK:
-            log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, no callback", line, token);
-            break;
+    case PARSECONF_ERROR_NO_CALLBACK:
+        log_printf(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, no callback", line, token);
+        break;
 
-        case PARSECONF_ERROR_CALLBACK:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, %s", line, errstr);
-            break;
+    case PARSECONF_ERROR_CALLBACK:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, %s", line, errstr);
+        break;
 
-        case PARSECONF_ERROR_FILE_ERRNO:
-            log_errnof(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, errno", line, token);
-            break;
+    case PARSECONF_ERROR_FILE_ERRNO:
+        log_errnof(conf_log(conf), LCORE, LERROR, "Internal conf error at line %lu for argument %lu, errno", line, token);
+        break;
 
-        case PARSECONF_ERROR_TOO_MANY_ARGUMENTS:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, too many arguments", line);
-            break;
+    case PARSECONF_ERROR_TOO_MANY_ARGUMENTS:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, too many arguments", line);
+        break;
 
-        case PARSECONF_ERROR_INVALID_SYNTAX:
-            log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, invalid syntax", line);
-            break;
+    case PARSECONF_ERROR_INVALID_SYNTAX:
+        log_printf(conf_log(conf), LCORE, LERROR, "Conf error at line %lu, invalid syntax", line);
+        break;
 
-        default:
-            log_printf(conf_log(conf), LCORE, LERROR, "Unknown conf error %d at %lu", error, line);
-            break;
+    default:
+        log_printf(conf_log(conf), LCORE, LERROR, "Unknown conf error %d at %lu", error, line);
+        break;
     }
 }
 
-int conf_parse_file(drool_conf_t* conf, const char* file) {
+int conf_parse_file(drool_conf_t* conf, const char* file)
+{
     int err;
 
     if (!conf) {
@@ -1119,7 +1139,8 @@ int conf_parse_file(drool_conf_t* conf, const char* file) {
     return CONF_OK;
 }
 
-int conf_parse_text(drool_conf_t* conf, const char* text, size_t length) {
+int conf_parse_text(drool_conf_t* conf, const char* text, size_t length)
+{
     int err;
 
     if (!conf) {
@@ -1144,18 +1165,19 @@ int conf_parse_text(drool_conf_t* conf, const char* text, size_t length) {
  * Error strings
  */
 
-const char* conf_strerr(int errnum) {
+const char* conf_strerr(int errnum)
+{
     switch (errnum) {
-        case CONF_ERROR:
-            return CONF_ERROR_STR;
-        case CONF_EINVAL:
-            return CONF_EINVAL_STR;
-        case CONF_ENOMEM:
-            return CONF_ENOMEM_STR;
-        case CONF_EEXIST:
-            return CONF_EEXIST_STR;
-        default:
-            break;
+    case CONF_ERROR:
+        return CONF_ERROR_STR;
+    case CONF_EINVAL:
+        return CONF_EINVAL_STR;
+    case CONF_ENOMEM:
+        return CONF_ENOMEM_STR;
+    case CONF_EEXIST:
+        return CONF_EEXIST_STR;
+    default:
+        break;
     }
     return "Unknown error";
 }

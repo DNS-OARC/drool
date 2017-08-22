@@ -55,7 +55,8 @@
 
 char* program_name = 0;
 
-static void usage(void) {
+static void usage(void)
+{
     printf(
         "usage: %s [options]\n"
         /* -o            description                                                 .*/
@@ -86,11 +87,11 @@ static void usage(void) {
         "                given multiple times to increase verbosity level.\n"
         "  -h            Print this help and exit\n"
         "  -V            Print version and exit\n",
-        program_name
-    );
+        program_name);
 }
 
-static void version(void) {
+static void version(void)
+{
     printf("%s version " PACKAGE_VERSION "\n", program_name);
 }
 
@@ -100,9 +101,10 @@ struct signal_context {
     pcap_thread_t*      pcap_thread;
 };
 sig_atomic_t volatile _stop = 0;
-static void* signal_handler_thread(void* arg) {
+static void* signal_handler_thread(void* arg)
+{
     struct signal_context* context = (struct signal_context*)arg;
-    int sig, err;
+    int                    sig, err;
 
     while (1) {
         sig = 0;
@@ -130,11 +132,12 @@ static void* signal_handler_thread(void* arg) {
     return 0;
 }
 
-static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
-    int err;
+static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread)
+{
+    int             err;
     struct timespec ts_start, ts_end, ts_diff;
-    drool_t* contexts = 0;
-    drool_t* context;
+    drool_t*        contexts = 0;
+    drool_t*        context;
 
     if (conf_have_read(conf)) {
         const drool_conf_file_t* conf_file = conf_read(conf);
@@ -154,10 +157,10 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
                     exit(DROOL_ENOMEM);
                 }
                 context->client_pool->next = context->client_pools;
-                context->client_pools = context->client_pool;
+                context->client_pools      = context->client_pool;
             }
             context->next = contexts;
-            contexts = context;
+            contexts      = context;
 
             if ((err = pcap_thread_open_offline(pcap_thread, conf_file_name(conf_file), (void*)context))) {
                 if (err == PCAP_THREAD_ERRNO)
@@ -192,10 +195,10 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
                     exit(DROOL_ENOMEM);
                 }
                 context->client_pool->next = context->client_pools;
-                context->client_pools = context->client_pool;
+                context->client_pools      = context->client_pool;
             }
             context->next = contexts;
-            contexts = context;
+            contexts      = context;
 
             if ((err = pcap_thread_open(pcap_thread, conf_interface_name(conf_interface), (void*)context))) {
                 if (err == PCAP_THREAD_ERRNO)
@@ -217,20 +220,20 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
      */
 
     switch (conf_read_mode(conf)) {
-        case CONF_READ_MODE_LOOP:
-            log_print(conf_log(conf), LCORE, LINFO, "loop start");
-            break;
+    case CONF_READ_MODE_LOOP:
+        log_print(conf_log(conf), LCORE, LINFO, "loop start");
+        break;
 
-        case CONF_READ_MODE_ITER:
-            log_print(conf_log(conf), LCORE, LINFO, "iter start");
-            break;
+    case CONF_READ_MODE_ITER:
+        log_print(conf_log(conf), LCORE, LINFO, "iter start");
+        break;
 
-        default:
-            log_print(conf_log(conf), LCORE, LINFO, "start");
-            break;
+    default:
+        log_print(conf_log(conf), LCORE, LINFO, "start");
+        break;
     }
 
-    ts_start.tv_sec = 0;
+    ts_start.tv_sec  = 0;
     ts_start.tv_nsec = 0;
     ts_end = ts_diff = ts_start;
     clock_gettime(CLOCK_MONOTONIC, &ts_start);
@@ -258,9 +261,9 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
     /* TODO */
     for (context = contexts; context; context = context->next) {
         drool_client_pool_t* client_pool = context->client_pools;
-        for (; client_pool; ) {
+        for (; client_pool;) {
             drool_client_pool_t* item = client_pool;
-            client_pool = client_pool->next;
+            client_pool               = client_pool->next;
             client_pool_stop(item);
             client_pool_free(item);
         }
@@ -274,7 +277,7 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
     log_print(conf_log(conf), LCORE, LINFO, "end");
 
     {
-        float pkts_fraction = 0;
+        float    pkts_fraction = 0;
         uint64_t seen = 0, sent = 0, dropped = 0, ignored = 0, size = 0;
 
         for (context = contexts; context; context = context->next) {
@@ -288,12 +291,11 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
         if (ts_end.tv_sec == ts_start.tv_sec && ts_end.tv_nsec >= ts_start.tv_nsec) {
             pkts_fraction = 1 / (((float)ts_end.tv_nsec - (float)ts_start.tv_nsec) / (float)1000000000);
             log_printf(conf_log(conf), LCORE, LINFO, "runtime 0.%09ld seconds", ts_end.tv_nsec - ts_start.tv_nsec);
-        }
-        else if (ts_end.tv_sec > ts_start.tv_sec) {
+        } else if (ts_end.tv_sec > ts_start.tv_sec) {
             long nsec = 1000000000 - ts_start.tv_nsec + ts_end.tv_nsec;
-            long sec = ts_end.tv_sec - ts_start.tv_sec - 1;
+            long sec  = ts_end.tv_sec - ts_start.tv_sec - 1;
 
-            pkts_fraction = 1 / (((float)ts_end.tv_sec - (float)ts_start.tv_sec - 1) + ((float)nsec/(float)1000000000));
+            pkts_fraction = 1 / (((float)ts_end.tv_sec - (float)ts_start.tv_sec - 1) + ((float)nsec / (float)1000000000));
 
             if (nsec > 1000000000) {
                 sec += nsec / 1000000000;
@@ -301,14 +303,13 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
             }
 
             log_printf(conf_log(conf), LCORE, LINFO, "runtime %ld.%09ld seconds", sec, nsec);
-        }
-        else {
+        } else {
             log_print(conf_log(conf), LCORE, LINFO, "Unable to compute runtime, clock is behind starting point");
         }
 
-        log_printf(conf_log(conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen*pkts_fraction);
+        log_printf(conf_log(conf), LCORE, LINFO, "saw %lu packets, %.0f/pps", seen, seen * pkts_fraction);
         if (sent)
-            log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp%s", sent, sent*pkts_fraction, (float)size/(float)sent, conf_is_dry_run(conf) ? " (DRY RUN)" : "");
+            log_printf(conf_log(conf), LCORE, LINFO, "sent %lu packets, %.0f/pps %.0f/abpp%s", sent, sent * pkts_fraction, (float)size / (float)sent, conf_is_dry_run(conf) ? " (DRY RUN)" : "");
         else
             log_printf(conf_log(conf), LCORE, LINFO, "sent 0 packets%s", conf_is_dry_run(conf) ? " (DRY RUN)" : "");
         log_printf(conf_log(conf), LCORE, LINFO, "dropped %lu packets", dropped);
@@ -334,214 +335,189 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread) {
     pcap_thread_close(pcap_thread);
 
     switch (conf_read_mode(conf)) {
-        case CONF_READ_MODE_LOOP:
-            return 1;
+    case CONF_READ_MODE_LOOP:
+        return 1;
 
-        case CONF_READ_MODE_ITER:
-            {
-                size_t read_iter = conf_read_iter(conf);
+    case CONF_READ_MODE_ITER: {
+        size_t read_iter = conf_read_iter(conf);
 
-                read_iter--;
+        read_iter--;
 
-                if (!read_iter)
-                    return 0;
+        if (!read_iter)
+            return 0;
 
-                if ((err = conf_set_read_iter(conf, read_iter)) != CONF_OK) {
-                    log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to set internal iteration: %s", conf_strerr(err));
-                    exit(DROOL_ERROR);
-                }
-                return 1;
-            }
+        if ((err = conf_set_read_iter(conf, read_iter)) != CONF_OK) {
+            log_printf(conf_log(conf), LCORE, LCRITICAL, "Unable to set internal iteration: %s", conf_strerr(err));
+            exit(DROOL_ERROR);
+        }
+        return 1;
+    }
 
-        default:
-            break;
+    default:
+        break;
     }
     return 0;
 }
 
-int main(int argc, char* argv[]) {
-    int opt, err;
-    size_t verbose = 0;
-    drool_conf_t conf = CONF_T_INIT;
+int main(int argc, char* argv[])
+{
+    int                   opt, err;
+    size_t                verbose = 0;
+    drool_conf_t          conf    = CONF_T_INIT;
     struct signal_context sigcontext;
-    pcap_thread_t pcap_thread = PCAP_THREAD_T_INIT;
+    pcap_thread_t         pcap_thread = PCAP_THREAD_T_INIT;
 
     if ((program_name = strrchr(argv[0], '/'))) {
         program_name++;
-    }
-    else {
+    } else {
         program_name = argv[0];
     }
 
     while ((opt = getopt(argc, argv, "c:l:L:f:i:r:R:" /*"o:w:"*/ "nvhV")) != -1) {
         switch (opt) {
-            case 'c':
-                if (!strncmp(optarg, "file:", 5)) {
-                    err = conf_parse_file(&conf, optarg + 5);
-                }
-                else if (!strncmp(optarg, "text:", 5)) {
-                    err = conf_parse_text(&conf, optarg + 5, strlen(optarg) - 5);
-                }
-                else {
-                    err = conf_parse_file(&conf, optarg);
-                }
-                if (err) {
-                    fprintf(stderr, "Unable to read conf file: %s\n", conf_strerr(err));
-                    exit(DROOL_ECONF);
-                }
-                break;
+        case 'c':
+            if (!strncmp(optarg, "file:", 5)) {
+                err = conf_parse_file(&conf, optarg + 5);
+            } else if (!strncmp(optarg, "text:", 5)) {
+                err = conf_parse_text(&conf, optarg + 5, strlen(optarg) - 5);
+            } else {
+                err = conf_parse_file(&conf, optarg);
+            }
+            if (err) {
+                fprintf(stderr, "Unable to read conf file: %s\n", conf_strerr(err));
+                exit(DROOL_ECONF);
+            }
+            break;
 
-            case 'l':
-            case 'L':
-                {
-                    char* level_str = strchr(optarg, ':');
-                    drool_log_facility_t facility = LOG_FACILITY_NONE;
-                    drool_log_level_t level = LOG_LEVEL_ALL;
-                    size_t len = 0;
-                    int all = 0;
+        case 'l':
+        case 'L': {
+            char*                level_str = strchr(optarg, ':');
+            drool_log_facility_t facility  = LOG_FACILITY_NONE;
+            drool_log_level_t    level     = LOG_LEVEL_ALL;
+            size_t               len       = 0;
+            int                  all       = 0;
 
-                    if (level_str) {
-                        len = level_str - optarg;
-                        level_str++;
+            if (level_str) {
+                len = level_str - optarg;
+                level_str++;
 
-                        if (!strcmp(level_str, "debug")) {
-                            level = LOG_LEVEL_DEBUG;
-                        }
-                        else if (!strcmp(level_str, "info")) {
-                            level = LOG_LEVEL_INFO;
-                        }
-                        else if (!strcmp(level_str, "notice")) {
-                            level = LOG_LEVEL_NOTICE;
-                        }
-                        else if (!strcmp(level_str, "warning")) {
-                            level = LOG_LEVEL_WARNING;
-                        }
-                        else if (!strcmp(level_str, "error")) {
-                            level = LOG_LEVEL_ERROR;;
-                        }
-                        else if (!strcmp(level_str, "critical")) {
-                            level = LOG_LEVEL_CRITICAL;
-                        }
-                        else {
-                            fprintf(stderr, "Invalid log level %s\n", level_str);
-                            exit(DROOL_EOPT);
-                        }
-                    }
-
-                    if ((len == 4 && !strncmp(optarg, "core", 4))
-                        || (!len && !strcmp(optarg, "core")))
-                    {
-                        facility = LOG_FACILITY_CORE;
-                    }
-                    else if ((len == 7 && !strncmp(optarg, "network", 7))
-                        || (!len && !strcmp(optarg, "network")))
-                    {
-                        facility = LOG_FACILITY_NETWORK;
-                    }
-                    else if ((len == 3 && !strncmp(optarg, "all", 3))
-                        || (!len && !strcmp(optarg, "all")))
-                    {
-                        all = 1;
-                    }
-                    else {
-                        if (len)
-                            fprintf(stderr, "Invalid log facility %.*s\n", (int)len, optarg);
-                        else
-                            fprintf(stderr, "Invalid log facility %s\n", optarg);
-                        exit(DROOL_EOPT);
-                    }
-
-                    if (all) {
-                        if ((opt == 'l' && log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, level))
-                            || (opt == 'L' && log_disable(conf_log_rw(&conf), LOG_FACILITY_CORE, level)))
-                        {
-                            fprintf(stderr, "Unable to %s log facility[:level] %s\n", opt == 'l' ? "enable" : "disable", optarg);
-                            exit(DROOL_EOPT);
-                        }
-                        if ((opt == 'l' && log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, level))
-                            || (opt == 'L' && log_disable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, level)))
-                        {
-                            fprintf(stderr, "Unable to %s log facility[:level] %s\n", opt == 'l' ? "enable" : "disable", optarg);
-                            exit(DROOL_EOPT);
-                        }
-                    }
-                    else {
-                        if ((opt == 'l' && log_enable(conf_log_rw(&conf), facility, level))
-                            || (opt == 'L' && log_disable(conf_log_rw(&conf), facility, level)))
-                        {
-                            fprintf(stderr, "Unable to %s log facility[:level] %s\n", opt == 'l' ? "enable" : "disable", optarg);
-                            exit(DROOL_EOPT);
-                        }
-                    }
-                }
-                break;
-
-            case 'f':
-                if ((err = conf_set_filter(&conf, optarg, 0)) != CONF_OK) {
-                    fprintf(stderr, "Unable to set filter to %s: %s\n", optarg, conf_strerr(err));
+                if (!strcmp(level_str, "debug")) {
+                    level = LOG_LEVEL_DEBUG;
+                } else if (!strcmp(level_str, "info")) {
+                    level = LOG_LEVEL_INFO;
+                } else if (!strcmp(level_str, "notice")) {
+                    level = LOG_LEVEL_NOTICE;
+                } else if (!strcmp(level_str, "warning")) {
+                    level = LOG_LEVEL_WARNING;
+                } else if (!strcmp(level_str, "error")) {
+                    level = LOG_LEVEL_ERROR;
+                    ;
+                } else if (!strcmp(level_str, "critical")) {
+                    level = LOG_LEVEL_CRITICAL;
+                } else {
+                    fprintf(stderr, "Invalid log level %s\n", level_str);
                     exit(DROOL_EOPT);
                 }
-                break;
+            }
 
-            case 'i':
-                if ((err = conf_add_input(&conf, optarg, 0)) != CONF_OK) {
-                    fprintf(stderr, "Unable to add interface %s as input: %s\n", optarg, conf_strerr(err));
+            if ((len == 4 && !strncmp(optarg, "core", 4))
+                || (!len && !strcmp(optarg, "core"))) {
+                facility = LOG_FACILITY_CORE;
+            } else if ((len == 7 && !strncmp(optarg, "network", 7))
+                       || (!len && !strcmp(optarg, "network"))) {
+                facility = LOG_FACILITY_NETWORK;
+            } else if ((len == 3 && !strncmp(optarg, "all", 3))
+                       || (!len && !strcmp(optarg, "all"))) {
+                all = 1;
+            } else {
+                if (len)
+                    fprintf(stderr, "Invalid log facility %.*s\n", (int)len, optarg);
+                else
+                    fprintf(stderr, "Invalid log facility %s\n", optarg);
+                exit(DROOL_EOPT);
+            }
+
+            if (all) {
+                if ((opt == 'l' && log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, level))
+                    || (opt == 'L' && log_disable(conf_log_rw(&conf), LOG_FACILITY_CORE, level))) {
+                    fprintf(stderr, "Unable to %s log facility[:level] %s\n", opt == 'l' ? "enable" : "disable", optarg);
                     exit(DROOL_EOPT);
                 }
-                break;
-
-            case 'r':
-                if ((err = conf_add_read(&conf, optarg, 0)) != CONF_OK) {
-                    fprintf(stderr, "Unable to add file %s as input: %s\n", optarg, conf_strerr(err));
+                if ((opt == 'l' && log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, level))
+                    || (opt == 'L' && log_disable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, level))) {
+                    fprintf(stderr, "Unable to %s log facility[:level] %s\n", opt == 'l' ? "enable" : "disable", optarg);
                     exit(DROOL_EOPT);
                 }
-                break;
-
-            case 'R':
-                {
-                    char* optstr = strchr(optarg, ':');
-                    size_t len = 0;
-
-                    if (optstr) {
-                        len = optstr - optarg;
-                        optstr++;
-                    }
-
-                    if (!len && !strcmp(optarg, "loop")) {
-                        if ((err = conf_set_read_mode(&conf, CONF_READ_MODE_LOOP)) != CONF_OK) {
-                            fprintf(stderr, "Unable to set read mode as loop: %s\n", conf_strerr(err));
-                            exit(DROOL_EOPT);
-                        }
-                    }
-                    else if (len == 4 && !strncmp(optarg, "iter", 4) && optstr) {
-                        char* endptr = 0;
-                        size_t read_iter;
-
-                        read_iter = strtoul(optstr, &endptr, 10);
-
-                        if (!read_iter || !endptr || *endptr) {
-                            fprintf(stderr, "Invalid argument for read mode iter: %s\n", optstr);
-                            exit(DROOL_EOPT);
-                        }
-
-                        if ((err = conf_set_read_mode(&conf, CONF_READ_MODE_ITER))
-                            || (err = conf_set_read_iter(&conf, read_iter)))
-                        {
-                            fprintf(stderr, "Unable to set read mode as iter: %s\n", conf_strerr(err));
-                            exit(DROOL_EOPT);
-                        }
-                    }
-                    else {
-                        if (len)
-                            fprintf(stderr, "Invalid read mode %.*s\n", (int)len, optarg);
-                        else
-                            fprintf(stderr, "Invalid read mode %s\n", optarg);
-                        exit(DROOL_EOPT);
-                    }
+            } else {
+                if ((opt == 'l' && log_enable(conf_log_rw(&conf), facility, level))
+                    || (opt == 'L' && log_disable(conf_log_rw(&conf), facility, level))) {
+                    fprintf(stderr, "Unable to %s log facility[:level] %s\n", opt == 'l' ? "enable" : "disable", optarg);
+                    exit(DROOL_EOPT);
                 }
-                break;
+            }
+        } break;
 
-            /*
+        case 'f':
+            if ((err = conf_set_filter(&conf, optarg, 0)) != CONF_OK) {
+                fprintf(stderr, "Unable to set filter to %s: %s\n", optarg, conf_strerr(err));
+                exit(DROOL_EOPT);
+            }
+            break;
+
+        case 'i':
+            if ((err = conf_add_input(&conf, optarg, 0)) != CONF_OK) {
+                fprintf(stderr, "Unable to add interface %s as input: %s\n", optarg, conf_strerr(err));
+                exit(DROOL_EOPT);
+            }
+            break;
+
+        case 'r':
+            if ((err = conf_add_read(&conf, optarg, 0)) != CONF_OK) {
+                fprintf(stderr, "Unable to add file %s as input: %s\n", optarg, conf_strerr(err));
+                exit(DROOL_EOPT);
+            }
+            break;
+
+        case 'R': {
+            char*  optstr = strchr(optarg, ':');
+            size_t len    = 0;
+
+            if (optstr) {
+                len = optstr - optarg;
+                optstr++;
+            }
+
+            if (!len && !strcmp(optarg, "loop")) {
+                if ((err = conf_set_read_mode(&conf, CONF_READ_MODE_LOOP)) != CONF_OK) {
+                    fprintf(stderr, "Unable to set read mode as loop: %s\n", conf_strerr(err));
+                    exit(DROOL_EOPT);
+                }
+            } else if (len == 4 && !strncmp(optarg, "iter", 4) && optstr) {
+                char*  endptr = 0;
+                size_t read_iter;
+
+                read_iter = strtoul(optstr, &endptr, 10);
+
+                if (!read_iter || !endptr || *endptr) {
+                    fprintf(stderr, "Invalid argument for read mode iter: %s\n", optstr);
+                    exit(DROOL_EOPT);
+                }
+
+                if ((err = conf_set_read_mode(&conf, CONF_READ_MODE_ITER))
+                    || (err = conf_set_read_iter(&conf, read_iter))) {
+                    fprintf(stderr, "Unable to set read mode as iter: %s\n", conf_strerr(err));
+                    exit(DROOL_EOPT);
+                }
+            } else {
+                if (len)
+                    fprintf(stderr, "Invalid read mode %.*s\n", (int)len, optarg);
+                else
+                    fprintf(stderr, "Invalid read mode %s\n", optarg);
+                exit(DROOL_EOPT);
+            }
+        } break;
+
+        /*
             case 'o':
                 if ((err = conf_set_output(&conf, optarg, 0)) != CONF_OK) {
                     fprintf(stderr, "Unable to set interface %s as output: %s\n", optarg, err == CONF_EEXIST ? "Another output already set" : conf_strerr(err));
@@ -557,42 +533,42 @@ int main(int argc, char* argv[]) {
                 break;
             */
 
-            case 'n':
-                if ((err = conf_set_dry_run(&conf, 1)) != CONF_OK) {
-                    fprintf(stderr, "Unable to set dry run: %s\n", conf_strerr(err));
-                    exit(DROOL_EOPT);
-                }
-                break;
-
-            case 'v':
-                verbose++;
-
-                if (verbose == 1) {
-                    log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, LOG_LEVEL_NOTICE);
-                    log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, LOG_LEVEL_NOTICE);
-                }
-                if (verbose == 2) {
-                    log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, LOG_LEVEL_INFO);
-                    log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, LOG_LEVEL_INFO);
-                }
-                if (verbose == 3) {
-                    log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, LOG_LEVEL_DEBUG);
-                    log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, LOG_LEVEL_DEBUG);
-                }
-
-                break;
-
-            case 'h':
-                usage();
-                exit(0);
-
-            case 'V':
-                version();
-                exit(0);
-
-            default:
-                usage();
+        case 'n':
+            if ((err = conf_set_dry_run(&conf, 1)) != CONF_OK) {
+                fprintf(stderr, "Unable to set dry run: %s\n", conf_strerr(err));
                 exit(DROOL_EOPT);
+            }
+            break;
+
+        case 'v':
+            verbose++;
+
+            if (verbose == 1) {
+                log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, LOG_LEVEL_NOTICE);
+                log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, LOG_LEVEL_NOTICE);
+            }
+            if (verbose == 2) {
+                log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, LOG_LEVEL_INFO);
+                log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, LOG_LEVEL_INFO);
+            }
+            if (verbose == 3) {
+                log_enable(conf_log_rw(&conf), LOG_FACILITY_CORE, LOG_LEVEL_DEBUG);
+                log_enable(conf_log_rw(&conf), LOG_FACILITY_NETWORK, LOG_LEVEL_DEBUG);
+            }
+
+            break;
+
+        case 'h':
+            usage();
+            exit(0);
+
+        case 'V':
+            version();
+            exit(0);
+
+        default:
+            usage();
+            exit(DROOL_EOPT);
         }
     }
 
@@ -621,7 +597,7 @@ int main(int argc, char* argv[]) {
     sigaddset(&(sigcontext.set), SIGQUIT);
     sigaddset(&(sigcontext.set), SIGINT);
 
-    sigcontext.conf = &conf;
+    sigcontext.conf        = &conf;
     sigcontext.pcap_thread = &pcap_thread;
 
     {
@@ -645,29 +621,21 @@ int main(int argc, char* argv[]) {
 
         if ((err = pcap_thread_set_use_threads(&pcap_thread, 1)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread use threads";
-        }
-        else if ((err = pcap_thread_set_snaplen(&pcap_thread, 64*1024)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_snaplen(&pcap_thread, 64 * 1024)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread snaplen";
-        }
-        else if ((err = pcap_thread_set_buffer_size(&pcap_thread, 4*1024*1024)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_buffer_size(&pcap_thread, 4 * 1024 * 1024)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread buffer size";
-        }
-        else if (conf_have_filter(&conf) && (err = pcap_thread_set_filter(&pcap_thread, conf_filter(&conf), conf_filter_length(&conf))) != PCAP_THREAD_OK) {
+        } else if (conf_have_filter(&conf) && (err = pcap_thread_set_filter(&pcap_thread, conf_filter(&conf), conf_filter_length(&conf))) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread filter";
-        }
-        else if ((err = pcap_thread_set_queue_mode(&pcap_thread, PCAP_THREAD_QUEUE_MODE_DIRECT)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_queue_mode(&pcap_thread, PCAP_THREAD_QUEUE_MODE_DIRECT)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread queue mode to direct";
-        }
-        else if ((err = pcap_thread_set_use_layers(&pcap_thread, 1)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_use_layers(&pcap_thread, 1)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread use layers";
-        }
-        else if ((err = pcap_thread_set_callback_udp(&pcap_thread, &callback_udp)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_callback_udp(&pcap_thread, &callback_udp)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread udp callback";
-        }
-        else if ((err = pcap_thread_set_callback_tcp(&pcap_thread, &callback_tcp)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_callback_tcp(&pcap_thread, &callback_tcp)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread tcp callback";
-        }
-        else if ((err = pcap_thread_set_dropback(&pcap_thread, &dropback)) != PCAP_THREAD_OK) {
+        } else if ((err = pcap_thread_set_dropback(&pcap_thread, &dropback)) != PCAP_THREAD_OK) {
             errstr = "Unable to set pcap-thread dropback";
         }
 

@@ -1,7 +1,8 @@
 Name:           drool
-Version:        1.0.0.beta.3
+Version:        1.0.0.beta.4
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
+Group:          Productivity/Networking/DNS/Utilities
 
 License:        BSD-3-Clause
 URL:            https://github.com/DNS-OARC/drool
@@ -48,6 +49,17 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Aug 22 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.beta.3-1
+- Release 1.0.0-beta.4
+  * Compatibility fixes and packaging.
+  * Commits:
+    f6b6251 Fix #66: Check for libev/ev.h also
+    8dff723 Code formatting
+    a5af21d Update pcap-thread to v2.1.3
+    e622612 Prepare SPEC for OSB/COPR
+    3c8fbb0 Fix #57: Update README with build tools and environment setup
+    456d586 Add debian packaging files
+    a0a74cb Add dependencies
 * Wed Mar 29 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.beta.3-1
 - Release 1.0.0-beta.3
   * Various compatibility fixes across GNU/Linux, FreeBSD, OpenBSD and
