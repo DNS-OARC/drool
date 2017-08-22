@@ -41,7 +41,11 @@
 #include "query.h"
 #include "conf.h"
 
+#ifdef HAVE_LIBEV_EV_H
+#include <libev/ev.h>
+#else
 #include <ev.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 

@@ -45,7 +45,11 @@
 #include "client_pool_sendas.h"
 
 #include <pthread.h>
+#ifdef HAVE_LIBEV_EV_H
+#include <libev/ev.h>
+#else
 #include <ev.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
