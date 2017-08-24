@@ -107,6 +107,20 @@ Most of the functionality of this tool is controlled by the configuration
 used, please see
 .BR drool.conf (5)
 for more information.
+.SH DESIGN
+
+  input -> context -+-> client pool -> target
+                    +-> client pool -> target
+                    +-> client pool -> target
+
+Each file read or interface listen on is a context and runs in its own
+thread, parses the input for DNS queries and puts them into a queue within
+the context.
+
+Each context can have one or more client pools.
+
+Each client pool runs in its own thread, waits for DNS queries on the context
+queue and sends them to the target.
 .SH CURRENT IMPLEMENTATION LIMITATIONS
 See
 .BR drool.conf (5)
