@@ -96,6 +96,7 @@ as possible.
 Set the timing mode to try and keep up with interval between the traffic
 received, will give a warning if it can't keep up sending it out at the
 same rate.
+This is the default timing mode if none is specified.
 .TP
 \fBtiming\fR add NANOSECONDS ;
 Set the timing mode to add the given nanoseconds to the interval between
@@ -114,7 +115,7 @@ Will give a warning if it can't keep up sending it out at the new rate.
 .TP
 \fBcontext\fR client_pools NUMBER ;
 Set the number of client pools to use per context (a context is a \fIread\fR
-or \fIinput\fR), default is one.
+or \fIinput\fR), default is 1.
 Each client pool will spin up a thread for sending and receiving and will use
 the given configuration starting with \fBclient_pool\fR.
 As each \fIread\fR and \fIinput\fR will each use this amount of client pools
@@ -125,9 +126,9 @@ available.
 Set the target of the client pools, where to send the traffic.
 .TP
 \fBclient_pool\fR max_clients NUMBER ;
-Set the maximum clients each client pool can have. Each client will use a TCP
-or UDP port depending on the traffic read/captured, \fBfilter\fR and
-\fBclient_pool sendas\fR.
+Set the maximum clients each client pool can have, default 100. Each client
+will use a TCP or UDP port depending on the traffic read/captured,
+\fBfilter\fR and \fBclient_pool sendas\fR.
 The total amount of ports used will be this value * number of \fIread\fR
 and \fIinput\fR * \fBcontext client_pools\fR and it is advised to keep this
 within the available ports/file descriptors for the running user.
@@ -135,7 +136,8 @@ within the available ports/file descriptors for the running user.
 \fBclient_pool\fR client_ttl SECONDS_AS_FLOAT ;
 Set the time a client lives for, this is used to timeout clients in case
 the target does not answer.
-Specified as a float meaning 0.05 would be 50 milliseconds.
+Default value is 0.05.
+Specified as a float meaning 0.2 would be 200 milliseconds.
 .TP
 \fBclient_pool\fR skip_reply ;
 Enables a mode where replies are ignored and client is considered successful
@@ -144,6 +146,7 @@ after just sending.
 \fBclient_pool\fR max_reuse_clients NUMBER ;
 Set the maximum clients to save for reuse, this only applies to protocol that
 can be reused.
+Default value is 20.
 .TP
 \fBclient_pool\fR sendas < original | udp | tcp > ;
 Set how to send the traffic, default is original which sends the traffic with
