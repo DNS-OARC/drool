@@ -1,36 +1,14 @@
-Analysis/dry-run mode is needed to check config, read pcaps and evaluate if it can be done
+# TODO
+- Analysis/dry-run mode is needed to check config, read pcaps and evaluate if it can be done
 
-Input
-- read x
-+ loop
-
-Modifications
-+ no timing
-+ stick to timing
-+ speed up
-+ slow down
-- response timings
-  - same, more, less
-+ change target
-+ change source
-
-Emulate source
+# Emulate source
 - limit of maximum sources
 
-Client pool
+# Client pool
 - per context or one
-- ev_base (fallback select)
 - ip/net to use and the port range
 
-Main thread sets up pcap-thread's
-Each pcap-thread has its own context and may keeps its own client pool
-- Read packets
-- See query
-- Track query
-- send query
-- wait for response
-
-Issues
+# Issues
 - dns cookies
 - tcp multi query connection
   - check rfc, is it suppose to close the conn
@@ -43,24 +21,17 @@ Issues
 - too few resources to emulate full traffic
   - do analysis/dry-run first
 - max open files
--
 
-Problems!!
+# Problems
 - sending real traffic
   - kernel may block/drop addresses not it's own
   - may change the link layers
 - connection tracking at kernel level
 
-
-
-Compare Q+R in pcap:
+# Compare Q+R in pcap
 - Push R on queue also
 - Keep long list of Q, FIFO
   - Check R against list of Q
   - If no match
     - Keep short list of R, FIFO
 - Check Q against list of R
-
-Timing managment:
-- Done in callback thread
-- Active measuring and adjusting between client and callback thread
