@@ -158,11 +158,17 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
                 }
             }
 
-#if !defined(HAVE_CLOCK_NANOSLEEP) && defined(HAVE_NANOSLEEP)
-            sleep_to = context->last_realtime;
-#else
+#if HAVE_CLOCK_NANOSLEEP
+            /* absolute time */
             sleep_to = context->last_time;
+#elif HAVE_NANOSLEEP
+            /* relative time */
+            sleep_to.tv_sec  = 0;
+            sleep_to.tv_nsec = 0;
+#else
+#error "No clock_nanosleep() or nanosleep(), can not continue"
 #endif
+
             sleep_to.tv_nsec += diff.tv_usec * 1000;
             if (sleep_to.tv_nsec > 999999999) {
                 sleep_to.tv_sec += sleep_to.tv_nsec / 1000000000;
@@ -228,25 +234,41 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "sleep_to %lu.%09lu", sleep_to.tv_sec, sleep_to.tv_nsec);
             */
 
-            if (sleep_to.tv_sec < now.tv_sec
-                || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec)) {
+#if HAVE_CLOCK_NANOSLEEP
+            if (conf_timing_mode(context->conf) != TIMING_MODE_BEST_EFFORT
+                && (sleep_to.tv_sec < now.tv_sec
+                       || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec))) {
                 log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
                     pdiff.tv_sec, pdiff.tv_nsec,
                     diff.tv_sec, diff.tv_usec,
                     now.tv_sec, now.tv_nsec,
                     sleep_to.tv_sec, sleep_to.tv_nsec);
+                sleep_to.tv_sec  = 0;
+                sleep_to.tv_nsec = 0;
             }
 
             if (sleep_to.tv_sec || sleep_to.tv_nsec) {
-#if HAVE_CLOCK_NANOSLEEP
                 clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleep_to, 0);
+            }
 #elif HAVE_NANOSLEEP
 #define SAVE_REALTIME 1
-                nanosleep(&sleep_to, 0);
-#else
-#error "No clock_nanosleep() or nanosleep(), can not continue"
-#endif
+            /* sleep_to will be relative, need to check against now - last_time */
+            if (conf_timing_mode(context->conf) != TIMING_MODE_BEST_EFFORT
+                && (sleep_to.tv_sec < (now.tv_sec - context->last_time.tv_sec)
+                       || (sleep_to.tv_sec == (now.tv_sec - context->last_time.tv_sec) && sleep_to.tv_nsec < (now.tv_nsec - context->last_time.tv_nsec)))) {
+                log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
+                    pdiff.tv_sec, pdiff.tv_nsec,
+                    diff.tv_sec, diff.tv_usec,
+                    now.tv_sec, now.tv_nsec,
+                    context->last_time.tv_sec + sleep_to.tv_sec, context->last_time.tv_nsec + sleep_to.tv_nsec);
+                sleep_to.tv_sec  = 0;
+                sleep_to.tv_nsec = 0;
             }
+
+            if (sleep_to.tv_sec || sleep_to.tv_nsec) {
+                nanosleep(&sleep_to, 0);
+            }
+#endif
         }
 
         if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time))) {
