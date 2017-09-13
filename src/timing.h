@@ -44,7 +44,8 @@ enum drool_timing_mode {
     TIMING_MODE_IGNORE,
     TIMING_MODE_INCREASE,
     TIMING_MODE_REDUCE,
-    TIMING_MODE_MULTIPLY
+    TIMING_MODE_MULTIPLY,
+    TIMING_MODE_BEST_EFFORT
 };
 
 #endif /* __drool_timing_h */

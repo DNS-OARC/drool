@@ -98,6 +98,12 @@ received, will give a warning if it can't keep up sending it out at the
 same rate.
 This is the default timing mode if none is specified.
 .TP
+\fBtiming\fR best_effort ;
+Set the timing mode to try and keep up with interval between the traffic
+received.
+Unlike \fBkeep\fR, this mode will not warn about being unable to keep to
+the timings.
+.TP
 \fBtiming\fR add NANOSECONDS ;
 Set the timing mode to add the given nanoseconds to the interval between
 the traffic received.
