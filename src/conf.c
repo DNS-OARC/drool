@@ -553,6 +553,29 @@ static int parse_timing_multiply(void* user, const parseconf_token_t* tokens, co
     return 0;
 }
 
+static parseconf_token_type_t timing_best_effort_tokens[] = {
+    PARSECONF_TOKEN_END
+};
+
+static int parse_timing_best_effort(void* user, const parseconf_token_t* tokens, const char** errstr)
+{
+    drool_conf_t* conf = (drool_conf_t*)user;
+
+    if (!conf) {
+        return 1;
+    }
+    if (!tokens) {
+        return 1;
+    }
+    if (!errstr) {
+        return 1;
+    }
+
+    conf->timing_mode = TIMING_MODE_BEST_EFFORT;
+
+    return 0;
+}
+
 static parseconf_syntax_t timing_syntax[] = {
     /* timing ignore; */
     { "ignore", parse_timing_ignore, timing_ignore_tokens, 0 },
@@ -564,6 +587,8 @@ static parseconf_syntax_t timing_syntax[] = {
     { "reduce", parse_timing_reduce, timing_reduce_tokens, 0 },
     /* timing multiply <multiplication>; */
     { "multiply", parse_timing_multiply, timing_multiply_tokens, 0 },
+    /* timing best_effort; */
+    { "best_effort", parse_timing_best_effort, timing_best_effort_tokens, 0 },
     PARSECONF_SYNTAX_END
 };
 

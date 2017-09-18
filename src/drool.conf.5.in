@@ -38,28 +38,55 @@
 drool.conf \- Configuration for DNS Replay Tool
 .SH DESCRIPTION
 With these configuration options for \fIdrool\fR you can control all
-aspects of generating/replaying DNS traffic. Some options are also
-available as command line options.
+aspects of generating/replaying DNS traffic.
+Some options are also available as command line options.
+.SH CURRENT IMPLEMENTATION LIMITATIONS
+These are the current limitations in the implementation and may be changed
+or removed in the future:
+.TP
+- Same configuration for each \fBread\fR and \fBinput\fR
+Currently the configuration for \fBfilter\fR, \fBtiming\fR, \fBcontext\fR
+and \fBclient_pool\fR affects all \fBread\fR and \fBinput\fR.
+In the future this may be split up so that each \fBread\fR and \fBinput\fR
+can have different configuration.
+.TP
+- Only one \fBclient_pool target\fR
+Currently there can only be one target for all queries.
+In the future this may be change to be able to give multiple targets and
+different ways to distribute the queries amongst them.
+.TP
+- Send from IP/interface
+Currently there is no way to specify from where the queries should be sent,
+instead it is up to the OS to decide that.
+In the future there will be ways to specify this, sending from different
+interfaces and/or ranges of IP addresses.
 .SH CONFIGURATION
 .TP
 \fBlog\fR FACILITY [ LEVEL ] ;
 Enable logging for \fIfacility\fR, optional log \fIlevel\fR can be given
-to enable just that. Can be given multiple times and will be
-processed in the given order. See LOGGING for more information.
+to enable just that.
+Can be given multiple times and will be processed in the given order.
+See LOGGING for more information.
 .TP
 \fBnolog\fR FACILITY [ LEVEL ] ;
 Disable logging for \fIfacility\fR, optional log \fIlevel\fR can be
-given to disable just that. Can be given multiple times and
-will be processed in the given order. See LOGGING for more information.
+given to disable just that.
+Can be given multiple times and will be processed in the given order.
+See LOGGING for more information.
 .TP
 \fBread\fR " FILE " ;
 Read packets from PCAP file, can be given multiple times.
+Each \fBread\fR counts as a context and will use the given configuration
+for starting with \fBcontext\fR.
 .TP
 \fBinput\fR " INTERFACE " ;
 Capture packets from interface, can be given multiple times.
+Each \fBinput\fR counts as a context and will use the given configuration
+for starting with \fBcontext\fR.
 .TP
 \fBfilter\fR " FILTER " ;
-Set the Berkeley Packet Filter to use.
+Set the Berkeley Packet Filter to use, this will be applied on all
+\fBread\fR and \fBinput\fR.
 .TP
 \fBtiming\fR ignore ;
 Set the timing mode to ignore all timings and try to send traffic as fast
@@ -69,6 +96,13 @@ as possible.
 Set the timing mode to try and keep up with interval between the traffic
 received, will give a warning if it can't keep up sending it out at the
 same rate.
+This is the default timing mode if none is specified.
+.TP
+\fBtiming\fR best_effort ;
+Set the timing mode to try and keep up with interval between the traffic
+received.
+Unlike \fBkeep\fR, this mode will not warn about being unable to keep to
+the timings.
 .TP
 \fBtiming\fR add NANOSECONDS ;
 Set the timing mode to add the given nanoseconds to the interval between
@@ -82,23 +116,34 @@ sending it out at the new rate.
 \fBtiming\fR multiply MULTIPLY_AS_FLOAT ;
 Set the timing mode to multiply the interval between the traffic received,
 this can be thought as percent with 1.00 being 100% of the interval, 2.00
-being 200%, 0.10 being 10% and so on. Will give a warning if it can't keep
-up sending it out at the new rate.
+being 200%, 0.10 being 10% and so on.
+Will give a warning if it can't keep up sending it out at the new rate.
 .TP
 \fBcontext\fR client_pools NUMBER ;
 Set the number of client pools to use per context (a context is a \fIread\fR
-or \fIinterface\fR), default is one.
+or \fIinput\fR), default is 1.
+Each client pool will spin up a thread for sending and receiving and will use
+the given configuration starting with \fBclient_pool\fR.
+As each \fIread\fR and \fIinput\fR will each use this amount of client pools
+it may be good that the total amount does not exceed the number of CPU cores
+available.
 .TP
 \fBclient_pool\fR target " IP_OR_HOSTNAME " " SERVICE_OR_PORT ";
 Set the target of the client pools, where to send the traffic.
 .TP
 \fBclient_pool\fR max_clients NUMBER ;
-Set the maximum clients each client pool can have.
+Set the maximum clients each client pool can have, default 100. Each client
+will use a TCP or UDP port depending on the traffic read/captured,
+\fBfilter\fR and \fBclient_pool sendas\fR.
+The total amount of ports used will be this value * number of \fIread\fR
+and \fIinput\fR * \fBcontext client_pools\fR and it is advised to keep this
+within the available ports/file descriptors for the running user.
 .TP
 \fBclient_pool\fR client_ttl SECONDS_AS_FLOAT ;
 Set the time a client lives for, this is used to timeout clients in case
-the target does not answer. Specified as a float meaning 0.05 would be 50
-milliseconds.
+the target does not answer.
+Default value is 0.05.
+Specified as a float meaning 0.2 would be 200 milliseconds.
 .TP
 \fBclient_pool\fR skip_reply ;
 Enables a mode where replies are ignored and client is considered successful
@@ -107,6 +152,7 @@ after just sending.
 \fBclient_pool\fR max_reuse_clients NUMBER ;
 Set the maximum clients to save for reuse, this only applies to protocol that
 can be reused.
+Default value is 20.
 .TP
 \fBclient_pool\fR sendas < original | udp | tcp > ;
 Set how to send the traffic, default is original which sends the traffic with

@@ -18,17 +18,51 @@ efficacy of subsequent bug fixes.
 
 ## Usage example
 
-This example reads all DNS queries from a PCAP file, sends them to
-a nameserver at `127.0.0.1` and ignores both timings and replies.
+Send all DNS queries twice as fast as found in the PCAP file to localhost
+using UDP:
 
-```
-drool \
-  -vv \
-  -c 'text:timing ignore;' \
-  -c 'text:client_pool target "127.0.0.1" "53";' \
-  -c 'text:client_pool skip_reply;' \
+```shell
+drool -vv \
+  -c 'text:timing multiply 2.0; client_pool target "127.0.0.1" "53"; client_pool sendas udp;' \
   -r file.pcap
 ```
+
+Only look for DNS queries in TCP traffic and send it to localhost:
+
+```shell
+drool -vv \
+  -c 'text:filter "tcp"; client_pool target "127.0.0.1" "53";' \
+  -r file.pcap
+```
+
+Listen for DNS queries on eth0 and send them to an (assuming) internal server:
+
+```shell
+drool -vv \
+  -c 'text:filter "port 53"; client_pool target "172.16.1.2" "53";' \
+  -i eth0
+```
+
+Take all UDP DNS queries found in the PCAP file and send them as fast as
+possible to localhost by ignoring both timings, replies and starting 5
+contexts (threads) that will simultaneously send queries:
+
+```shell
+drool -vv \
+  -c 'text:filter "udp"; timing ignore; context client_pools 5; client_pool target "127.0.0.1" "53"; client_pool skip_reply;' \
+  -r file.pcap
+```
+
+## Timing warnings
+
+The warnings from timing mode `keep` consists of:
+- `process cost`: This is the CPU cost of processing the packet including the cost of measuring the cost
+- `packet diff`: This is the timing differential between the previous packet and the packet being processed as seen from the PCAP, i.e. the time to wait before sending it
+- `now`: Is the time "now" or at least when the processing for this packet begun
+- `sleep to`: Was the time it should have slept to
+
+The values for `now` and `sleep to` are in monotonic or real-time clock
+depending on the available system functionality during compilation.
 
 ## Dependencies and build tools
 
