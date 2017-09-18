@@ -1,3 +1,19 @@
+2017-09-18 Jerry Lundström
+
+    Release 1.0.0-rc.1
+
+    Mostly documentation updates and clarifications but also a new timing
+    mode `best_effort` to send packets as fast as possible without warnings
+    and a correct usage of `nanosleep()` on systems that does not support
+    `clock_nanosleep()`.
+
+    114f984 Fix #74: Best effort timing mode, fix usage of `nanosleep()`
+    a32201c Rework development notes
+    3999214 Add examples and default values
+    1e70ab9 Design documentation
+    6e530ee Fix #64: More documentation around context and client_pool,
+            and how configuration relates to each other.
+
 2017-08-22 Jerry Lundström
 
     Release 1.0.0-beta.4
