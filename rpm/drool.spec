@@ -1,5 +1,5 @@
 Name:           drool
-Version:        1.0.0.beta.4
+Version:        1.0.0.rc.1
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
@@ -49,7 +49,20 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Tue Aug 22 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.beta.3-1
+* Mon Sep 18 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.rc.1-1
+- Release 1.0.0-rc.1
+  * Mostly documentation updates and clarifications but also a new timing
+    mode `best_effort` to send packets as fast as possible without warnings
+    and a correct usage of `nanosleep()` on systems that does not support
+    `clock_nanosleep()`.
+  * Commits:
+    114f984 Fix #74: Best effort timing mode, fix usage of `nanosleep()`
+    a32201c Rework development notes
+    3999214 Add examples and default values
+    1e70ab9 Design documentation
+    6e530ee Fix #64: More documentation around context and client_pool,
+            and how configuration relates to each other.
+* Tue Aug 22 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.beta.4-1
 - Release 1.0.0-beta.4
   * Compatibility fixes and packaging.
   * Commits:
