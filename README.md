@@ -23,7 +23,7 @@ using UDP:
 
 ```shell
 drool -vv \
-  -c 'text:timing multiply 2.0; client_pool target "127.0.0.1" "53"; client_pool sendas udp;' \
+  -c 'text:timing multiply 0.5; client_pool target "127.0.0.1" "53"; client_pool sendas udp;' \
   -r file.pcap
 ```
 
