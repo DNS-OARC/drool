@@ -16,6 +16,12 @@ Another example is to be able to replay a packet stream for a
 bug that is sequence- and/or timing-related in order to validate the
 efficacy of subsequent bug fixes.
 
+## Known Issues
+
+- IP fragments are currently not processed and will be discarded.
+- TCP sessions are not reassembled, each packet is parsed as DNS after
+  discarding the first two bytes.
+
 ## Usage example
 
 Send all DNS queries twice as fast as found in the PCAP file to localhost
