@@ -78,6 +78,7 @@ struct drool_client {
     unsigned short skip_reply : 1;
     unsigned short is_dgram : 1;
     unsigned short is_stream : 1;
+    unsigned short sent_length : 1;
 
     ev_tstamp       start;
     drool_client_t* next;
