@@ -326,7 +326,7 @@ static void client_pool_engine_timeout(struct ev_loop* loop, ev_timer* w, int re
 {
     drool_client_pool_t* client_pool = (drool_client_pool_t*)ev_userdata(loop);
     ev_tstamp            timeout;
-    drool_client_t*      client;
+    drool_client_t *     client, *first_client = 0;
 
     /* TODO: Check revents for EV_ERROR */
 
@@ -339,6 +339,12 @@ static void client_pool_engine_timeout(struct ev_loop* loop, ev_timer* w, int re
     timeout = ev_now(loop) - client_pool->client_ttl;
 
     while ((client = client_pool->client_list_first) && client_start(client_pool->client_list_first) <= timeout) {
+        if (!first_client) {
+            first_client = client;
+        } else if (client == first_client) {
+            break;
+        }
+
         client_list_remove(client_pool, client, loop);
         if (client_state(client) == CLIENT_CLOSING) {
             client_list_add(client_pool, client, loop);
