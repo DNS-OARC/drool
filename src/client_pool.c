@@ -195,6 +195,12 @@ drool_client_pool_t* client_pool_new(const drool_conf_t* conf)
             free(client_pool);
             return 0;
         }
+        log_printf(conf_log(conf), LNETWORK, LDEBUG, "getaddrinfo() flags: 0x%x family: 0x%x socktype: 0x%x protocol: 0x%x addrlen: %d",
+            client_pool->addrinfo->ai_flags,
+            client_pool->addrinfo->ai_family,
+            client_pool->addrinfo->ai_socktype,
+            client_pool->addrinfo->ai_protocol,
+            client_pool->addrinfo->ai_addrlen);
 
         memcpy(&(client_pool->queries), &client_pool_sllq_init, sizeof(sllq_t));
         sllq_set_size(&(client_pool->queries), 0x200); /* TODO: conf */
@@ -457,6 +463,11 @@ static void client_pool_engine_query(struct ev_loop* loop, ev_async* w, int reve
                 proto = IPPROTO_UDP;
             } else if (query_is_tcp(query)) {
                 proto = IPPROTO_TCP;
+            } else {
+                log_print(conf_log(client_pool->conf), LNETWORK, LERROR, "unable to understand query protocol, surly a bug so please report this");
+                query_free(query);
+                ev_async_send(loop, &(client_pool->notify_query));
+                return;
             }
             break;
         }
