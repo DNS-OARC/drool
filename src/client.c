@@ -88,8 +88,8 @@ static void client_read(struct ev_loop* loop, ev_io* w, int revents)
 
     /* TODO:
     if (client->have_from_addr)
-        memset(&(client->from_addr), 0, sizeof(struct sockaddr));
-    client->from_addrlen = sizeof(struct sockaddr);
+        memset(&(client->from_addr), 0, sizeof(struct sockaddr_storage));
+    client->from_addrlen = sizeof(struct sockaddr_storage);
     nrecv = recvfrom(client->fd, buf, sizeof(buf), 0, &(client->from_addr), &(client->from_addrlen));
     */
     nrecv = recvfrom(client->fd, buf, sizeof(buf), 0, 0, 0);
@@ -171,7 +171,7 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents)
         uint16_t length = htons(query_length(client->query));
 
         if (client->have_to_addr)
-            nsent = sendto(client->fd, &length, 2, 0, &(client->to_addr), client->to_addrlen);
+            nsent = sendto(client->fd, &length, 2, 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
         else
             nsent = sendto(client->fd, &length, 2, 0, 0, 0);
         if (nsent < 0) {
@@ -203,7 +203,7 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents)
     }
 
     if (client->have_to_addr)
-        nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, &(client->to_addr), client->to_addrlen);
+        nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
     else
         nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, 0, 0);
     if (nsent < 0) {
@@ -437,7 +437,7 @@ int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* a
     if (!addrlen) {
         return 1;
     }
-    if (addrlen > sizeof(struct sockaddr)) {
+    if (addrlen > sizeof(struct sockaddr_storage)) {
         return 1;
     }
     drool_assert(loop);
@@ -529,7 +529,7 @@ int client_send(drool_client_t* client, struct ev_loop* loop)
         uint16_t length = htons(query_length(client->query));
 
         if (client->have_to_addr)
-            nsent = sendto(client->fd, &length, 2, 0, &(client->to_addr), client->to_addrlen);
+            nsent = sendto(client->fd, &length, 2, 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
         else
             nsent = sendto(client->fd, &length, 2, 0, 0, 0);
         if (nsent < 0) {
@@ -559,7 +559,7 @@ int client_send(drool_client_t* client, struct ev_loop* loop)
     }
 
     if (client->have_to_addr)
-        nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, &(client->to_addr), client->to_addrlen);
+        nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
     else
         nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, 0, 0);
     if (nsent < 0) {
