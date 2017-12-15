@@ -1,3 +1,5 @@
+#!/bin/sh -e
+#
 # DNS Reply Tool (drool)
 #
 # Copyright (c) 2017, OARC, Inc.
@@ -33,22 +35,18 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-
-CLEANFILES = test*.log test*.trs \
-    *.pcap-dist \
-    test4.out test4.out2
-
-TESTS = test1.sh test2.sh test3.sh test4.sh
-
-test3.sh: dns.pcap-dist 1qtcp.pcap-dist
-
-test4.sh: dns.pcap-dist 1qtcp.pcap-dist
-
-.pcap.pcap-dist:
-	cp "$<" "$@"
-
-EXTRA_DIST = $(TESTS) \
-    test2.conf \
-    dns.pcap 1qtcp.pcap \
-    test4.gold
+if [ -n "$DROOL_TEST_NETWORK" ]; then
+    rm -f test4.out test4.out2
+    for pcap in ./dns.pcap-dist ./1qtcp.pcap-dist; do
+        ../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore; client_pool skip_reply;" -vv -r "$pcap" >>test4.out
+        ../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore; client_pool skip_reply; client_pool sendas udp;" -vv -r "$pcap" >>test4.out
+        ../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore; client_pool skip_reply; client_pool sendas tcp;" -vv -r "$pcap" >>test4.out
+        ../drool -c "text:client_pool target \"::1\" \"53\"; timing ignore; client_pool skip_reply;" -vv -r "$pcap" >>test4.out
+        ../drool -c "text:client_pool target \"::1\" \"53\"; timing ignore; client_pool skip_reply; client_pool sendas udp;" -vv -r "$pcap" >>test4.out
+        ../drool -c "text:client_pool target \"::1\" \"53\"; timing ignore; client_pool skip_reply; client_pool sendas tcp;" -vv -r "$pcap" >>test4.out
+    done
+    cut -d" " -f 4- test4.out | grep -v runtime | sed 's%packets, .*%packets%' > test4.out2
+    diff test4.out2 "$srcdir/test4.gold"
+else
+    echo "Not testing network (set DROOL_TEST_NETWORK to enable)"
+fi

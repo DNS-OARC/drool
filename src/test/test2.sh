@@ -35,4 +35,4 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-! ../drool -c ./test2.conf.dist
+! ../drool -c "$srcdir/test2.conf"
