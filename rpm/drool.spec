@@ -1,5 +1,5 @@
 Name:           drool
-Version:        1.0.0.rc.1
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
@@ -49,6 +49,21 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Dec 19 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.1-1
+- Release 1.0.1 (v1.0)
+  * Thanks to a few people, especially Petr Špaček @pspacek (CZ.NIC), for
+    testing and reporting issues and other oddities (documentation is hard),
+    release v1.0 is now ready!
+    9c26a5a pcap-thread and tests
+  * Increase of version because of how distributions compare package versions.
+  * Commits:
+    f9a55bc Update pcap-thread to v3.1.0
+    a069d84 Fix #87: Use `sockaddr_storage`, add more debug and error messages
+    047abe6 Fix #84: don't loop client list on timeout handling
+    5377698 Fix #82: Parse TCP payload, add Known Issues
+    05013f0 Fix #82: Send query length
+    aea71ad Correct `timing multiply` in README also
+    6437fe7 Fix man page example for timing multiply
 * Mon Sep 18 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.0.rc.1-1
 - Release 1.0.0-rc.1
   * Mostly documentation updates and clarifications but also a new timing
