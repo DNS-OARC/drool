@@ -78,6 +78,7 @@ struct drool_client {
     unsigned short skip_reply : 1;
     unsigned short is_dgram : 1;
     unsigned short is_stream : 1;
+    unsigned short sent_length : 1;
 
     ev_tstamp       start;
     drool_client_t* next;
@@ -94,10 +95,10 @@ struct drool_client {
     size_t                  sent;
     size_t                  recv;
 
-    struct sockaddr to_addr;
-    socklen_t       to_addrlen;
-    struct sockaddr from_addr;
-    socklen_t       from_addrlen;
+    struct sockaddr_storage to_addr;
+    socklen_t               to_addrlen;
+    struct sockaddr_storage from_addr;
+    socklen_t               from_addrlen;
 };
 
 drool_client_t* client_new(drool_query_t* query, drool_client_callback_t callback);

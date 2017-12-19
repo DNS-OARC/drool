@@ -88,8 +88,8 @@ static void client_read(struct ev_loop* loop, ev_io* w, int revents)
 
     /* TODO:
     if (client->have_from_addr)
-        memset(&(client->from_addr), 0, sizeof(struct sockaddr));
-    client->from_addrlen = sizeof(struct sockaddr);
+        memset(&(client->from_addr), 0, sizeof(struct sockaddr_storage));
+    client->from_addrlen = sizeof(struct sockaddr_storage);
     nrecv = recvfrom(client->fd, buf, sizeof(buf), 0, &(client->from_addr), &(client->from_addrlen));
     */
     nrecv = recvfrom(client->fd, buf, sizeof(buf), 0, 0, 0);
@@ -167,8 +167,43 @@ static void client_write(struct ev_loop* loop, ev_io* w, int revents)
         return;
     }
 
+    if (client->is_stream && !client->sent_length) {
+        uint16_t length = htons(query_length(client->query));
+
+        if (client->have_to_addr)
+            nsent = sendto(client->fd, &length, 2, 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
+        else
+            nsent = sendto(client->fd, &length, 2, 0, 0, 0);
+        if (nsent < 0) {
+            switch (errno) {
+            case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+            case EWOULDBLOCK:
+#endif
+                return;
+
+            default:
+                break;
+            }
+
+            ev_io_stop(loop, w);
+            client->errnum = errno;
+            client->state  = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
+            client->callback(client, loop);
+            return;
+        } else if (nsent != 2) {
+            ev_io_stop(loop, w);
+            client->errnum = ENOBUFS;
+            client->state  = CLIENT_FAILED;
+            client->callback(client, loop);
+            return;
+        }
+
+        client->sent_length = 1;
+    }
+
     if (client->have_to_addr)
-        nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, &(client->to_addr), client->to_addrlen);
+        nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
     else
         nsent = sendto(client->fd, query_raw(client->query) + client->sent, query_length(client->query) - client->sent, 0, 0, 0);
     if (nsent < 0) {
@@ -402,7 +437,7 @@ int client_connect(drool_client_t* client, int ipproto, const struct sockaddr* a
     if (!addrlen) {
         return 1;
     }
-    if (addrlen > sizeof(struct sockaddr)) {
+    if (addrlen > sizeof(struct sockaddr_storage)) {
         return 1;
     }
     drool_assert(loop);
@@ -490,8 +525,41 @@ int client_send(drool_client_t* client, struct ev_loop* loop)
         return 1;
     }
 
+    if (client->is_stream && !client->sent_length) {
+        uint16_t length = htons(query_length(client->query));
+
+        if (client->have_to_addr)
+            nsent = sendto(client->fd, &length, 2, 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
+        else
+            nsent = sendto(client->fd, &length, 2, 0, 0, 0);
+        if (nsent < 0) {
+            switch (errno) {
+            case EAGAIN:
+#if EAGAIN != EWOULDBLOCK
+            case EWOULDBLOCK:
+#endif
+                ev_io_start(loop, &(client->write_watcher));
+                client->state = CLIENT_SENDING;
+                return 0;
+
+            default:
+                break;
+            }
+
+            client->errnum = errno;
+            client->state  = errno == ECONNRESET ? CLIENT_FAILED : CLIENT_ERRNO;
+            return 1;
+        } else if (nsent != 2) {
+            client->errnum = ENOBUFS;
+            client->state  = CLIENT_FAILED;
+            return 1;
+        }
+
+        client->sent_length = 1;
+    }
+
     if (client->have_to_addr)
-        nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, &(client->to_addr), client->to_addrlen);
+        nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, (struct sockaddr*)&(client->to_addr), client->to_addrlen);
     else
         nsent = sendto(client->fd, query_raw(client->query), query_length(client->query), 0, 0, 0);
     if (nsent < 0) {
@@ -546,10 +614,11 @@ int client_reuse(drool_client_t* client, drool_query_t* query)
 
     if (client->query)
         query_free(client->query);
-    client->query = query;
-    client->sent  = 0;
-    client->recv  = 0;
-    client->state = CLIENT_CONNECTED;
+    client->query       = query;
+    client->sent        = 0;
+    client->recv        = 0;
+    client->state       = CLIENT_CONNECTED;
+    client->sent_length = 0;
 
     return 0;
 }

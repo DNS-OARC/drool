@@ -1,3 +1,22 @@
+2017-12-19 Jerry Lundström
+
+    Release 1.0.1 (v1.0)
+
+    Thanks to a few people, especially Petr Špaček @pspacek (CZ.NIC), for
+    testing and reporting issues and other oddities (documentation is hard),
+    release v1.0 is now ready!
+
+    Increase of version because of how distributions compare package versions.
+
+    f9a55bc Update pcap-thread to v3.1.0
+    9c26a5a pcap-thread and tests
+    a069d84 Fix #87: Use `sockaddr_storage`, add more debug and error messages
+    047abe6 Fix #84: don't loop client list on timeout handling
+    5377698 Fix #82: Parse TCP payload, add Known Issues
+    05013f0 Fix #82: Send query length
+    aea71ad Correct `timing multiply` in README also
+    6437fe7 Fix man page example for timing multiply
+
 2017-09-18 Jerry Lundström
 
     Release 1.0.0-rc.1

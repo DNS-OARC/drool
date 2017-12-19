@@ -16,6 +16,12 @@ Another example is to be able to replay a packet stream for a
 bug that is sequence- and/or timing-related in order to validate the
 efficacy of subsequent bug fixes.
 
+## Known Issues
+
+- IP fragments are currently not processed and will be discarded.
+- TCP sessions are not reassembled, each packet is parsed as DNS after
+  discarding the first two bytes.
+
 ## Usage example
 
 Send all DNS queries twice as fast as found in the PCAP file to localhost
@@ -23,7 +29,7 @@ using UDP:
 
 ```shell
 drool -vv \
-  -c 'text:timing multiply 2.0; client_pool target "127.0.0.1" "53"; client_pool sendas udp;' \
+  -c 'text:timing multiply 0.5; client_pool target "127.0.0.1" "53"; client_pool sendas udp;' \
   -r file.pcap
 ```
 

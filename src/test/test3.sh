@@ -35,4 +35,5 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore;" -n -r ./dns.pcap.dist
+../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore;" -n -r ./dns.pcap-dist
+../drool -c "text:client_pool target \"127.0.0.1\" \"53\"; timing ignore;" -n -r ./1qtcp.pcap-dist
