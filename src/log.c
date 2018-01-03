@@ -301,7 +301,7 @@ void log_printf_fileline(const drool_log_t* log, const drool_log_facility_t faci
 #endif
         "%s %s: ",
 #if LOG_DATETIME
-        1900 + tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
 #endif
 #if LOG_FILENAME_LINE
 #if LOG_SHORT_FILENAME
@@ -396,7 +396,7 @@ void log_errnumf_fileline(const drool_log_t* log, const drool_log_facility_t fac
 #endif
         "%s %s: ",
 #if LOG_DATETIME
-        1900 + tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
+        1900 + tm.tm_year, 1 + tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
 #endif
 #if LOG_FILENAME_LINE
 #if LOG_SHORT_FILENAME
