@@ -51,46 +51,46 @@ core info: initialize pcap-thread
 core info: start
 core info: end
 core info: saw 10 packets
-core info: sent 2 packets
+core info: sent 1 packets
 core info: dropped 8 packets
-core info: ignored 0 packets
+core info: ignored 1 packets
 core info: setup signal handling
 core info: initialize pcap-thread
 core info: start
 core info: end
 core info: saw 10 packets
-core info: sent 2 packets
+core info: sent 1 packets
 core info: dropped 8 packets
-core info: ignored 0 packets
+core info: ignored 1 packets
 core info: setup signal handling
 core info: initialize pcap-thread
 core info: start
 core info: end
 core info: saw 10 packets
-core info: sent 2 packets
+core info: sent 1 packets
 core info: dropped 8 packets
-core info: ignored 0 packets
+core info: ignored 1 packets
 core info: setup signal handling
 core info: initialize pcap-thread
 core info: start
 core info: end
 core info: saw 10 packets
-core info: sent 2 packets
+core info: sent 1 packets
 core info: dropped 8 packets
-core info: ignored 0 packets
+core info: ignored 1 packets
 core info: setup signal handling
 core info: initialize pcap-thread
 core info: start
 core info: end
 core info: saw 10 packets
-core info: sent 2 packets
+core info: sent 1 packets
 core info: dropped 8 packets
-core info: ignored 0 packets
+core info: ignored 1 packets
 core info: setup signal handling
 core info: initialize pcap-thread
 core info: start
 core info: end
 core info: saw 10 packets
-core info: sent 2 packets
+core info: sent 1 packets
 core info: dropped 8 packets
-core info: ignored 0 packets
+core info: ignored 1 packets
