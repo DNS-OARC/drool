@@ -1,6 +1,6 @@
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017, OARC, Inc.
+# Copyright (c) 2017-2018, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -34,7 +34,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 AC_PREREQ(2.61)
-AC_INIT([drool], [1.0.1], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
+AC_INIT([drool], [1.0.2], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/drool.c])
 AC_CONFIG_HEADER([src/config.h])

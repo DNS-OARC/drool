@@ -1,7 +1,7 @@
 /*
  * DNS Reply Tool (drool)
  *
- * Copyright (c) 2017, OARC, Inc.
+ * Copyright (c) 2017-2018, OARC, Inc.
  * Copyright (c) 2017, Comcast Corporation
  * All rights reserved.
  *
