@@ -1,5 +1,5 @@
 Name:           drool
-Version:        1.0.1
+Version:        1.0.2
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
@@ -49,6 +49,16 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Jan 16 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.2-1
+- Release 1.0.2
+  * Bugfixes:
+    - TCP option parsing was fixed in pcap-thread 3.0.0 but the work-around
+      code was still in drool
+    - The month in the console output was incorrect
+  * Commits:
+    a47ed95 Update copyright year
+    4d44801 TCP options was fixed in pcap-thread 3.0.0
+    cb5cebf Fix #93: `tm_mon` is 0-11
 * Tue Dec 19 2017 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.1-1
 - Release 1.0.1 (v1.0)
   * Thanks to a few people, especially Petr Špaček @pspacek (CZ.NIC), for

@@ -1,7 +1,7 @@
 /*
  * DNS Reply Tool (drool)
  *
- * Copyright (c) 2017, OARC, Inc.
+ * Copyright (c) 2017-2018, OARC, Inc.
  * Copyright (c) 2017, Comcast Corporation
  * All rights reserved.
  *
@@ -329,19 +329,6 @@ void callback_tcp(u_char* user, const pcap_thread_packet_t* packet, const u_char
 
     context->packets_seen++;
 
-    /* TODO: Fix workaround for pcap-thread not parsing/skipping TCP options */
-    if (!packet->have_tcphdr) {
-        context->packets_dropped++;
-        return;
-    }
-    if (packet->tcphdr.th_off > 5) {
-        if (length < ((packet->tcphdr.th_off - 5) * 4)) {
-            context->packets_dropped++;
-            return;
-        }
-        payload += (packet->tcphdr.th_off - 5) * 4;
-        length -= (packet->tcphdr.th_off - 5) * 4;
-    }
     if (length < 3) {
         context->packets_dropped++;
         return;
