@@ -40,6 +40,7 @@
 
 #include "conf.h"
 #include "client_pool.h"
+#include "pcap-thread/pcap_thread.h"
 
 #include <stdint.h>
 #include <time.h>
@@ -61,7 +62,7 @@
 #define DROOL_T_INIT { \
     0, \
     0, 0, 0, 0, 0, \
-    { 0, 0 }, { 0, 0 }, { 0, 0 }, \
+    { 0, 0 }, { 0, 0 }, { 0, 0 }, 0, { 0, 0 }, \
     0, 0 \
 }
 /* clang-format on */
@@ -76,7 +77,11 @@ struct drool {
     uint64_t            packets_dropped;
     uint64_t            packets_ignored;
 
-    struct timespec mono_diff; /** add this value to convert from absolute value to mono time on this system */
+    struct timespec              diff;
+    struct timeval               last_pkthdr_ts;
+    struct timespec              last_ts;
+    pcap_thread_layer_callback_t timing_callback;
+    struct timespec              mod_ts;
 
     drool_client_pool_t* client_pool;
     drool_client_pool_t* client_pools;

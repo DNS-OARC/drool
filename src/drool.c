@@ -150,7 +150,8 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread)
                 exit(DROOL_ENOMEM);
             }
 
-            context->conf = conf;
+            context->timing_callback = timing_init;
+            context->conf            = conf;
             for (n = 0; n < conf->context_client_pools; n++) { /* TODO */
                 if (!(context->client_pool = client_pool_new(conf))) {
                     log_print(conf_log(conf), LCORE, LCRITICAL, "Unable to allocate client_pool with client_pool_new()");
@@ -188,7 +189,8 @@ static int run(drool_conf_t* conf, pcap_thread_t* pcap_thread)
                 exit(DROOL_ENOMEM);
             }
 
-            context->conf = conf;
+            context->timing_callback = timing_init;
+            context->conf            = conf;
             for (n = 0; n < conf->context_client_pools; n++) { /* TODO */
                 if (!(context->client_pool = client_pool_new(conf))) {
                     log_print(conf_log(conf), LCORE, LCRITICAL, "Unable to allocate client_pool with client_pool_new()");
