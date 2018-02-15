@@ -76,10 +76,7 @@ struct drool {
     uint64_t            packets_dropped;
     uint64_t            packets_ignored;
 
-    struct timeval  last_packet;
-    struct timespec last_time;
-    struct timespec last_realtime;
-    struct timespec last_time_queue;
+    struct timespec mono_diff; /** add this value to convert from absolute value to mono time on this system */
 
     drool_client_pool_t* client_pool;
     drool_client_pool_t* client_pools;

@@ -111,191 +111,44 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
         }
     }
     if (walkpkt) {
-        struct timespec now = { 0, 0 };
+	struct timespec mono_now;
+	if (clock_gettime(CLOCK_MONOTONIC, &mono_now)) {
+		drool_assert("unable to sync clocks" == NULL);
+	}
+
+	/* init */
+	if (!context->mono_diff.tv_sec && !context->mono_diff.tv_nsec) {
+		context->mono_diff.tv_sec = mono_now.tv_sec - walkpkt->pkthdr.ts.tv_sec;
+		context->mono_diff.tv_nsec = mono_now.tv_nsec - walkpkt->pkthdr.ts.tv_usec * 1000;
+	}
+
+	struct timespec sleep_to;
+	sleep_to.tv_sec = context->mono_diff.tv_sec + walkpkt->pkthdr.ts.tv_sec;
+	sleep_to.tv_nsec = context->mono_diff.tv_nsec + walkpkt->pkthdr.ts.tv_usec * 1000;
+	if (sleep_to.tv_nsec > 1e9) {
+		sleep_to.tv_sec += 1;
+		sleep_to.tv_nsec -= 1e9;
+	} else if (sleep_to.tv_nsec < 0) {
+		sleep_to.tv_sec -= 1;
+		sleep_to.tv_nsec += 1e9;
+	}
+	drool_assert(sleep_to.tv_sec > 0);
+	drool_assert(sleep_to.tv_nsec > 0);
+	drool_assert(sleep_to.tv_nsec < 1e9);
+	if (sleep_to.tv_sec - mono_now.tv_sec < 0 || ((sleep_to.tv_sec == mono_now.tv_sec) && sleep_to.tv_nsec - mono_now.tv_nsec < -1e6)) {
+		printf("VELKY SPATNY, lag %ld sec %ld nsec\n", sleep_to.tv_sec - mono_now.tv_sec, sleep_to.tv_nsec - mono_now.tv_nsec);
+	} else {
+		int ret;
+		while ((ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleep_to, 0)) == EINTR);
+	}
 
         // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "pkthdr.ts %lu.%06lu", walkpkt->pkthdr.ts.tv_sec, walkpkt->pkthdr.ts.tv_usec);
         // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "last_packet %lu.%06lu", context->last_packet.tv_sec, context->last_packet.tv_usec);
 
-        if (clock_gettime(CLOCK_MONOTONIC, &(now))) {
-            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-        }
 
-        if ((context->last_time_queue.tv_sec || context->last_time_queue.tv_nsec)
-            && context->last_packet.tv_sec
-            && (context->last_time.tv_sec || context->last_time.tv_nsec)
-            && timercmp(&(walkpkt->pkthdr.ts), &(context->last_packet), >)) {
-            struct timespec pdiff = { 0, 0 };
-            struct timeval  diff;
-            struct timespec sleep_to;
-
-            if (now.tv_sec > context->last_time_queue.tv_sec)
-                pdiff.tv_sec = now.tv_sec - context->last_time_queue.tv_sec;
-            if (now.tv_nsec > context->last_time_queue.tv_nsec)
-                pdiff.tv_nsec = now.tv_nsec - context->last_time_queue.tv_nsec;
-
-            if (context->last_time_queue.tv_sec > context->last_time.tv_sec)
-                pdiff.tv_sec += context->last_time_queue.tv_sec - context->last_time.tv_sec;
-            if (context->last_time_queue.tv_nsec > context->last_time.tv_nsec)
-                pdiff.tv_nsec += context->last_time_queue.tv_nsec - context->last_time.tv_nsec;
-
-            if (pdiff.tv_nsec > 999999999) {
-                pdiff.tv_sec += pdiff.tv_nsec / 1000000000;
-                pdiff.tv_nsec %= 1000000000;
-            }
-
-            // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "process diff %lu.%09lu", pdiff.tv_sec, pdiff.tv_nsec);
-
-            timersub(&(walkpkt->pkthdr.ts), &(context->last_packet), &diff);
-
-            // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "diff %lu.%06lu", diff.tv_sec, diff.tv_usec);
-
-            if (conf_timing_mode(context->conf) == TIMING_MODE_MULTIPLY) {
-                diff.tv_sec  = (long)((float)diff.tv_sec * conf_timing_multiply(context->conf));
-                diff.tv_usec = (long)((float)diff.tv_usec * conf_timing_multiply(context->conf));
-                if (diff.tv_sec < 0 || diff.tv_usec < 0) {
-                    diff.tv_sec  = 0;
-                    diff.tv_usec = 0;
-                }
-            }
-
-#if HAVE_CLOCK_NANOSLEEP
-            /* absolute time */
-            sleep_to = context->last_time;
-#elif HAVE_NANOSLEEP
-            /* relative time */
-            sleep_to.tv_sec  = 0;
-            sleep_to.tv_nsec = 0;
-#else
-#error "No clock_nanosleep() or nanosleep(), can not continue"
-#endif
-
-            sleep_to.tv_nsec += diff.tv_usec * 1000;
-            if (sleep_to.tv_nsec > 999999999) {
-                sleep_to.tv_sec += sleep_to.tv_nsec / 1000000000;
-                sleep_to.tv_nsec %= 1000000000;
-            }
-            sleep_to.tv_sec += diff.tv_sec;
-
-            if (pdiff.tv_sec) {
-                if (sleep_to.tv_sec > pdiff.tv_sec)
-                    sleep_to.tv_sec -= pdiff.tv_sec;
-                else
-                    sleep_to.tv_sec = 0;
-            }
-            if (pdiff.tv_nsec) {
-                if (sleep_to.tv_nsec >= pdiff.tv_nsec)
-                    sleep_to.tv_nsec -= pdiff.tv_nsec;
-                else if (sleep_to.tv_sec) {
-                    sleep_to.tv_sec -= 1;
-                    sleep_to.tv_nsec += 1000000000 - pdiff.tv_nsec;
-                } else
-                    sleep_to.tv_nsec = 0;
-            }
-
-            switch (conf_timing_mode(context->conf)) {
-            case TIMING_MODE_INCREASE:
-                sleep_to.tv_nsec += conf_timing_increase(context->conf);
-                break;
-
-            case TIMING_MODE_REDUCE: {
-                unsigned long int nsec = conf_timing_reduce(context->conf);
-
-                if (nsec > 999999999) {
-                    unsigned long int sec = nsec / 1000000000;
-                    if (sleep_to.tv_sec > sec)
-                        sleep_to.tv_sec -= sec;
-                    else
-                        sleep_to.tv_sec = 0;
-                    nsec %= 1000000000;
-                }
-                if (nsec) {
-                    if (sleep_to.tv_nsec >= nsec)
-                        sleep_to.tv_nsec -= nsec;
-                    else if (sleep_to.tv_sec) {
-                        sleep_to.tv_sec -= 1;
-                        sleep_to.tv_nsec += 1000000000 - nsec;
-                    } else
-                        sleep_to.tv_nsec = 0;
-                }
-            } break;
-
-            default:
-                break;
-            }
-
-            if (sleep_to.tv_nsec > 999999999) {
-                sleep_to.tv_sec += sleep_to.tv_nsec / 1000000000;
-                sleep_to.tv_nsec %= 1000000000;
-            }
-
-            /*
-            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "last %lu.%09lu", context->last_time.tv_sec, context->last_time.tv_nsec);
-            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "now %lu.%09lu", now.tv_sec, now.tv_nsec);
-            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "sleep_to %lu.%09lu", sleep_to.tv_sec, sleep_to.tv_nsec);
-            */
-
-#if HAVE_CLOCK_NANOSLEEP
-            if (conf_timing_mode(context->conf) != TIMING_MODE_BEST_EFFORT
-                && (sleep_to.tv_sec < now.tv_sec
-                       || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec))) {
-                log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
-                    pdiff.tv_sec, pdiff.tv_nsec,
-                    diff.tv_sec, diff.tv_usec,
-                    now.tv_sec, now.tv_nsec,
-                    sleep_to.tv_sec, sleep_to.tv_nsec);
-                sleep_to.tv_sec  = 0;
-                sleep_to.tv_nsec = 0;
-            }
-
-            if (sleep_to.tv_sec || sleep_to.tv_nsec) {
-                clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleep_to, 0);
-            }
-#elif HAVE_NANOSLEEP
-#define SAVE_REALTIME 1
-            /* sleep_to will be relative, need to check against now - last_time */
-            if (conf_timing_mode(context->conf) != TIMING_MODE_BEST_EFFORT
-                && (sleep_to.tv_sec < (now.tv_sec - context->last_time.tv_sec)
-                       || (sleep_to.tv_sec == (now.tv_sec - context->last_time.tv_sec) && sleep_to.tv_nsec < (now.tv_nsec - context->last_time.tv_nsec)))) {
-                log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
-                    pdiff.tv_sec, pdiff.tv_nsec,
-                    diff.tv_sec, diff.tv_usec,
-                    now.tv_sec, now.tv_nsec,
-                    context->last_time.tv_sec + sleep_to.tv_sec, context->last_time.tv_nsec + sleep_to.tv_nsec);
-                sleep_to.tv_sec  = 0;
-                sleep_to.tv_nsec = 0;
-            }
-
-            if (sleep_to.tv_sec || sleep_to.tv_nsec) {
-                nanosleep(&sleep_to, 0);
-            }
-#endif
-        }
-
-        if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time))) {
-            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-            context->last_time.tv_sec  = 0;
-            context->last_time.tv_nsec = 0;
-        }
-#ifdef SAVE_REALTIME
-        if (clock_gettime(CLOCK_REALTIME, &(context->last_realtime))) {
-            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-            context->last_realtime.tv_sec  = 0;
-            context->last_realtime.tv_nsec = 0;
-            context->last_time.tv_sec      = 0;
-            context->last_time.tv_nsec     = 0;
-        }
-#endif
-
-        context->last_packet = walkpkt->pkthdr.ts;
     }
 
     queue_dns(context, packet, payload, length);
-
-    if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time_queue))) {
-        log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-        context->last_time_queue.tv_sec  = 0;
-        context->last_time_queue.tv_nsec = 0;
-    }
 }
 
 void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
