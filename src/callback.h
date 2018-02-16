@@ -43,4 +43,10 @@
 void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
 void callback_tcp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
 
+void timing_init(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
+void timing_keep(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
+void timing_increase(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
+void timing_reduce(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
+void timing_multiply(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length);
+
 #endif /* __drool_callback_h */

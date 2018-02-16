@@ -571,6 +571,8 @@ static int parse_timing_best_effort(void* user, const parseconf_token_t* tokens,
         return 1;
     }
 
+    log_print(conf_log(conf), LCORE, LWARNING, "best_effort mode is deprecated, keep will be used");
+
     conf->timing_mode = TIMING_MODE_BEST_EFFORT;
 
     return 0;
