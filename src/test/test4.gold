@@ -1,96 +1,60 @@
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 82 packets
-core info: sent 41 packets
-core info: dropped 0 packets
-core info: ignored 41 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 82 packets
-core info: sent 41 packets
-core info: dropped 0 packets
-core info: ignored 41 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 82 packets
-core info: sent 41 packets
-core info: dropped 0 packets
-core info: ignored 41 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 82 packets
-core info: sent 41 packets
-core info: dropped 0 packets
-core info: ignored 41 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 82 packets
-core info: sent 41 packets
-core info: dropped 0 packets
-core info: ignored 41 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 82 packets
-core info: sent 41 packets
-core info: dropped 0 packets
-core info: ignored 41 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 10 packets
-core info: sent 1 packets
-core info: dropped 8 packets
-core info: ignored 1 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 10 packets
-core info: sent 1 packets
-core info: dropped 8 packets
-core info: ignored 1 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 10 packets
-core info: sent 1 packets
-core info: dropped 8 packets
-core info: ignored 1 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 10 packets
-core info: sent 1 packets
-core info: dropped 8 packets
-core info: ignored 1 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 10 packets
-core info: sent 1 packets
-core info: dropped 8 packets
-core info: ignored 1 packets
-core info: setup signal handling
-core info: initialize pcap-thread
-core info: start
-core info: end
-core info: saw 10 packets
-core info: sent 1 packets
-core info: dropped 8 packets
-core info: ignored 1 packets
+packets 82
+queries 41
+dropped 0
+ignored 41
+total 82
+packets 82
+queries 41
+dropped 0
+ignored 41
+total 82
+packets 82
+queries 41
+dropped 0
+ignored 41
+total 82
+packets 82
+queries 41
+dropped 0
+ignored 41
+total 82
+packets 82
+queries 41
+dropped 0
+ignored 41
+total 82
+packets 82
+queries 41
+dropped 0
+ignored 41
+total 82
+packets 10
+queries 1
+dropped 8
+ignored 1
+total 10
+packets 10
+queries 1
+dropped 8
+ignored 1
+total 10
+packets 10
+queries 1
+dropped 8
+ignored 1
+total 10
+packets 10
+queries 1
+dropped 8
+ignored 1
+total 10
+packets 10
+queries 1
+dropped 8
+ignored 1
+total 10
+packets 10
+queries 1
+dropped 8
+ignored 1
+total 10

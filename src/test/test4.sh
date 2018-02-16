@@ -45,7 +45,7 @@ if [ -n "$DROOL_TEST_NETWORK" ]; then
         ../drool -c "text:client_pool target \"::1\" \"53\"; timing ignore; client_pool skip_reply; client_pool sendas udp;" -vv -r "$pcap" >>test4.out
         ../drool -c "text:client_pool target \"::1\" \"53\"; timing ignore; client_pool skip_reply; client_pool sendas tcp;" -vv -r "$pcap" >>test4.out
     done
-    cut -d" " -f 4- test4.out | grep -v runtime | sed 's%packets, .*%packets%' > test4.out2
+    cut -d" " -f 4- test4.out | grep -v runtime | awk '{print $1 " " $2}' > test4.out2
     diff test4.out2 "$srcdir/test4.gold"
 else
     echo "Not testing network (set DROOL_TEST_NETWORK to enable)"
