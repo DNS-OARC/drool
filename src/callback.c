@@ -45,6 +45,8 @@
 #include "client_pool.h"
 #include "assert.h"
 
+#define N1e9 1000000000
+
 static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
 {
     omg_dns_t                   dns = OMG_DNS_T_INIT;
@@ -101,8 +103,9 @@ static void queue_dns(drool_t* context, const pcap_thread_packet_t* packet, cons
     context->packets_size += length;
 }
 
-static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+void timing_init(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
 {
+    drool_t*                    context = (drool_t*)user;
     const pcap_thread_packet_t* walkpkt;
 
     for (walkpkt = packet; walkpkt; walkpkt = walkpkt->prevpkt) {
@@ -110,192 +113,397 @@ static void do_timing(drool_t* context, const pcap_thread_packet_t* packet, cons
             break;
         }
     }
-    if (walkpkt) {
-        struct timespec now = { 0, 0 };
-
-        // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "pkthdr.ts %lu.%06lu", walkpkt->pkthdr.ts.tv_sec, walkpkt->pkthdr.ts.tv_usec);
-        // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "last_packet %lu.%06lu", context->last_packet.tv_sec, context->last_packet.tv_usec);
-
-        if (clock_gettime(CLOCK_MONOTONIC, &(now))) {
-            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-        }
-
-        if ((context->last_time_queue.tv_sec || context->last_time_queue.tv_nsec)
-            && context->last_packet.tv_sec
-            && (context->last_time.tv_sec || context->last_time.tv_nsec)
-            && timercmp(&(walkpkt->pkthdr.ts), &(context->last_packet), >)) {
-            struct timespec pdiff = { 0, 0 };
-            struct timeval  diff;
-            struct timespec sleep_to;
-
-            if (now.tv_sec > context->last_time_queue.tv_sec)
-                pdiff.tv_sec = now.tv_sec - context->last_time_queue.tv_sec;
-            if (now.tv_nsec > context->last_time_queue.tv_nsec)
-                pdiff.tv_nsec = now.tv_nsec - context->last_time_queue.tv_nsec;
-
-            if (context->last_time_queue.tv_sec > context->last_time.tv_sec)
-                pdiff.tv_sec += context->last_time_queue.tv_sec - context->last_time.tv_sec;
-            if (context->last_time_queue.tv_nsec > context->last_time.tv_nsec)
-                pdiff.tv_nsec += context->last_time_queue.tv_nsec - context->last_time.tv_nsec;
-
-            if (pdiff.tv_nsec > 999999999) {
-                pdiff.tv_sec += pdiff.tv_nsec / 1000000000;
-                pdiff.tv_nsec %= 1000000000;
-            }
-
-            // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "process diff %lu.%09lu", pdiff.tv_sec, pdiff.tv_nsec);
-
-            timersub(&(walkpkt->pkthdr.ts), &(context->last_packet), &diff);
-
-            // log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "diff %lu.%06lu", diff.tv_sec, diff.tv_usec);
-
-            if (conf_timing_mode(context->conf) == TIMING_MODE_MULTIPLY) {
-                diff.tv_sec  = (long)((float)diff.tv_sec * conf_timing_multiply(context->conf));
-                diff.tv_usec = (long)((float)diff.tv_usec * conf_timing_multiply(context->conf));
-                if (diff.tv_sec < 0 || diff.tv_usec < 0) {
-                    diff.tv_sec  = 0;
-                    diff.tv_usec = 0;
-                }
-            }
+    if (!walkpkt) {
+        return;
+    }
 
 #if HAVE_CLOCK_NANOSLEEP
-            /* absolute time */
-            sleep_to = context->last_time;
+    if (clock_gettime(CLOCK_MONOTONIC, &context->last_ts)) {
+        log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
+        return;
+    }
+    context->diff = context->last_ts;
+    context->diff.tv_sec -= walkpkt->pkthdr.ts.tv_sec;
+    context->diff.tv_nsec -= walkpkt->pkthdr.ts.tv_usec * 1000;
+    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_init() with clock_nanosleep() now is %ld.%ld, diff of first pkt %ld.%ld",
+        context->last_ts.tv_sec, context->last_ts.tv_nsec,
+        context->diff.tv_sec, context->diff.tv_nsec);
 #elif HAVE_NANOSLEEP
-            /* relative time */
-            sleep_to.tv_sec  = 0;
-            sleep_to.tv_nsec = 0;
+    log_print(conf_log(context->conf), LNETWORK, LDEBUG, "timing_init() with nanosleep()");
 #else
 #error "No clock_nanosleep() or nanosleep(), can not continue"
 #endif
 
-            sleep_to.tv_nsec += diff.tv_usec * 1000;
-            if (sleep_to.tv_nsec > 999999999) {
-                sleep_to.tv_sec += sleep_to.tv_nsec / 1000000000;
-                sleep_to.tv_nsec %= 1000000000;
-            }
-            sleep_to.tv_sec += diff.tv_sec;
+    context->last_pkthdr_ts = walkpkt->pkthdr.ts;
 
-            if (pdiff.tv_sec) {
-                if (sleep_to.tv_sec > pdiff.tv_sec)
-                    sleep_to.tv_sec -= pdiff.tv_sec;
-                else
-                    sleep_to.tv_sec = 0;
-            }
-            if (pdiff.tv_nsec) {
-                if (sleep_to.tv_nsec >= pdiff.tv_nsec)
-                    sleep_to.tv_nsec -= pdiff.tv_nsec;
-                else if (sleep_to.tv_sec) {
-                    sleep_to.tv_sec -= 1;
-                    sleep_to.tv_nsec += 1000000000 - pdiff.tv_nsec;
-                } else
-                    sleep_to.tv_nsec = 0;
-            }
-
-            switch (conf_timing_mode(context->conf)) {
-            case TIMING_MODE_INCREASE:
-                sleep_to.tv_nsec += conf_timing_increase(context->conf);
-                break;
-
-            case TIMING_MODE_REDUCE: {
-                unsigned long int nsec = conf_timing_reduce(context->conf);
-
-                if (nsec > 999999999) {
-                    unsigned long int sec = nsec / 1000000000;
-                    if (sleep_to.tv_sec > sec)
-                        sleep_to.tv_sec -= sec;
-                    else
-                        sleep_to.tv_sec = 0;
-                    nsec %= 1000000000;
-                }
-                if (nsec) {
-                    if (sleep_to.tv_nsec >= nsec)
-                        sleep_to.tv_nsec -= nsec;
-                    else if (sleep_to.tv_sec) {
-                        sleep_to.tv_sec -= 1;
-                        sleep_to.tv_nsec += 1000000000 - nsec;
-                    } else
-                        sleep_to.tv_nsec = 0;
-                }
-            } break;
-
-            default:
-                break;
-            }
-
-            if (sleep_to.tv_nsec > 999999999) {
-                sleep_to.tv_sec += sleep_to.tv_nsec / 1000000000;
-                sleep_to.tv_nsec %= 1000000000;
-            }
-
-            /*
-            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "last %lu.%09lu", context->last_time.tv_sec, context->last_time.tv_nsec);
-            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "now %lu.%09lu", now.tv_sec, now.tv_nsec);
-            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "sleep_to %lu.%09lu", sleep_to.tv_sec, sleep_to.tv_nsec);
-            */
-
-#if HAVE_CLOCK_NANOSLEEP
-            if (conf_timing_mode(context->conf) != TIMING_MODE_BEST_EFFORT
-                && (sleep_to.tv_sec < now.tv_sec
-                       || (sleep_to.tv_sec == now.tv_sec && sleep_to.tv_nsec < now.tv_nsec))) {
-                log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
-                    pdiff.tv_sec, pdiff.tv_nsec,
-                    diff.tv_sec, diff.tv_usec,
-                    now.tv_sec, now.tv_nsec,
-                    sleep_to.tv_sec, sleep_to.tv_nsec);
-                sleep_to.tv_sec  = 0;
-                sleep_to.tv_nsec = 0;
-            }
-
-            if (sleep_to.tv_sec || sleep_to.tv_nsec) {
-                clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &sleep_to, 0);
-            }
-#elif HAVE_NANOSLEEP
-#define SAVE_REALTIME 1
-            /* sleep_to will be relative, need to check against now - last_time */
-            if (conf_timing_mode(context->conf) != TIMING_MODE_BEST_EFFORT
-                && (sleep_to.tv_sec < (now.tv_sec - context->last_time.tv_sec)
-                       || (sleep_to.tv_sec == (now.tv_sec - context->last_time.tv_sec) && sleep_to.tv_nsec < (now.tv_nsec - context->last_time.tv_nsec)))) {
-                log_printf(conf_log(context->conf), LNETWORK, LWARNING, "Unable to keep up with timings (process cost %lu.%09lu, packet diff %lu.%06lu, now %lu.%09lu, sleep to %lu.%09lu)",
-                    pdiff.tv_sec, pdiff.tv_nsec,
-                    diff.tv_sec, diff.tv_usec,
-                    now.tv_sec, now.tv_nsec,
-                    context->last_time.tv_sec + sleep_to.tv_sec, context->last_time.tv_nsec + sleep_to.tv_nsec);
-                sleep_to.tv_sec  = 0;
-                sleep_to.tv_nsec = 0;
-            }
-
-            if (sleep_to.tv_sec || sleep_to.tv_nsec) {
-                nanosleep(&sleep_to, 0);
-            }
-#endif
-        }
-
-        if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time))) {
-            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-            context->last_time.tv_sec  = 0;
-            context->last_time.tv_nsec = 0;
-        }
-#ifdef SAVE_REALTIME
-        if (clock_gettime(CLOCK_REALTIME, &(context->last_realtime))) {
-            log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-            context->last_realtime.tv_sec  = 0;
-            context->last_realtime.tv_nsec = 0;
-            context->last_time.tv_sec      = 0;
-            context->last_time.tv_nsec     = 0;
-        }
-#endif
-
-        context->last_packet = walkpkt->pkthdr.ts;
+    switch (conf_timing_mode(context->conf)) {
+    case TIMING_MODE_KEEP:
+    case TIMING_MODE_BEST_EFFORT:
+        log_print(conf_log(context->conf), LNETWORK, LDEBUG, "timing_init() mode keep");
+        context->timing_callback = timing_keep;
+        break;
+    case TIMING_MODE_INCREASE:
+        context->timing_callback = timing_increase;
+        context->mod_ts.tv_sec   = conf_timing_increase(context->conf) / N1e9;
+        context->mod_ts.tv_nsec  = conf_timing_increase(context->conf) % N1e9;
+        log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_init() mode increase by %ld.%ld", context->mod_ts.tv_sec, context->mod_ts.tv_nsec);
+        break;
+    case TIMING_MODE_REDUCE:
+        context->timing_callback = timing_reduce;
+        context->mod_ts.tv_sec   = conf_timing_reduce(context->conf) / N1e9;
+        context->mod_ts.tv_nsec  = conf_timing_reduce(context->conf) % N1e9;
+        log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_init() mode reduce by %ld.%ld", context->mod_ts.tv_sec, context->mod_ts.tv_nsec);
+        break;
+    case TIMING_MODE_MULTIPLY:
+        context->timing_callback = timing_multiply;
+        log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_init() mode multiply by %f", conf_timing_multiply(context->conf));
+        break;
+    default:
+        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "invalid timing mode %d", conf_timing_mode(context->conf));
+        return;
     }
 
     queue_dns(context, packet, payload, length);
+}
 
-    if (clock_gettime(CLOCK_MONOTONIC, &(context->last_time_queue))) {
-        log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
-        context->last_time_queue.tv_sec  = 0;
-        context->last_time_queue.tv_nsec = 0;
+void timing_keep(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
+    drool_t*                    context = (drool_t*)user;
+    const pcap_thread_packet_t* walkpkt;
+
+    for (walkpkt = packet; walkpkt; walkpkt = walkpkt->prevpkt) {
+        if (walkpkt->have_pkthdr) {
+            break;
+        }
     }
+    if (!walkpkt) {
+        return;
+    }
+
+#if HAVE_CLOCK_NANOSLEEP
+    {
+        struct timespec to = {
+            context->diff.tv_sec + walkpkt->pkthdr.ts.tv_sec,
+            context->diff.tv_nsec + (walkpkt->pkthdr.ts.tv_usec * 1000)
+        };
+        int ret = EINTR;
+
+        if (to.tv_nsec >= N1e9) {
+            to.tv_sec += 1;
+            to.tv_nsec -= N1e9;
+        } else if (to.tv_nsec < 0) {
+            to.tv_sec -= 1;
+            to.tv_nsec += N1e9;
+        }
+
+        while (ret) {
+            log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_keep() sleep to %ld.%ld", to.tv_sec, to.tv_nsec);
+            ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &to, 0);
+            if (ret && ret != EINTR) {
+                log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "clock_nanosleep(%ld.%ld) %d", to.tv_sec, to.tv_nsec, ret);
+                return;
+            }
+        }
+    }
+#elif HAVE_NANOSLEEP
+    {
+        struct timespec diff = {
+            walkpkt->pkthdr.ts.tv_sec - context->last_pkthdr_ts.tv_sec,
+            (walkpkt->pkthdr.ts.tv_usec - context->last_pkthdr_ts.tv_usec) * 1000
+        };
+        int ret = EINTR;
+
+        if (diff.tv_nsec >= N1e9) {
+            diff.tv_sec += 1;
+            diff.tv_nsec -= N1e9;
+        } else if (diff.tv_nsec < 0) {
+            diff.tv_sec -= 1;
+            diff.tv_nsec += N1e9;
+        }
+
+        if (diff.tv_sec > -1 && diff.tv_nsec > -1) {
+            while (ret) {
+                log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_keep() sleep for %ld.%ld", diff.tv_sec, diff.tv_nsec);
+                if ((ret = nanosleep(&diff, &diff))) {
+                    ret = errno;
+                    if (ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "nanosleep(%ld.%ld) %d", diff.tv_sec, diff.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+        }
+
+        context->last_pkthdr_ts = walkpkt->pkthdr.ts;
+    }
+#endif
+
+    queue_dns(context, packet, payload, length);
+}
+
+void timing_increase(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
+    drool_t*                    context = (drool_t*)user;
+    const pcap_thread_packet_t* walkpkt;
+
+    for (walkpkt = packet; walkpkt; walkpkt = walkpkt->prevpkt) {
+        if (walkpkt->have_pkthdr) {
+            break;
+        }
+    }
+    if (!walkpkt) {
+        return;
+    }
+
+    {
+        struct timespec diff = {
+            walkpkt->pkthdr.ts.tv_sec - context->last_pkthdr_ts.tv_sec,
+            (walkpkt->pkthdr.ts.tv_usec - context->last_pkthdr_ts.tv_usec) * 1000
+        };
+        int ret = EINTR;
+
+        if (diff.tv_nsec >= N1e9) {
+            diff.tv_sec += 1;
+            diff.tv_nsec -= N1e9;
+        } else if (diff.tv_nsec < 0) {
+            diff.tv_sec -= 1;
+            diff.tv_nsec += N1e9;
+        }
+
+        diff.tv_sec += context->mod_ts.tv_sec;
+        diff.tv_nsec += context->mod_ts.tv_nsec;
+        if (diff.tv_nsec >= N1e9) {
+            diff.tv_sec += 1;
+            diff.tv_nsec -= N1e9;
+        }
+
+        if (diff.tv_sec > -1 && diff.tv_nsec > -1) {
+#if HAVE_CLOCK_NANOSLEEP
+            {
+                struct timespec to = {
+                    context->last_ts.tv_sec + diff.tv_sec,
+                    context->last_ts.tv_nsec + diff.tv_nsec
+                };
+
+                if (to.tv_nsec >= N1e9) {
+                    to.tv_sec += 1;
+                    to.tv_nsec -= N1e9;
+                } else if (to.tv_nsec < 0) {
+                    to.tv_sec -= 1;
+                    to.tv_nsec += N1e9;
+                }
+
+                while (ret) {
+                    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_increase() sleep to %ld.%ld", to.tv_sec, to.tv_nsec);
+                    ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &to, 0);
+                    if (ret && ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "clock_nanosleep(%ld.%ld) %d", to.tv_sec, to.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+#elif HAVE_NANOSLEEP
+            while (ret) {
+                log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_increase() sleep for %ld.%ld", diff.tv_sec, diff.tv_nsec);
+                if ((ret = nanosleep(&diff, &diff))) {
+                    ret = errno;
+                    if (ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "nanosleep(%ld.%ld) %d", diff.tv_sec, diff.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+#endif
+        }
+
+        context->last_pkthdr_ts = walkpkt->pkthdr.ts;
+    }
+
+#if HAVE_CLOCK_NANOSLEEP
+    if (clock_gettime(CLOCK_MONOTONIC, &context->last_ts)) {
+        log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
+        return;
+    }
+#endif
+
+    queue_dns(context, packet, payload, length);
+}
+
+void timing_reduce(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
+    drool_t*                    context = (drool_t*)user;
+    const pcap_thread_packet_t* walkpkt;
+
+    for (walkpkt = packet; walkpkt; walkpkt = walkpkt->prevpkt) {
+        if (walkpkt->have_pkthdr) {
+            break;
+        }
+    }
+    if (!walkpkt) {
+        return;
+    }
+
+    {
+        struct timespec diff = {
+            walkpkt->pkthdr.ts.tv_sec - context->last_pkthdr_ts.tv_sec,
+            (walkpkt->pkthdr.ts.tv_usec - context->last_pkthdr_ts.tv_usec) * 1000
+        };
+        int ret = EINTR;
+
+        if (diff.tv_nsec >= N1e9) {
+            diff.tv_sec += 1;
+            diff.tv_nsec -= N1e9;
+        } else if (diff.tv_nsec < 0) {
+            diff.tv_sec -= 1;
+            diff.tv_nsec += N1e9;
+        }
+
+        diff.tv_sec -= context->mod_ts.tv_sec;
+        diff.tv_nsec -= context->mod_ts.tv_nsec;
+        if (diff.tv_nsec < 0) {
+            diff.tv_sec -= 1;
+            diff.tv_nsec += N1e9;
+        }
+
+        if (diff.tv_sec > -1 && diff.tv_nsec > -1) {
+#if HAVE_CLOCK_NANOSLEEP
+            {
+                struct timespec to = {
+                    context->last_ts.tv_sec + diff.tv_sec,
+                    context->last_ts.tv_nsec + diff.tv_nsec
+                };
+
+                if (to.tv_nsec >= N1e9) {
+                    to.tv_sec += 1;
+                    to.tv_nsec -= N1e9;
+                } else if (to.tv_nsec < 0) {
+                    to.tv_sec -= 1;
+                    to.tv_nsec += N1e9;
+                }
+
+                while (ret) {
+                    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_reduce() sleep to %ld.%ld", to.tv_sec, to.tv_nsec);
+                    ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &to, 0);
+                    if (ret && ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "clock_nanosleep(%ld.%ld) %d", to.tv_sec, to.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+#elif HAVE_NANOSLEEP
+            while (ret) {
+                log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_reduce() sleep for %ld.%ld", diff.tv_sec, diff.tv_nsec);
+                if ((ret = nanosleep(&diff, &diff))) {
+                    ret = errno;
+                    if (ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "nanosleep(%ld.%ld) %d", diff.tv_sec, diff.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+#endif
+        }
+
+        context->last_pkthdr_ts = walkpkt->pkthdr.ts;
+    }
+
+#if HAVE_CLOCK_NANOSLEEP
+    if (clock_gettime(CLOCK_MONOTONIC, &context->last_ts)) {
+        log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
+        return;
+    }
+#endif
+
+    queue_dns(context, packet, payload, length);
+}
+
+void timing_multiply(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
+{
+    drool_t*                    context = (drool_t*)user;
+    const pcap_thread_packet_t* walkpkt;
+
+    for (walkpkt = packet; walkpkt; walkpkt = walkpkt->prevpkt) {
+        if (walkpkt->have_pkthdr) {
+            break;
+        }
+    }
+    if (!walkpkt) {
+        return;
+    }
+
+    {
+        struct timespec diff = {
+            walkpkt->pkthdr.ts.tv_sec - context->last_pkthdr_ts.tv_sec,
+            (walkpkt->pkthdr.ts.tv_usec - context->last_pkthdr_ts.tv_usec) * 1000
+        };
+        int ret = EINTR;
+
+        if (diff.tv_nsec >= N1e9) {
+            diff.tv_sec += 1;
+            diff.tv_nsec -= N1e9;
+        } else if (diff.tv_nsec < 0) {
+            diff.tv_sec -= 1;
+            diff.tv_nsec += N1e9;
+        }
+
+        diff.tv_sec  = (time_t)((float)diff.tv_sec * conf_timing_multiply(context->conf));
+        diff.tv_nsec = (long)((float)diff.tv_nsec * conf_timing_multiply(context->conf));
+
+        if (diff.tv_sec > -1 && diff.tv_nsec > -1) {
+            if (diff.tv_nsec >= N1e9) {
+                diff.tv_sec += diff.tv_nsec / N1e9;
+                diff.tv_nsec %= N1e9;
+            }
+
+#if HAVE_CLOCK_NANOSLEEP
+            {
+                struct timespec to = {
+                    context->last_ts.tv_sec + diff.tv_sec,
+                    context->last_ts.tv_nsec + diff.tv_nsec
+                };
+
+                if (to.tv_nsec >= N1e9) {
+                    to.tv_sec += 1;
+                    to.tv_nsec -= N1e9;
+                } else if (to.tv_nsec < 0) {
+                    to.tv_sec -= 1;
+                    to.tv_nsec += N1e9;
+                }
+
+                while (ret) {
+                    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_multiply() sleep to %ld.%ld", to.tv_sec, to.tv_nsec);
+                    ret = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &to, 0);
+                    if (ret && ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "clock_nanosleep(%ld.%ld) %d", to.tv_sec, to.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+#elif HAVE_NANOSLEEP
+            while (ret) {
+                log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "timing_multiply() sleep for %ld.%ld", diff.tv_sec, diff.tv_nsec);
+                if ((ret = nanosleep(&diff, &diff))) {
+                    ret = errno;
+                    if (ret != EINTR) {
+                        log_errnof(conf_log(context->conf), LNETWORK, LDEBUG, "nanosleep(%ld.%ld) %d", diff.tv_sec, diff.tv_nsec, ret);
+                        return;
+                    }
+                }
+            }
+#endif
+        }
+
+        context->last_pkthdr_ts = walkpkt->pkthdr.ts;
+    }
+
+#if HAVE_CLOCK_NANOSLEEP
+    if (clock_gettime(CLOCK_MONOTONIC, &context->last_ts)) {
+        log_errno(conf_log(context->conf), LNETWORK, LDEBUG, "clock_gettime()");
+        return;
+    }
+#endif
+
+    queue_dns(context, packet, payload, length);
 }
 
 void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
@@ -314,7 +522,7 @@ void callback_udp(u_char* user, const pcap_thread_packet_t* packet, const u_char
         queue_dns(context, packet, payload, length);
         return;
     }
-    do_timing(context, packet, payload, length);
+    context->timing_callback(user, packet, payload, length);
 }
 
 void callback_tcp(u_char* user, const pcap_thread_packet_t* packet, const u_char* payload, size_t length)
@@ -340,20 +548,5 @@ void callback_tcp(u_char* user, const pcap_thread_packet_t* packet, const u_char
         queue_dns(context, packet, payload, length);
         return;
     }
-    do_timing(context, packet, payload, length);
+    context->timing_callback(user, packet, payload, length);
 }
-
-/*
-void callback(u_char* user, const struct pcap_pkthdr* pkthdr, const u_char* pkt, const char* name, int dlt) {
-    drool_t* context = (drool_t*)user;
-
-    drool_assert(context);
-    drool_assert(pkthdr);
-    drool_assert(pkt);
-    drool_assert(name);
-
-    log_printf(conf_log(context->conf), LNETWORK, LDEBUG, "packet received from %s", name);
-
-    context->packets_seen++;
-}
-*/

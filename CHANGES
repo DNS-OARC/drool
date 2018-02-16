@@ -1,3 +1,17 @@
+2018-02-16 Jerry Lundström
+
+    Release 1.1.0
+
+    Rework of the timing code to make it more effective, based on
+    proof-of-concept from Petr Špaček @pspacek (CZ.NIC).
+
+    The `best_effort` timing mode is now deprecated, this is now the same
+    mode as `keep` and the warnings `keep` made when unable to follow
+    timings have been removed.
+
+    6e81a31 Timing
+    d30918c WIP: timing rework
+
 2018-01-16 Jerry Lundström
 
     Release 1.0.2

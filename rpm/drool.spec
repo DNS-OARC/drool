@@ -1,5 +1,5 @@
 Name:           drool
-Version:        1.0.2
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
@@ -49,6 +49,16 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Feb 16 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.1.0-1
+- Release 1.1.0
+  * Rework of the timing code to make it more effective, based on
+    proof-of-concept from Petr Špaček @pspacek (CZ.NIC).
+  * The `best_effort` timing mode is now deprecated, this is now the same
+    mode as `keep` and the warnings `keep` made when unable to follow
+    timings have been removed.
+  * Commits:
+    6e81a31 Timing
+    d30918c WIP: timing rework
 * Tue Jan 16 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.0.2-1
 - Release 1.0.2
   * Bugfixes:
