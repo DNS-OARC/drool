@@ -191,6 +191,12 @@ The following logging facilities exists:
 \fBcore\fR
 Log messages about initializing, configuration and start up.
 .TP
+\fBinput\fR
+Log messages about input related tasks.
+.TP
+\fBprocessing\fR
+Log messages about processing related tasks.
+.TP
 \fBnetwork\fR
 Log messages about network related tasks.
 .TP
@@ -215,12 +221,14 @@ operation.
 Log message of the warning kind that indicates possible disruption in
 operation.
 .TP
-\fBerror\fR
+\fBcritical\fR
 Log messages of the error kind that will most likely result in termination
 of operation.
+This log level can not be silenced.
 .TP
-\fBcritical\fR
+\fBfatal\fR
 Log messages of the critical kind that indicates termination of operation.
+This log level can not be silenced.
 .TP
 \fBall\fR
 Log messages for all levels, this is only used to configure logging.

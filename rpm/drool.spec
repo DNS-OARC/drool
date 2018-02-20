@@ -8,7 +8,7 @@ License:        BSD-3-Clause
 URL:            https://github.com/DNS-OARC/drool
 Source0:        %{name}_%{version}.orig.tar.gz
 
-BuildRequires:  libpcap-devel libev-devel
+BuildRequires:  dnsjit
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  libtool

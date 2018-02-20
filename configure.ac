@@ -34,38 +34,16 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 AC_PREREQ(2.61)
-AC_INIT([drool], [1.1.0], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
+AC_INIT([drool], [2.0.0], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
-AC_CONFIG_SRCDIR([src/drool.c])
-AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_SRCDIR([src/drool.in])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
-AC_PROG_CC
-AM_PROG_CC_C_O
-AC_CANONICAL_HOST
-m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
-LT_INIT([disable-static])
-
-# pcap_thread
-AX_PCAP_THREAD
-
-# Checks for sizes
-AC_CHECK_SIZEOF(void*)
-AC_CHECK_SIZEOF(int)
-AC_CHECK_SIZEOF(long)
-
-# Checks for functions
-AC_SEARCH_LIBS([clock_gettime],[rt])
-AC_CHECK_FUNCS([clock_nanosleep nanosleep])
-
-# Checks for libraries/headers.
-AC_CHECK_LIB([ev], [ev_now], [], AC_MSG_ERROR([libev not found]))
-AC_CHECK_HEADER([ev.h], [AC_CHECK_HEADERS([ev.h])], [AC_CHECK_HEADER([libev/ev.h], [AC_CHECK_HEADERS([libev/ev.h])], [AC_MSG_ERROR([libev header not found])])])
-
-# Check for OS specific libraries
-# case "$host_os" in
-# esac
+AC_PATH_PROG([DNSJIT],[dnsjit])
+if test "x$ac_cv_path_DNSJIT" = "x"; then
+	AC_MSG_ERROR([dnsjit was not found])
+fi
 
 # Output Makefiles
 AC_CONFIG_FILES([

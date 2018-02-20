@@ -1,6 +1,6 @@
 # DNS Replay Tool (drool)
 
-[![Build Status](https://travis-ci.org/DNS-OARC/drool.svg?branch=develop)](https://travis-ci.org/DNS-OARC/drool) [![Coverity Scan Build Status](https://scan.coverity.com/projects/12202/badge.svg)](https://scan.coverity.com/projects/dns-oarc-drool)
+[![Build Status](https://travis-ci.org/DNS-OARC/drool.svg?branch=develop)](https://travis-ci.org/DNS-OARC/drool)
 
 `drool` can replay DNS traffic from packet capture (PCAP) files and send
 it to a specified server, with options such as to manipulate the timing
@@ -59,71 +59,15 @@ drool -vv \
   -r file.pcap
 ```
 
-## Timing warnings
+## Dependencies
 
-The warnings from timing mode `keep` consists of:
-- `process cost`: This is the CPU cost of processing the packet including the cost of measuring the cost
-- `packet diff`: This is the timing differential between the previous packet and the packet being processed as seen from the PCAP, i.e. the time to wait before sending it
-- `now`: Is the time "now" or at least when the processing for this packet begun
-- `sleep to`: Was the time it should have slept to
+`drool` is built upon [dnsjit](https://github.com/DNS-OARC/dnsjit) and
+requires it to be installed.
 
-The values for `now` and `sleep to` are in monotonic or real-time clock
-depending on the available system functionality during compilation.
-
-## Dependencies and build tools
-
-`drool` requires the PCAP library and the event engine EV along with system
-build tools.
-
-To install the dependencies and build tools under Debian 8+/Ubuntu 14.04+:
-```
-apt-get install -y libpcap-dev libev-dev build-essential autoconf automake libtool
-```
-
-To install the dependencies and build tools under CentOS 7+ (with EPEL enabled):
-```
-yum install -y libpcap-devel libev-devel
-yum group install -y "Development Tools"
-```
-
-To install the dependencies, build tools and setup the environment for
-FreeBSD 11+ using `pkg`:
-```
-pkg install -y libpcap libev gmake autoconf automake libtool gcc
-export AUTOCONF_VERSION=2.69 \
-  AUTOMAKE_VERSION=1.15 \
-  CFLAGS="-I/usr/local/include" \
-  LDFLAGS="-L/usr/local/lib"
-```
-
-For OpenBSD 6.0+ it is recommended to install a later version of the PCAP
-library then the system provides, rest of the dependencies can be installed
-using `pkg_add` (based on 6.0, package versions may be different for others):
-```
-pkg_add libev gcc autoconf-2.69p2 automake-1.15p0 gmake-4.2.1 libtool-2.4.2p0
-export AUTOCONF_VERSION=2.69 \
-  AUTOMAKE_VERSION=1.15 \
-  CFLAGS="-I/usr/local/include" \
-  LDFLAGS="-L/usr/local/lib"
-```
-
-## Build from GitHub
+## Build
 
 ```
-git clone https://github.com/DNS-OARC/drool.git
-cd drool
-git submodule update --init
 sh autogen.sh
-./configure
-make
-make test
-make install
-```
-
-## Build from tarball
-
-```
-cd drool-VERSION...
 ./configure
 make
 make test
