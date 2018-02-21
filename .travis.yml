@@ -14,4 +14,3 @@ script:
   - ../configure
   - make
   - make test
-  - src/drool -h

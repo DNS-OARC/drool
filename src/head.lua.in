@@ -1,0 +1,29 @@
+#!/usr/bin/env dnsjit
+
+log = require("dnsjit.core.log")
+L = log.new("drool")
+conf = require("dnsjit.lib.parseconf").new()
+getopt = nil
+
+files = {}
+interfaces = {}
+bpf = nil
+client_pools = nil
+host = nil
+port = nil
+max_clients = nil
+client_ttl = nil
+skip_reply = nil
+max_reuse_clients = nil
+sendas = nil
+timing_mode = nil
+timing_arg = nil
+facility_log = {
+    input = {},
+    processing = {},
+    network = {},
+}
+read_iter = 1
+read_mode = false
+program = "@PACKAGE_NAME@"
+version = "@PACKAGE_VERSION@"
