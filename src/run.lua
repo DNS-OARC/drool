@@ -1,5 +1,11 @@
 function run()
-    local input = require("dnsjit.input.pcap").new()
+    local pcapthread = pcall(function() require("dnsjit.input.pcapthread") end)
+    if not pcapthread then
+        pcapthread = require("dnsjit.input.pcap")
+    else
+        pcapthread = require("dnsjit.input.pcapthread")
+    end
+    local input = pcapthread.new()
     set_log("input", input)
     input:only_queries(true)
 
