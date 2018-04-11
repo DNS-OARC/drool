@@ -1,3 +1,42 @@
+#!/usr/bin/env dnsjit
+
+log = require("dnsjit.core.log")
+clock = require("dnsjit.lib.clock")
+L = log.new("drool")
+conf = require("dnsjit.lib.parseconf").new()
+getopt = nil
+
+files = {}
+interfaces = {}
+bpf = nil
+client_pools = nil
+host = nil
+port = nil
+max_clients = nil
+client_ttl = nil
+skip_reply = nil
+max_reuse_clients = nil
+sendas = nil
+timing_mode = nil
+timing_arg = nil
+facility_log = {
+    input = {},
+    processing = {},
+    network = {},
+}
+read_iter = 1
+read_mode = false
+program = "@PACKAGE_NAME@"
+version = "@PACKAGE_VERSION@"
+package_url = "@PACKAGE_URL@"
+pkgdatadir = "@pkgdatadir@"
+backend = {
+    input = "pcapthread",
+    output = "cpool",
+}
+
+io.stderr:write("<< "..program.." v"..version.." "..package_url.." >>\n")
+
 function args()
     getopt = require("dnsjit.lib.getopt").new({
         { "c", nil, "", "", "?+" },
@@ -10,6 +49,7 @@ function args()
         { "n", nil, "", "", "?" },
         { "v", nil, 0, "", "?+" },
         { "V", nil, false, "", "?" },
+        { nil, "pkgdatadir", pkgdatadir, "", "?" },
     })
     arg = getopt:parse()
 
@@ -61,3 +101,10 @@ function args()
         os.exit(0)
     end
 end
+
+args()
+assert(loadfile(getopt:val("pkgdatadir").."/conf.lua"))()
+assert(loadfile(getopt:val("pkgdatadir").."/log.lua"))()
+assert(loadfile(getopt:val("pkgdatadir").."/run.lua"))()
+assert(loadfile(getopt:val("pkgdatadir").."/main.lua"))()
+main()
