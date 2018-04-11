@@ -34,7 +34,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 AC_PREREQ(2.61)
-AC_INIT([drool], [2.0.0], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
+AC_INIT([drool], [1.99.0], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/main.lua])
 AC_CONFIG_MACRO_DIR([m4])
@@ -42,13 +42,13 @@ AC_CONFIG_MACRO_DIR([m4])
 # Checks for programs.
 AC_PATH_PROG([DNSJIT],[dnsjit])
 if test "x$ac_cv_path_DNSJIT" = "x"; then
-	AC_MSG_ERROR([dnsjit was not found])
+  AC_MSG_ERROR([dnsjit was not found])
 fi
 
 # Output Makefiles
 AC_CONFIG_FILES([
-    Makefile
-    src/Makefile
-	src/test/Makefile
+  Makefile
+  src/Makefile
+  src/test/Makefile
 ])
 AC_OUTPUT

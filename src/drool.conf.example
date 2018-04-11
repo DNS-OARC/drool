@@ -1,6 +1,13 @@
 log all;
 nolog network debug;
 
+#backend input pcapthread;
+#backend input fpcap;
+#backend input mmpcap;
+#backend input pcap;
+#backend output cpool;
+#backend output udpcli;
+
 filter "udp port 53";
 
 timing ignore;

@@ -43,3 +43,28 @@ conf:func("client_pool", function(_, option, arg1, arg2)
         L:fatal("unknown client_pool option: %s", option)
     end
 end)
+conf:func("backend", function(_, section, module)
+    if section == "input" then
+        if module == "pcapthread" then
+            backend.input = "pcapthread"
+        elseif module == "fpcap" then
+            backend.input = "fpcap"
+        elseif module == "mmpcap" then
+            backend.input = "mmpcap"
+        elseif module == "pcap" then
+            backend.input = "pcap"
+        else
+            L:fatal("unknown backend input: %s", module)
+        end
+    elseif section == "output" then
+        if module == "cpool" then
+            backend.output = "cpool"
+        elseif module == "udpcli" then
+            backend.output = "udpcli"
+        else
+            L:fatal("unknown backend output: %s", module)
+        end
+    else
+        L:fatal("unknown backend section: %s", section)
+    end
+end)

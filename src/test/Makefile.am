@@ -36,8 +36,8 @@
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
 CLEANFILES = test*.log test*.trs \
-    *.pcap-dist \
-    test4.out test4.out2
+  *.pcap-dist \
+  test4.out test4.out2
 
 TESTS = test1.sh test2.sh test3.sh test4.sh
 
@@ -49,6 +49,6 @@ test4.sh: dns.pcap-dist 1qtcp.pcap-dist
 	cp "$<" "$@"
 
 EXTRA_DIST = $(TESTS) \
-    test2.conf \
-    dns.pcap 1qtcp.pcap \
-    test4.gold
+  test2.conf \
+  dns.pcap 1qtcp.pcap \
+  test4.gold

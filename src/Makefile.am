@@ -34,41 +34,38 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-CLEANFILES = head.lua drool drool.1 drool.conf.5
+CLEANFILES = drool drool.1 drool.conf.5
 
 SUBDIRS = test
 
-EXTRA_DIST = drool.1.in \
-    drool.conf.5.in \
-    drool.conf.example \
-	head.lua.in conf.lua getopt.lua log.lua run.lua main.lua
+EXTRA_DIST = drool.in \
+  drool.1.in \
+  drool.conf.5.in \
+  drool.conf.example
 
 bin_SCRIPTS = drool
-
-SOURCES = head.lua conf.lua getopt.lua log.lua run.lua main.lua
+dist_pkgdata_DATA = conf.lua log.lua run.lua main.lua
 
 man1_MANS = drool.1
 man5_MANS = drool.conf.5
 
-drool: $(SOURCES)
-	for file in $(SOURCES); do test -f "$$file" && cat "$$file" || cat "$(srcdir)/$$file"; done > drool
-	chmod +x drool
-
-head.lua: head.lua.in Makefile
+drool: drool.in Makefile
 	sed -e 's,[@]PACKAGE_NAME[@],$(PACKAGE_NAME),g' \
-        -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-		-e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < "$(srcdir)/head.lua.in" > head.lua
+  -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
+  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  -e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
+  < "$(srcdir)/drool.in" > drool
+	chmod +x drool
 
 drool.1: drool.1.in Makefile
 	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < "$(srcdir)/drool.1.in" > drool.1
+  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  < "$(srcdir)/drool.1.in" > drool.1
 
 drool.conf.5: drool.conf.5.in Makefile
 	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < "$(srcdir)/drool.conf.5.in" > drool.conf.5
+  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  < "$(srcdir)/drool.conf.5.in" > drool.conf.5

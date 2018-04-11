@@ -36,7 +36,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in \
-    $(srcdir)/configure
+  $(srcdir)/configure
 
 SUBDIRS = src
 

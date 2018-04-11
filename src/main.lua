@@ -79,6 +79,3 @@ function main()
         end
     end
 end
-
-args()
-main()

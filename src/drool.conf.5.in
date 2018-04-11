@@ -74,6 +74,10 @@ given to disable just that.
 Can be given multiple times and will be processed in the given order.
 See LOGGING for more information.
 .TP
+\fBbackend\fR SECTION MODULE ;
+Set which backend module to use for each section.
+See BACKEND for more information.
+.TP
 \fBread\fR " FILE " ;
 Read packets from PCAP file, can be given multiple times.
 Each \fBread\fR counts as a context and will use the given configuration
@@ -137,6 +141,9 @@ will use a TCP or UDP port depending on the traffic read/captured,
 The total amount of ports used will be this value * number of \fIread\fR
 and \fIinput\fR * \fBcontext client_pools\fR and it is advised to keep this
 within the available ports/file descriptors for the running user.
+If used together with backend
+.I udpcli
+then this will set the number of threads to use and run one client per thread.
 .TP
 \fBclient_pool\fR client_ttl SECONDS_AS_FLOAT ;
 Set the time a client lives for, this is used to timeout clients in case
@@ -172,50 +179,97 @@ example:
 
 The following logging facilities exists:
 .TP
-\fBcore\fR
+.B core
 Log messages about initializing, configuration and start up.
 .TP
-\fBinput\fR
+.B input
 Log messages about input related tasks.
 .TP
-\fBprocessing\fR
+.B processing
 Log messages about processing related tasks.
 .TP
-\fBnetwork\fR
+.B network
 Log messages about network related tasks.
 .TP
-\fBall\fR
+.B all
 Log messages for all facilities, this is only used to configure logging.
 .LP
 The following logging level exists for all facilities:
 .TP
-\fBdebug\fR
+.B debug
 Log messages about the very inner workings, use with caution since it
 generates a lot of messages.
 .TP
-\fBinfo\fR
+.B info
 Log messages of the informational kind that may not be interesting in normal
 operation.
 .TP
-\fBnotice\fR
+.B notice
 Log messages of the informational kind that may be interesting in normal
 operation.
 .TP
-\fBwarning\fR
+.B warning
 Log message of the warning kind that indicates possible disruption in
 operation.
 .TP
-\fBcritical\fR
+.B critical
 Log messages of the error kind that will most likely result in termination
 of operation.
 This log level can not be silenced.
 .TP
-\fBfatal\fR
+.B fatal
 Log messages of the critical kind that indicates termination of operation.
 This log level can not be silenced.
 .TP
-\fBall\fR
+.B all
 Log messages for all levels, this is only used to configure logging.
+.SH BACKEND
+Following backend modules exists, note that some modules does not work with
+each other and configuration options may not be available or mean different
+things.
+.SS SECTION: input
+.TP
+.B pcapthread
+Default input that uses pcap-thread helper library to read from interfaces
+and PCAP files.
+.TP
+.B fpcap
+Read input from a PCAP file using standard library function
+.B fopen()
+and parse the PCAP without libpcap.
+Following configuration options does not work:
+.B filter
+and
+.BR timing .
+.TP
+.B mmpcap
+Read input from a PCAP file by mapping the whole file to memory using
+.B mmap()
+and parse the PCAP without libpcap.
+Following configuration options does not work:
+.B filter
+and
+.BR timing .
+.TP
+.B pcap
+Read input from an interface or PCAP file using libpcap.
+Following configuration options does not work:
+.B filter
+and
+.BR timing .
+.SS SECTION: output
+.TP
+.B cpool
+Send queries to a target by emulating clients (a client pool).
+.TP
+.B udpcli
+Simple and dumb UDP DNS client.
+Following configuration options does not work:
+.B context
+and all
+.B client_pool
+but
+.BR max_clients .
 .SH SEE ALSO
 drool(1)
 .SH AUTHORS
