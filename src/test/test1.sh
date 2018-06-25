@@ -35,4 +35,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-! ../drool --pkgdatadir "$srcdir/.." -h
+export LUA_PATH="$srcdir/../lib/?.lua"
+../drool -h
+../drool replay -h

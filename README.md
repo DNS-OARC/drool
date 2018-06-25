@@ -25,38 +25,24 @@ efficacy of subsequent bug fixes.
 ## Usage example
 
 Send all DNS queries twice as fast as found in the PCAP file to localhost
-using UDP:
+using UDP.
 
 ```shell
-drool -vv \
-  -c 'text:timing multiply 0.5; client_pool target "127.0.0.1" "53"; client_pool sendas udp;' \
-  -r file.pcap
+drool replay --timing multiply=0.5 --no-tcp file.pcap 127.0.0.1 53
 ```
 
-Only look for DNS queries in TCP traffic and send it to localhost:
+Send all DNS queries over TCP to localhost as they were recorded.
 
 ```shell
-drool -vv \
-  -c 'text:filter "tcp"; client_pool target "127.0.0.1" "53";' \
-  -r file.pcap
+drool replay --timing keep --no-udp file.pcap 127.0.0.1 53
 ```
 
-Listen for DNS queries on eth0 and send them to an (assuming) internal server:
+Take all DNS queries found in the PCAP file and send them as fast as possible
+over UDP to localhost by ignoring both timings, replies and starting 3 threads
+that will simultaneously send queries.
 
 ```shell
-drool -vv \
-  -c 'text:filter "port 53"; client_pool target "172.16.1.2" "53";' \
-  -i eth0
-```
-
-Take all UDP DNS queries found in the PCAP file and send them as fast as
-possible to localhost by ignoring both timings, replies and starting 5
-contexts (threads) that will simultaneously send queries:
-
-```shell
-drool -vv \
-  -c 'text:filter "udp"; timing ignore; context client_pools 5; client_pool target "127.0.0.1" "53"; client_pool skip_reply;' \
-  -r file.pcap
+drool replay --no-tcp --no-responses --threads --udp-threads 3 file.pcap 127.0.0.1 53
 ```
 
 ## Dependencies

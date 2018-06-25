@@ -1,110 +1,144 @@
 #!/usr/bin/env dnsjit
+-- DNS Reply Tool (drool)
+--
+-- Copyright (c) 2017-2018, OARC, Inc.
+-- Copyright (c) 2017, Comcast Corporation
+-- All rights reserved.
+--
+-- Redistribution and use in source and binary forms, with or without
+-- modification, are permitted provided that the following conditions
+-- are met:
+--
+-- 1. Redistributions of source code must retain the above copyright
+--    notice, this list of conditions and the following disclaimer.
+--
+-- 2. Redistributions in binary form must reproduce the above copyright
+--    notice, this list of conditions and the following disclaimer in
+--    the documentation and/or other materials provided with the
+--    distribution.
+--
+-- 3. Neither the name of the copyright holder nor the names of its
+--    contributors may be used to endorse or promote products derived
+--    from this software without specific prior written permission.
+--
+-- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+-- "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+-- LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+-- FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+-- COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+-- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+-- BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+-- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+-- CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+-- LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+-- ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+-- POSSIBILITY OF SUCH DAMAGE.
+package.path = package.path .. ";@pkglibdir@/?.lua"
 
-log = require("dnsjit.core.log")
-clock = require("dnsjit.lib.clock")
-L = log.new("drool")
-conf = require("dnsjit.lib.parseconf").new()
-getopt = nil
+local clock = require("dnsjit.lib.clock")
+local log = require("dnsjit.core.log").new("drool")
+local getopt = require("dnsjit.lib.getopt").new({
+    { "v", "verbose", 0, "Enable and increase verbosity for each time given", "?+" },
+    { nil, "json", false, "Output statistics as JSON", "?" },
+    { nil, "csv", false, "Output statistics as CSV", "?" },
+})
+getopt.usage_desc = arg[1] .. " command [options...] <arguments...>"
 
-files = {}
-interfaces = {}
-bpf = nil
-client_pools = nil
-host = nil
-port = nil
-max_clients = nil
-client_ttl = nil
-skip_reply = nil
-max_reuse_clients = nil
-sendas = nil
-timing_mode = nil
-timing_arg = nil
-facility_log = {
-    input = {},
-    processing = {},
-    network = {},
+local cmds = {
+    replay = "drool.replay",
+    mirror = "drool.mirror",
+    respdiff = "drool.respdiff",
 }
-read_iter = 1
-read_mode = false
-program = "@PACKAGE_NAME@"
-version = "@PACKAGE_VERSION@"
-package_url = "@PACKAGE_URL@"
-pkgdatadir = "@pkgdatadir@"
-backend = {
-    input = "pcapthread",
-    output = "cpool",
-}
 
-io.stderr:write("<< "..program.." v"..version.." "..package_url.." >>\n")
-
-function args()
-    getopt = require("dnsjit.lib.getopt").new({
-        { "c", nil, "", "", "?+" },
-        { "l", nil, "", "", "?+" },
-        { "L", nil, "", "", "?+" },
-        { "f", nil, "", "", "?" },
-        { "i", nil, "", "", "?+" },
-        { "r", nil, "", "", "?+" },
-        { "R", nil, "", "", "?" },
-        { "n", nil, "", "", "?" },
-        { "v", nil, 0, "", "?+" },
-        { "V", nil, false, "", "?" },
-        { nil, "pkgdatadir", pkgdatadir, "", "?" },
-    })
-    arg = getopt:parse()
-
-    local v = getopt:val("v")
-    if v > 0 then
-        log.enable("warning")
-    end
-    if v > 1 then
-        log.enable("notice")
-    end
-    if v > 2 then
-        log.enable("info")
-    end
-    if v > 3 then
-        log.enable("debug")
-    end
+if not arg[2] or not cmds[arg[2]] then
+    getopt:parse()
 
     if getopt:val("help") then
-        print("usage: "..program.." [options]")
-        print[[
-
-  -c [type:]config
-                Specify the configuration to use, if no type is given then
-                config expects to be a file. Valid types are file and text.
-                Can be given multiple times and will be processed in the
-                given order. See drool.conf(5) for configuration syntax.
-  -l facility[:level]
-                Enable logging for facility, optional log level can be given
-                to enable just that. Can be given multiple times and will be
-                processed in the given order. See drool(1) for available
-                facilities and log levels.
-  -L facility[:level]
-                Same as -l but to disable the given facility and log level.
-  -f filter     Set the Berkeley Packet Filter to use.
-  -i interface  Capture packets from interface, can be given multiple times.
-  -r file.pcap  Read packets from PCAP file, can be given multiple times.
-  -R mode       Specify the mode for reading PCAP files, see drool(1) for
-                available modes.
-  -n            Dry run mode, do not allocate any outbound sockets or
-                generate any network traffic.
-  -v            Enable verbose, a simple way to enable logging. Can be
-                given multiple times to increase verbosity level.
-  -h            Print this help and exit
-  -V            Print version and exit
-]]
-        os.exit(1)
-    elseif getopt:val("V") then
-        print("drool v"..version)
+        getopt:usage()
         os.exit(0)
     end
+    if arg[2] then
+        log:critical("Command "..arg[2].." not found")
+    end
+
+    getopt:usage()
+    os.exit(-1)
 end
 
-args()
-assert(loadfile(getopt:val("pkgdatadir").."/conf.lua"))()
-assert(loadfile(getopt:val("pkgdatadir").."/log.lua"))()
-assert(loadfile(getopt:val("pkgdatadir").."/run.lua"))()
-assert(loadfile(getopt:val("pkgdatadir").."/main.lua"))()
-main()
+local cmd = require(cmds[arg[2]]).new(getopt)
+getopt:parse()
+
+if getopt:val("help") then
+    getopt:usage()
+    os.exit(0)
+end
+
+local v = getopt:val("v")
+if v > 0 then
+    require("dnsjit.core.log").enable("warning")
+end
+if v > 1 then
+    require("dnsjit.core.log").enable("notice")
+end
+if v > 2 then
+    require("dnsjit.core.log").enable("info")
+end
+if v > 3 then
+    require("dnsjit.core.log").enable("debug")
+end
+
+cmd:setup(getopt)
+local start_sec, start_nsec = clock:monotonic()
+cmd:run()
+local end_sec, end_nsec = clock:monotonic()
+cmd:finish()
+local fin_sec, fin_nsec = clock:monotonic()
+
+local runtime = 0
+if end_sec > start_sec then
+    runtime = ((end_sec - start_sec) - 1) + ((1000000000 - start_nsec + end_nsec)/1000000000)
+elseif end_sec == start_sec and end_nsec > start_nsec then
+    runtime = (end_nsec - start_nsec) / 1000000000
+end
+
+local finish = 0
+if fin_sec > end_sec then
+    finish = ((fin_sec - end_sec) - 1) + ((1000000000 - end_nsec + fin_nsec)/1000000000)
+elseif fin_sec == end_sec and fin_nsec > end_nsec then
+    finish = (fin_nsec - end_nsec) / 1000000000
+end
+
+if getopt:val("json") then
+    print("{")
+    print("  \"runtime\": " .. runtime .. ",")
+    print("  \"finish\": " .. finish .. ",")
+    print("  \"packets\": " .. cmd.packets .. ",")
+    print("  \"queries\": " .. cmd.queries .. ",")
+    print("  \"sent\": " .. cmd.sent .. ",")
+    print("  \"received\": " .. cmd.received .. ",")
+    print("  \"responses\": " .. cmd.responses .. ",")
+    print("  \"timeouts\": " .. cmd.timeouts .. ",")
+    print("  \"errors\": " .. cmd.errors)
+    print("}")
+elseif getopt:val("csv") then
+    print("runtime,finish,packets,queries,sent,received,responses,timeouts,errors")
+    print(runtime ..","..
+        finish ..","..
+        cmd.packets ..","..
+        cmd.queries ..","..
+        cmd.sent ..","..
+        cmd.received ..","..
+        cmd.responses ..","..
+        cmd.timeouts ..","..
+        cmd.errors)
+else
+    print("runtime", runtime+finish, "run", runtime, "finish", finish)
+    print("", "total", "/sec")
+    print("packets", cmd.packets, cmd.packets/runtime)
+    print("queries", cmd.queries, cmd.queries/runtime)
+    print("sent", cmd.sent, cmd.sent/runtime)
+    print("received", cmd.received, cmd.received/runtime)
+    print("responses", cmd.responses, cmd.responses/runtime)
+    print("timeouts", cmd.timeouts)
+    print("errors", cmd.errors)
+end
