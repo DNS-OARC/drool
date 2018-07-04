@@ -28,9 +28,8 @@ src/stamp-h1
 build
 
 # Project specific files
-src/drool
 src/drool.1
-src/drool.conf.5
+src/drool-replay.1
 src/test/test-suite.log
 src/test/test*.sh.log
 src/test/test*.sh.trs

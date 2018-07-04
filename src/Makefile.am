@@ -34,38 +34,34 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-CLEANFILES = drool drool.1 drool.conf.5
+CLEANFILES = drool \
+  drool.1 \
+  drool-replay.1
 
 SUBDIRS = test
 
 EXTRA_DIST = drool.in \
-  drool.1.in \
-  drool.conf.5.in \
-  drool.conf.example
+  drool.1in \
+  drool-replay.1in
 
 bin_SCRIPTS = drool
-dist_pkgdata_DATA = conf.lua log.lua run.lua main.lua
+droollibdir = $(pkglibdir)/drool
+dist_droollib_DATA = lib/drool/replay.lua
 
-man1_MANS = drool.1
-man5_MANS = drool.conf.5
+man1_MANS = drool.1 \
+  drool-replay.1
 
 drool: drool.in Makefile
 	sed -e 's,[@]PACKAGE_NAME[@],$(PACKAGE_NAME),g' \
   -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
   -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
   -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-  -e 's,[@]pkgdatadir[@],$(pkgdatadir),g' \
+  -e 's,[@]pkglibdir[@],$(pkglibdir),g' \
   < "$(srcdir)/drool.in" > drool
 	chmod +x drool
 
-drool.1: drool.1.in Makefile
+.1in.1:
 	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
   -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
   -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-  < "$(srcdir)/drool.1.in" > drool.1
-
-drool.conf.5: drool.conf.5.in Makefile
-	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-  < "$(srcdir)/drool.conf.5.in" > drool.conf.5
+  < "$<" > "$@"
