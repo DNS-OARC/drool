@@ -36,8 +36,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 export LUA_PATH="$srcdir/../lib/?.lua"
-../drool -h
-../drool replay -h
 
 if [ -n "$DROOL_TEST_NETWORK" ]; then
     rm -f test2.out test2.out2

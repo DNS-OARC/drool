@@ -45,6 +45,15 @@ if test "x$ac_cv_path_DNSJIT" = "x"; then
   AC_MSG_ERROR([dnsjit was not found])
 fi
 
+# Check --enable-warn-all, placeholer for OARC projects wide options
+AC_ARG_ENABLE([warn-all])
+
+# Check --with-extra-cflags, placeholer for OARC projects wide options
+AC_ARG_WITH([extra-cflags])
+
+# Check --with-extra-ldflags, placeholer for OARC projects wide options
+AC_ARG_WITH([extra-ldflags])
+
 # Output Makefiles
 AC_CONFIG_FILES([
   Makefile
