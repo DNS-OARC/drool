@@ -3,15 +3,15 @@ Section: net
 Priority: optional
 Maintainer: Jerry Lundström <lundstrom.jerry@gmail.com>
 Build-Depends: debhelper (>= 8.0.0), build-essential, automake, autoconf,
- netbase, dnsjit
+ netbase, dnsjit (>= 0.9.4)
 Standards-Version: 3.9.4
 Homepage: https://www.dns-oarc.net/tools/drool
 Vcs-Git: https://github.com/DNS-OARC/drool.git
 Vcs-Browser: https://github.com/DNS-OARC/drool
 
 Package: drool
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Architecture: all
+Depends: ${misc:Depends}
 Description: DNS Replay Tool
  drool can replay DNS traffic from packet capture (PCAP) files and send it
  to a specified server, with options such as to manipulate the timing

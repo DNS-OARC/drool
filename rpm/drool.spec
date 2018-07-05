@@ -1,6 +1,6 @@
 Name:           drool
-Version:        1.99.0
-Release:        1.%{?dist}
+Version:        1.99.1
+Release:        5%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
 
@@ -8,13 +8,24 @@ License:        BSD-3-Clause
 URL:            https://github.com/DNS-OARC/drool
 Source0:        %{name}_%{version}.orig.tar.gz
 
-BuildRequires:  dnsjit
+BuildArch:      noarch
+
+BuildRequires:  dnsjit >= 0.9.4
 BuildRequires:  autoconf
 BuildRequires:  automake
-BuildRequires:  libtool
+
+Requires:       dnsjit >= 0.9.4
+
 
 %description
-DNS Replay Tool
+drool can replay DNS traffic from packet capture (PCAP) files and send it
+to a specified server, with options such as to manipulate the timing
+between packets, as well as loop packets infinitely or for a set number of
+iterations. This tool's goal is to be able to produce a high amount of UDP
+packets per second and TCP sessions per second on common hardware.
+
+
+%define debug_package %{nil}
 
 
 %prep
@@ -23,7 +34,7 @@ DNS Replay Tool
 
 %build
 sh autogen.sh
-%configure
+%configure --with-shebang=/usr/bin/dnsjit
 make %{?_smp_mflags}
 
 
@@ -44,13 +55,13 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 %{_bindir}/*
 %{_datadir}/doc/*
+%{_datadir}/drool
 %{_mandir}/man1/*
-%{_mandir}/man5/*
 
 
 %changelog
-* Wed Apr 11 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.0-1.
-- Release 1.99.0
+* Thu Jul 05 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.1-5
+- Release 1.99.1
   * Alpha version using dnsjit
 * Fri Feb 16 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.1.0-1
 - Release 1.1.0

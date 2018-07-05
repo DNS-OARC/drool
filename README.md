@@ -48,7 +48,7 @@ drool replay --no-tcp --no-responses --threads --udp-threads 3 file.pcap 127.0.0
 ## Dependencies
 
 `drool` is built upon [dnsjit](https://github.com/DNS-OARC/dnsjit) and
-requires it to be installed.
+requires it to be installed along with autoconf/automake.
 
 ## Build
 
