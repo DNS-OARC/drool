@@ -1,10 +1,10 @@
-drool (1.99.1-5~unstable+1) unstable; urgency=low
+drool (1.99.1-7~unstable+1) unstable; urgency=low
 
   * Release 1.99.1
 
     Alpha version using dnsjit.
 
- -- Jerry Lundström <lundstrom.jerry@gmail.com>  Thu, 05 Jul 2018 17:12:10 +0200
+ -- Jerry Lundström <lundstrom.jerry@gmail.com>  Fri, 06 Jul 2018 14:42:03 +0200
 
 drool (1.1.0-1~unstable+1) unstable; urgency=low
 

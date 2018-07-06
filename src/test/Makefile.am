@@ -37,7 +37,8 @@ MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 
 CLEANFILES = test*.log test*.trs \
   *.pcap-dist \
-  test2.out test2.out2
+  test2.out test2.out2 \
+  test2-threads.out test2-threads.out2
 
 TESTS = test1.sh test2.sh
 
