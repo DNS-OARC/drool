@@ -45,7 +45,7 @@ EXTRA_DIST = drool.in \
   drool-replay.1in
 
 bin_SCRIPTS = drool
-droollibdir = $(pkglibdir)/drool
+droollibdir = $(datadir)/drool/lib/drool
 dist_droollib_DATA = lib/drool/replay.lua
 
 man1_MANS = drool.1 \
@@ -56,7 +56,8 @@ drool: drool.in Makefile
   -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
   -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
   -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-  -e 's,[@]pkglibdir[@],$(pkglibdir),g' \
+  -e 's,[@]droollibdir[@],$(datadir)/drool/lib,g' \
+  -e 's,[@]DROOL_SHEBANG[@],$(DROOL_SHEBANG),g' \
   < "$(srcdir)/drool.in" > drool
 	chmod +x drool
 

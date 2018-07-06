@@ -54,6 +54,15 @@ AC_ARG_WITH([extra-cflags])
 # Check --with-extra-ldflags, placeholer for OARC projects wide options
 AC_ARG_WITH([extra-ldflags])
 
+# Check --with-shebang
+AC_ARG_WITH([shebang], [AS_HELP_STRING([--with-shebang=shebang], [Set the shebang to use (without #!, default to /usr/bin/env dnsjit)])], [
+  AC_MSG_NOTICE([using shebang... $withval])
+  AC_SUBST([DROOL_SHEBANG], ["$withval"])
+], [
+  AC_MSG_NOTICE([using shebang... /usr/bin/env dnsjit])
+  AC_SUBST([DROOL_SHEBANG], ["/usr/bin/env dnsjit"])
+])
+
 # Output Makefiles
 AC_CONFIG_FILES([
   Makefile

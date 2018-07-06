@@ -1,4 +1,4 @@
-#!/usr/bin/env dnsjit
+#!@DROOL_SHEBANG@
 -- DNS Reply Tool (drool)
 --
 -- Copyright (c) 2017-2018, OARC, Inc.
@@ -33,7 +33,7 @@
 -- LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
 -- ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 -- POSSIBILITY OF SUCH DAMAGE.
-package.path = package.path .. ";@pkglibdir@/?.lua"
+package.path = package.path .. ";@droollibdir@/?.lua"
 
 local clock = require("dnsjit.lib.clock")
 local log = require("dnsjit.core.log").new("drool")
