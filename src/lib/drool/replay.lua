@@ -160,8 +160,15 @@ function Replay:setup(getopt)
                     local thrid = string.format("udp#%d", thr:pop())
                     local log = require("dnsjit.core.log").new(thrid)
                     require("dnsjit.core.objects")
-                    require("drool.replay_stats")
                     local ffi = require("ffi")
+                    local C = ffi.C
+ffi.cdef[[
+struct replay_stats {
+    int64_t sent, received, responses, timeouts, errors;
+};
+void* malloc(size_t);
+void free(void*);
+]]
                     local host = thr:pop()
                     local port = thr:pop()
                     local chan = thr:pop()
@@ -189,13 +196,13 @@ function Replay:setup(getopt)
                     urecv, uctx = udpcli:receive()
                     uprod = udpcli:produce()
 
-                    local stat = ffi.cast("struct replay_stats*", ffi.C.malloc(ffi.sizeof("struct replay_stats")))
+                    local stat = ffi.cast("struct replay_stats*", C.malloc(ffi.sizeof("struct replay_stats")))
                     stat.sent = 0
                     stat.received = 0
                     stat.responses = 0
                     stat.timeouts = 0
                     stat.errors = 0
-                    ffi.gc(stat, ffi.C.free)
+                    ffi.gc(stat, C.free)
 
                     local send
                     if resp == 0 then
@@ -291,7 +298,15 @@ function Replay:setup(getopt)
                     local thrid = string.format("tcp#%d", thr:pop())
                     local log = require("dnsjit.core.log").new(thrid)
                     require("dnsjit.core.objects")
-                    require("drool.replay_stats")
+                    local ffi = require("ffi")
+                    local C = ffi.C
+ffi.cdef[[
+struct replay_stats {
+    int64_t sent, received, responses, timeouts, errors;
+};
+void* malloc(size_t);
+void free(void*);
+]]
                     local ffi = require("ffi")
                     local host = thr:pop()
                     local port = thr:pop()
@@ -320,13 +335,13 @@ function Replay:setup(getopt)
                     trecv, tctx = tcpcli:receive()
                     tprod = tcpcli:produce()
 
-                    local stat = ffi.cast("struct replay_stats*", ffi.C.malloc(ffi.sizeof("struct replay_stats")))
+                    local stat = ffi.cast("struct replay_stats*", C.malloc(ffi.sizeof("struct replay_stats")))
                     stat.sent = 0
                     stat.received = 0
                     stat.responses = 0
                     stat.timeouts = 0
                     stat.errors = 0
-                    ffi.gc(stat, ffi.C.free)
+                    ffi.gc(stat, C.free)
 
                     local send
                     if resp == 0 then

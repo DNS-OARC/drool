@@ -1,6 +1,6 @@
 Name:           drool
 Version:        1.99.1
-Release:        5%{?dist}
+Release:        7%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
 
@@ -60,7 +60,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Thu Jul 05 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.1-5
+* Fri Jul 06 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.1-7
 - Release 1.99.1
   * Alpha version using dnsjit
 * Fri Feb 16 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.1.0-1
