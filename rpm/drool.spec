@@ -1,6 +1,6 @@
 Name:           drool
-Version:        1.99.1
-Release:        7%{?dist}
+Version:        1.99.2
+Release:        1%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
 
@@ -10,11 +10,11 @@ Source0:        %{name}_%{version}.orig.tar.gz
 
 BuildArch:      noarch
 
-BuildRequires:  dnsjit >= 0.9.4
+BuildRequires:  dnsjit >= 0.9.5
 BuildRequires:  autoconf
 BuildRequires:  automake
 
-Requires:       dnsjit >= 0.9.4
+Requires:       dnsjit >= 0.9.5
 
 
 %description
@@ -60,6 +60,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jul 19 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.2-1
+- Alpha release 1.99.2
 * Fri Jul 06 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.1-7
 - Release 1.99.1
   * Alpha version using dnsjit

@@ -38,32 +38,33 @@ module(...,package.seeall)
 local ffi = require("ffi")
 local C = ffi.C
 ffi.cdef[[
-struct replay_stats {
+struct respdiff_stats {
     int64_t sent, received, responses, timeouts, errors;
 };
 void* malloc(size_t);
 void free(void*);
 ]]
 
+local clock = require("dnsjit.lib.clock")
 local object = require("dnsjit.core.objects")
 require("dnsjit.core.timespec_h")
 
-Replay = {}
+Respdiff = {}
 
-function Replay.new(getopt)
+function Respdiff.new(getopt)
     local self = setmetatable({
+        path = nil,
+        fname = nil,
         file = nil,
+        hname = nil,
         host = nil,
         port = nil,
-        no_responses = false,
+
         use_threads = false,
-        print_dns = false,
         timeout = 10.0,
-        timing = nil,
-        timing_mode = "ignore",
-        timing_opt = nil,
         layer = nil,
         input = nil,
+        respdiff = nil,
         no_udp = false,
         no_tcp = false,
         udp_threads = 4,
@@ -77,7 +78,7 @@ function Replay.new(getopt)
         errors = 0,
         timeouts = 0,
 
-        log = require("dnsjit.core.log").new("replay"),
+        log = require("dnsjit.core.log").new("respdiff"),
 
         _timespec = ffi.new("core_timespec_t"),
         _udp_channels = {},
@@ -86,26 +87,24 @@ function Replay.new(getopt)
         _udpcli = nil,
         _tcpcli = nil,
         _stat_channels = {},
-    }, { __index = Replay })
+        _result_channels = {},
+    }, { __index = Respdiff })
 
     if getopt then
-        getopt.usage_desc = arg[1] .. " replay [options...] file host port"
-        getopt:add("t", "timing", "ignore", "Set the timing mode [mode=option], default ignore", "?")
-        getopt:add("n", "no-responses", false, "Do not wait for responses before sending next request", "?")
+        getopt.usage_desc = arg[1] .. " respdiff [options...] path name file name host port"
         getopt:add(nil, "no-udp", false, "Do not use UDP", "?")
         getopt:add(nil, "no-tcp", false, "Do not use TCP", "?")
         getopt:add("T", "threads", false, "Use threads", "?")
         getopt:add(nil, "udp-threads", 4, "Set the number of UDP threads to use, default 4", "?")
         getopt:add(nil, "tcp-threads", 2, "Set the number of TCP threads to use, default 2", "?")
         getopt:add(nil, "timeout", "10.0", "Set timeout for waiting on responses [seconds.nanoseconds], default 10.0", "?")
-        getopt:add("D", nil, false, "Show DNS queries and responses as processing goes", "?")
     end
 
     return self
 end
 
-function Replay:getopt(getopt)
-    local _, file, host, port = unpack(getopt.left)
+function Respdiff:getopt(getopt)
+    local _, path, fname, file, hname, host, port = unpack(getopt.left)
 
     if getopt:val("no-udp") and getopt:val("no-tcp") then
         self.log:fatal("can not disable all transports")
@@ -117,10 +116,22 @@ function Replay:getopt(getopt)
         self.log:fatal("--tcp-threads must be 1 or greater")
     end
 
+    if path == nil then
+        self.log:fatal("no path given")
+    end
+    self.path = path
+    if fname == nil then
+        self.log:fatal("no name for file given")
+    end
+    self.fname = fname
     if file == nil then
         self.log:fatal("no file given")
     end
     self.file = file
+    if hname == nil then
+        self.log:fatal("no name for host given")
+    end
+    self.hname = hname
     if host == nil then
         self.log:fatal("no target host given")
     end
@@ -129,45 +140,28 @@ function Replay:getopt(getopt)
         self.log:fatal("no target port given")
     end
     self.port = port
+
     self.use_threads = getopt:val("T")
     self.timeout = tonumber(getopt:val("timeout"))
-    self.no_responses = getopt:val("n")
-    self.print_dns = getopt:val("D")
     self.no_udp = getopt:val("no-udp")
     self.udp_threads = getopt:val("udp-threads")
     self.no_tcp = getopt:val("no-tcp")
     self.tcp_threads = getopt:val("tcp-threads")
-
-    if getopt:val("t") ~= "ignore" then
-        local mode, opt = getopt:val("t")
-        self.timing_mode = mode
-        self.timing_opt = opt
-    end
 end
 
 local _thr_func = function(thr)
-    local mode, thrid, host, port, chan, stats, resp, print_dns, to_sec, to_nsec = thr:pop(10)
+    local mode, thrid, host, port, chan, stats, to_sec, to_nsec, result = thr:pop(9)
     local log = require("dnsjit.core.log").new(mode .. "#" .. thrid)
     require("dnsjit.core.objects")
     local ffi = require("ffi")
     local C = ffi.C
     ffi.cdef[[
-struct replay_stats {
+struct respdiff_stats {
     int64_t sent, received, responses, timeouts, errors;
 };
 void* malloc(size_t);
 void free(void*);
 ]]
-    local dns = require("dnsjit.core.object.dns").new()
-
-    if print_dns == 1 then
-        print_dns = function(payload)
-            dns.obj_prev = payload
-            dns:print()
-        end
-    else
-        print_dns = nil
-    end
 
     local cli, recv, ctx, prod
     if mode == "udp" then
@@ -182,96 +176,53 @@ void free(void*);
     recv, ctx = cli:receive()
     prod = cli:produce()
 
-    local stat = ffi.cast("struct replay_stats*", C.malloc(ffi.sizeof("struct replay_stats")))
-    ffi.fill(stat, ffi.sizeof("struct replay_stats"))
+    local stat = ffi.cast("struct respdiff_stats*", C.malloc(ffi.sizeof("struct respdiff_stats")))
+    ffi.fill(stat, ffi.sizeof("struct respdiff_stats"))
     ffi.gc(stat, C.free)
-
-    local send
-    if resp == 0 then
-        send = function(obj)
-            log:info("sending query")
-            recv(ctx, obj)
-            if print_dns then
-                print_dns(obj)
-            end
-        end
-    else
-        send = function(obj)
-            log:info("sending query")
-            recv(ctx, obj)
-            if print_dns then
-                print_dns(obj)
-            end
-
-            local response = prod(ctx)
-            if response == nil then
-                log:warning("producer error")
-                return
-            end
-            local payload = response:cast()
-            if payload.len == 0 then
-                stat.timeouts = stat.timeouts + 1
-                log:info("timeout")
-                return
-            end
-
-            stat.responses = stat.responses + 1
-            log:info("got response")
-            if print_dns then
-                print_dns(response)
-            end
-        end
-    end
 
     while true do
         local obj = chan:get()
         if obj == nil then break end
         obj = ffi.cast("core_object_t*", obj)
-        dns.obj_prev = obj
-        if dns:parse_header() == 0 and dns.qr == 0 then
-            send(obj)
-            stat.sent = stat.sent + 1
+        local resp = ffi.cast("core_object_t*", obj.obj_prev)
+
+        log:info("sending query")
+        recv(ctx, obj)
+        stat.sent = stat.sent + 1
+
+        local response = prod(ctx)
+        if response == nil then
+            log:warning("producer error")
+            stat.errors = stat.errors + 1
+            break
         end
-        obj:free()
+        local payload = response:cast()
+        if payload.len == 0 then
+            stat.timeouts = stat.timeouts + 1
+            log:info("timeout")
+        else
+            stat.responses = stat.responses + 1
+            log:info("got response")
+            resp.obj_prev = response:copy()
+        end
+        result:put(obj)
     end
 
-    stat.errors = cli:errors()
+    stat.errors = stat.errors + cli:errors()
     ffi.gc(stat, nil)
     stats:put(stat)
 end
 
-function Replay:setup()
+function Respdiff:setup()
     self.input = require("dnsjit.input.mmpcap").new()
     if self.input:open(self.file) ~= 0 then
         self.log:fatal("unable to open file " .. self.file)
     end
 
-    if self.timing_mode ~= "ignore" then
-        self.timing = require("dnsjit.filter.timing").new()
-        self.timing:producer(self.input)
-
-        if self.timing_mode == "keep" then
-        else
-            if self.timing_mode == "inc" or self.timing_mode == "increase" then
-                self.timing:increase(tonumber(self.timing_opt))
-            elseif self.timing_mode == "red" or self.timing_mode == "reduce" then
-                self.timing:reduce(tonumber(self.timing_opt))
-            elseif self.timing_mode == "mul" or self.timing_mode == "multiply" then
-                self.timing:multiply(tonumber(self.timing_opt))
-            elseif self.timing_mode == "fix" or self.timing_mode == "fixed" then
-                self.timing:fixed(tonumber(self.timing_opt))
-            else
-                self.log:fatal("Invalid timing mode " .. self.timing_mode)
-            end
-        end
-    end
-
     self.layer = require("dnsjit.filter.layer").new()
-    if self.timing then
-        self.layer:producer(self.timing)
-    else
-        self.layer:producer(self.input)
-    end
+    self.layer:producer(self.input)
+
+    self.respdiff = require("dnsjit.output.respdiff").new(self.path, self.fname, self.hname)
 
     self._timespec.sec = math.floor(self.timeout)
     self._timespec.nsec = (self.timeout - math.floor(self.timeout)) * 1000000000
@@ -282,24 +233,15 @@ function Replay:setup()
             for n = 1, self.udp_threads do
                 local chan = require("dnsjit.core.channel").new()
                 local stats = require("dnsjit.core.channel").new()
+                local result = require("dnsjit.core.channel").new()
                 local thr = require("dnsjit.core.thread").new()
 
                 thr:start(_thr_func)
-                thr:push("udp", n, self.host, self.port, chan, stats)
-                if self.no_responses then
-                    thr:push(0)
-                else
-                    thr:push(1)
-                end
-                if self.print_dns then
-                    thr:push(1)
-                else
-                    thr:push(0)
-                end
-                thr:push(tonumber(self._timespec.sec), tonumber(self._timespec.nsec))
+                thr:push("udp", n, self.host, self.port, chan, stats, tonumber(self._timespec.sec), tonumber(self._timespec.nsec), result)
 
                 table.insert(self._udp_channels, chan)
                 table.insert(self._stat_channels, stats)
+                table.insert(self._result_channels, result)
                 table.insert(self._threads, thr)
                 self.log:info("UDP thread " .. n .. " started")
             end
@@ -309,24 +251,15 @@ function Replay:setup()
             for n = 1, self.tcp_threads do
                 local chan = require("dnsjit.core.channel").new()
                 local stats = require("dnsjit.core.channel").new()
+                local result = require("dnsjit.core.channel").new()
                 local thr = require("dnsjit.core.thread").new()
 
                 thr:start(_thr_func)
-                thr:push("tcp", n, self.host, self.port, chan, stats)
-                if self.no_responses then
-                    thr:push(0)
-                else
-                    thr:push(1)
-                end
-                if self.print_dns then
-                    thr:push(1)
-                else
-                    thr:push(0)
-                end
-                thr:push(tonumber(self._timespec.sec), tonumber(self._timespec.nsec))
+                thr:push("tcp", n, self.host, self.port, chan, stats, tonumber(self._timespec.sec), tonumber(self._timespec.nsec), result)
 
                 table.insert(self._tcp_channels, chan)
                 table.insert(self._stat_channels, stats)
+                table.insert(self._result_channels, result)
                 table.insert(self._threads, thr)
                 self.log:info("TCP thread " .. n .. " started")
             end
@@ -349,48 +282,47 @@ function Replay:setup()
     end
 end
 
-function Replay:run()
+function Respdiff:run()
     local lprod, lctx = self.layer:produce()
     local udpcli = self._udpcli
     local tcpcli = self._tcpcli
-    local log, packets, queries, responses, errors, timeouts = self.log, 0, 0, 0, 0, 0
+    local log, packets, queries, responses, errors, timeouts, thread_resps = self.log, 0, 0, 0, 0, 0, 0
     local send
 
     if self.use_threads then
         -- TODO: generate code for all udp/tcp channels, see split gen code in test
         local udpidx, tcpidx = 1, 1
 
-        local send_udp, send_tcp
-        send_udp = function(obj)
+        local send_udp = function(obj, resp)
             local chan = self._udp_channels[udpidx]
             if not chan then
                 udpidx = 1
                 chan = self._udp_channels[1]
             end
-            chan:put(obj:copy())
+            local obj_copy, resp_copy = obj:copy(), resp:copy()
+            obj_copy = ffi.cast("core_object_t*", obj_copy)
+            obj_copy.obj_prev = resp_copy
+            chan:put(obj_copy)
             udpidx = udpidx + 1
         end
-        send_tcp = function(obj)
+        local send_tcp = function(obj, resp)
             local chan = self._tcp_channels[tcpidx]
             if not chan then
                 tcpidx = 1
                 chan = self._tcp_channels[1]
             end
-            chan:put(obj:copy())
+            local obj_copy, resp_copy = obj:copy(), resp:copy()
+            obj_copy = ffi.cast("core_object_t*", obj_copy)
+            obj_copy.obj_prev = resp_copy
+            chan:put(obj_copy)
             tcpidx = tcpidx + 1
         end
         if self._udp_channels[1] and self._tcp_channels[1] then
-            send = function(obj)
-                local protocol = obj.obj_prev
-                while protocol ~= nil do
-                    if protocol.obj_type == object.UDP then
-                        send_udp(obj)
-                        break
-                    elseif protocol.obj_type == object.TCP then
-                        send_tcp(obj)
-                        break
-                    end
-                    protocol = protocol.obj_prev
+            send = function(obj, resp, protocol)
+                if protocol.obj_type == object.UDP then
+                    send_udp(obj, resp)
+                elseif protocol.obj_type == object.TCP then
+                    send_tcp(obj, resp)
                 end
             end
         elseif self._udp_channels[1] then
@@ -399,6 +331,8 @@ function Replay:run()
             send = send_tcp
         end
     else
+        local resprecv, respctx = self.respdiff:receive()
+
         local urecv, uctx, uprod
         if udpcli then
             urecv, uctx = udpcli:receive()
@@ -410,127 +344,141 @@ function Replay:run()
             tprod = tcpcli:produce()
         end
 
-        local dns = require("dnsjit.core.object.dns").new()
-        local print_dns
-        if self.print_dns then
-            print_dns = function(payload)
-                dns.obj_prev = payload
-                dns:print()
+        local send_udp = function(obj, resp)
+            log:info("sending udp query")
+            urecv(uctx, obj)
+
+            local response = uprod(uctx)
+            if response == nil then
+                log:warning("producer error")
+                return
             end
+
+            obj = ffi.cast("core_object_t*", obj)
+            obj.obj_prev = resp
+            resp = ffi.cast("core_object_t*", resp)
+
+            local payload = response:cast()
+            if payload.len == 0 then
+                timeouts = timeouts + 1
+                log:info("timeout")
+                resp.obj_prev = nil
+            else
+                responses = responses + 1
+                log:info("got response")
+                resp.obj_prev = response
+            end
+            resprecv(respctx, obj)
         end
-        local send_udp, send_tcp
-        if self.no_responses then
-            send_udp = function(obj)
-                log:info("sending udp query")
-                urecv(uctx, obj)
-                if print_dns then
-                    print_dns(obj)
-                end
-            end
-            send_tcp = function(obj)
-                log:info("sending tcp query")
-                trecv(tctx, obj)
-                if print_dns then
-                    print_dns(obj)
-                end
-            end
-        else
-            send_udp = function(obj)
-                log:info("sending udp query")
-                urecv(uctx, obj)
-                if print_dns then
-                    print_dns(obj)
-                end
+        local send_tcp = function(obj, resp)
+            log:info("sending tcp query")
+            trecv(tctx, obj)
 
-                local response = uprod(uctx)
-                if response == nil then
-                    log:warning("producer error")
-                    return
-                end
-                local payload = response:cast()
-                if payload.len == 0 then
-                    timeouts = timeouts + 1
-                    log:info("timeout")
-                    return
-                end
+            local response = tprod(tctx)
+            if response == nil then
+                log:warning("producer error")
+                return
+            end
 
+            obj = ffi.cast("core_object_t*", obj)
+            obj.obj_prev = resp
+            resp = ffi.cast("core_object_t*", resp)
+
+            local payload = response:cast()
+            if payload.len == 0 then
+                timeouts = timeouts + 1
+                log:info("timeout")
+                resp.obj_prev = nil
+            else
                 responses = responses + 1
                 log:info("got response")
-                if print_dns then
-                    print_dns(response)
-                end
+                resp.obj_prev = response
             end
-            send_tcp = function(obj)
-                log:info("sending tcp query")
-                trecv(tctx, obj)
-                if print_dns then
-                    print_dns(obj)
-                end
-
-                local response = tprod(tctx)
-                if response == nil then
-                    log:warning("producer error")
-                    return
-                end
-                local payload = response:cast()
-                if payload.len == 0 then
-                    timeouts = timeouts + 1
-                    log:info("timeout")
-                    return
-                end
-
-                responses = responses + 1
-                log:info("got response")
-                if print_dns then
-                    print_dns(response)
-                end
-            end
+            resprecv(respctx, obj)
         end
         if udpcli and tcpcli then
-            send = function(obj)
-                dns.obj_prev = obj
-                if dns:parse_header() == 0 and dns.qr == 0 then
-                    queries = queries + 1
-
-                    local protocol = obj.obj_prev
-                    while protocol ~= nil do
-                        if protocol.obj_type == object.UDP then
-                            send_udp(obj)
-                            break
-                        elseif protocol.obj_type == object.TCP then
-                            send_tcp(obj)
-                            break
-                        end
-                        protocol = protocol.obj_prev
-                    end
+            send = function(obj, resp, protocol)
+                if protocol.obj_type == object.UDP then
+                    send_udp(obj, resp)
+                elseif protocol.obj_type == object.TCP then
+                    send_tcp(obj, resp)
                 end
             end
         elseif udpcli then
-            send = function(obj)
-                dns.obj_prev = obj
-                if dns:parse_header() == 0 and dns.qr == 0 then
-                    queries = queries + 1
-                    send_udp(obj)
-                end
-            end
+            send = send_udp
         elseif tcpcli then
-            send = function(obj)
-                dns.obj_prev = obj
-                if dns:parse_header() == 0 and dns.qr == 0 then
-                    queries = queries + 1
-                    send_tcp(obj)
-                end
-            end
+            send = send_tcp
         end
     end
 
+    self.start_sec = clock:realtime()
+
+    local qtbl = {}
+    local dns = require("dnsjit.core.object.dns").new()
     while true do
         local obj = lprod(lctx)
         if obj == nil then break end
         packets = packets + 1
         local payload = obj:cast()
         if obj:type() == "payload" and payload.len > 0 then
-            send(obj)
+
+            local transport = obj.obj_prev
+            while transport ~= nil do
+                if transport.obj_type == object.IP or transport.obj_type == object.IP6 then
+                    break
+                end
+                transport = transport.obj_prev
+            end
+            local protocol = obj.obj_prev
+            while protocol ~= nil do
+                if protocol.obj_type == object.UDP or protocol.obj_type == object.TCP then
+                    break
+                end
+                protocol = protocol.obj_prev
+            end
+
+            if transport and protocol then
+                transport = transport:cast()
+                protocol = protocol:cast()
+
+                dns.obj_prev = obj
+                if dns:parse_header() == 0 then
+                    if dns.qr == 0 then
+                        local k = string.format("%s %d %s %d", transport:source(), protocol.sport, transport:destination(), protocol.dport)
+                        log:info("query " .. k .. " id " .. dns.id)
+                        qtbl[k] = {
+                            id = dns.id,
+                            payload = payload:copy(),
+                        }
+                    else
+                        local k = string.format("%s %d %s %d", transport:destination(), protocol.dport, transport:source(), protocol.sport)
+                        local q = qtbl[k]
+                        if q and q.id == dns.id then
+                            log:info("response " .. k .. " id " .. dns.id)
+                            queries = queries + 1
+                            send(q.payload:uncast(), obj, protocol)
+                            qtbl[k] = nil
+                        end
+                    end
+                end
+            end
+        end
+
+        if self.use_threads and thread_resps < queries then
+            for _, result in pairs(self._result_channels) do
+                local res = result:try_get()
+                if res ~= nil then
+                    res = ffi.cast("core_object_t*", res)
+                    resprecv(respctx, res)
+                    thread_resps = thread_resps + 1
+
+                    if res.obj_prev.obj_prev ~= nil then
+                        ffi.cast("core_object_t*", res.obj_prev.obj_prev):free()
+                    end
+                    ffi.cast("core_object_t*", res.obj_prev):free()
+                    res:free()
+                end
+            end
         end
     end
 
@@ -565,13 +513,13 @@ function Replay:run()
     end
 end
 
-function Replay:finish()
+function Respdiff:finish()
     if self.use_threads then
         for _, thr in pairs(self._threads) do
             thr:stop()
         end
         for _, stats in pairs(self._stat_channels) do
-            local stat = ffi.cast("struct replay_stats*", stats:get())
+            local stat = ffi.cast("struct respdiff_stats*", stats:get())
             self.queries = self.queries + stat.sent
             self.sent = self.sent + stat.sent
             self.received = self.received + stat.received
@@ -590,6 +538,28 @@ function Replay:finish()
         -- TODO: received == responses ?
         self.received = self.responses
     end
+
+    while (self.responses + self.timeouts) < self.queries do
+        local resprecv, respctx = self.respdiff:receive()
+
+        for _, result in pairs(self._result_channels) do
+            local res = result:try_get()
+            if res ~= nil then
+                res = ffi.cast("core_object_t*", res)
+                resprecv(respctx, res)
+                self.responses = self.responses + 1
+
+                if res.obj_prev.obj_prev ~= nil then
+                    ffi.cast("core_object_t*", res.obj_prev.obj_prev):free()
+                end
+                ffi.cast("core_object_t*", res.obj_prev):free()
+                res:free()
+            end
+        end
+    end
+
+    local end_sec = clock:realtime()
+    self.respdiff:commit(self.start_sec, end_sec)
 end
 
-return Replay
+return Respdiff

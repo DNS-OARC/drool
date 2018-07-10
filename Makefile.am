@@ -42,6 +42,6 @@ SUBDIRS = src
 
 dist_doc_DATA = CHANGES README.md LICENSE
 
-EXTRA_DIST = m4
+EXTRA_DIST = m4 dnsjit_version.lua
 
 test: check
