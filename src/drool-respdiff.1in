@@ -37,70 +37,79 @@
 .SH NAME
 drool \- DNS Replay Tool
 .SH SYNOPSIS
-.B drool command
+.B drool respdiff
 [
 .I options
-] <
-.I arguments
->
+]
+.B path
+.B name
+.B file
+.B name
+.B host
+.B port
 .SH DESCRIPTION
-.B drool
-can replay DNS traffic from packet capture (PCAP) files and send
-it to a specified server, with options such as to manipulate the timing
-between packets, as well as loop packets infinitely or for a set number
-of iterations.
-This tool's goal is to be able to produce a high amount of UDP packets per
-second and TCP sessions per second on common hardware.
-
-The purpose can be to simulate Distributed Denial of Service (DDoS) attacks
-on the DNS and measure normal DNS querying.
-For example, the tool could enable you to take a snapshot of a DDoS and be
-able to replay it later to test if new code or hardening techniques are
-useful, safe & effective.
-Another example is to be able to replay a packet stream for a bug that is
-sequence- and/or timing-related in order to validate the efficacy of
-subsequent bug fixes.
-.SH COMMANDS
-.B drool
-is divided into various commands for different scenarios.
-Each command has it's own man-page, may take different arguments and may
-have additional options.
-.TP
-.B replay
-Replay DNS from a PCAP file, see
-.IR drool-replay (1).
-.TP
-.B respdiff
-Replay DNS and store the responses along with the responses found in the PCAP
-for analysis with the
+This tool is to be used in conjunction with the tool-chain
 .I respdiff
-tool-chain, see
-.IR drool-respdiff (1).
+by CZ.NIC (see
+.IR https://gitlab.labs.nic.cz/knot/respdiff ).
+.LP
+It will replay DNS queries found in the PCAP, but only if a correlating
+response is also found, against the target
+.I host
+and
+.IR port .
+The query, original response and the received response is then stored into
+a LMDB database located at
+.IR path .
+The
+.I name
+before the PCAP
+.I file
+and the
+.I name
+before the target
+.I host
+are stored in the meta table which should correspond with the configuration
+use for
+.I respdiff
+in order for it to be able to read the results correctly.
 .SH OPTIONS
-These options are generic for all
-.B drool
-commands.
+These options are specific for the
+.B respdiff
+command, see
+.IR drool (1)
+for generic options.
 .TP
-.B \-\-csv
-Output statistics as CSV.
+.B \-D
+Show DNS queries and responses as processing goes.
 .TP
-.B \-\-json
-Output statistics as JSON.
+.B \-\-no\-tcp
+Do not use TCP.
 .TP
-.B \-v \-\-verbose
-Enable verbose logging, can be given multiple times to increase verbosity level.
+.B \-\-no\-udp
+Do not use UDP.
 .TP
-.B \-h \-\-help
-Print help and exit.
+.B \-T \-\-threads
+Use threads.
 .TP
-.B \-V \-\-version
-Print version and exit.
-.SH EXIT VALUES
-0 \- no error
-.br
-1 \- generic error
+.B \-\-tcp\-threads N
+Set the number of TCP threads to use, default 2.
+.TP
+.B \-\-udp\-threads N
+Set the number of UDP threads to use, default 4.
+.TP
+.B \-\-timeout N.N
+Set timeout for waiting on responses [seconds.nanoseconds], default 10.0.
+.SH EXAMPLE
+This example replays a PCAP file against localhost and then uses the
+.I respdiff
+tool-chain to analyze the results.
+.LP
+  $ drool respdiff /lmdb/path pcap file.pcap target 127.0.0.1 53
+  $ msgdiff.py /lmdb/path
+  $ diffsum.py /lmdb/path
 .SH SEE ALSO
-drool-replay(1)
+drool(1)
 .SH AUTHORS
 Jerry Lundström, DNS-OARC
 .LP
@@ -114,12 +123,12 @@ Maintained by DNS-OARC
 For issues and feature requests please use:
 .LP
 .RS
-.I @PACKAGE_URL@
+\fI@PACKAGE_URL@\fP
 .RE
 .LP
 For question and help please use:
 .LP
 .RS
-.I @PACKAGE_BUGREPORT@
+\fI@PACKAGE_BUGREPORT@\fP
 .RE
 .LP

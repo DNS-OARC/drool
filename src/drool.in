@@ -38,6 +38,7 @@ package.path = package.path .. ";@droollibdir@/?.lua"
 local clock = require("dnsjit.lib.clock")
 local log = require("dnsjit.core.log").new("drool")
 local getopt = require("dnsjit.lib.getopt").new({
+    { "V", "version", false, "Print version and exit", "?" },
     { "v", "verbose", 0, "Enable and increase verbosity for each time given", "?+" },
     { nil, "json", false, "Output statistics as JSON", "?" },
     { nil, "csv", false, "Output statistics as CSV", "?" },
@@ -46,7 +47,6 @@ getopt.usage_desc = arg[1] .. " command [options...] <arguments...>"
 
 local cmds = {
     replay = "drool.replay",
-    mirror = "drool.mirror",
     respdiff = "drool.respdiff",
 }
 
@@ -55,6 +55,10 @@ if not arg[2] or not cmds[arg[2]] then
 
     if getopt:val("help") then
         getopt:usage()
+        os.exit(0)
+    end
+    if getopt:val("version") then
+        print("drool version @PACKAGE_VERSION@")
         os.exit(0)
     end
     if arg[2] then
@@ -87,7 +91,8 @@ if v > 3 then
     require("dnsjit.core.log").enable("debug")
 end
 
-cmd:setup(getopt)
+cmd:getopt(getopt)
+cmd:setup()
 local start_sec, start_nsec = clock:monotonic()
 cmd:run()
 local end_sec, end_nsec = clock:monotonic()

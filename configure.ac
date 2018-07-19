@@ -34,16 +34,23 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 AC_PREREQ(2.61)
-AC_INIT([drool], [1.99.1], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
+AC_INIT([drool], [1.99.2], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/drool.in])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
 AC_PATH_PROG([DNSJIT],[dnsjit])
-if test "x$ac_cv_path_DNSJIT" = "x"; then
+AS_IF([test "x$ac_cv_path_DNSJIT" = "x"], [
   AC_MSG_ERROR([dnsjit was not found])
-fi
+])
+AC_MSG_CHECKING([for dnsjit >= 0.9.5])
+AS_IF(["$DNSJIT" "$srcdir/dnsjit_version.lua" 0 9 5 2>/dev/null], [
+  AC_MSG_RESULT([yes])
+], [
+  AC_MSG_RESULT([no])
+  AC_MSG_ERROR([dnsjit version does not meet the requirements])
+])
 
 # Check --enable-warn-all, placeholer for OARC projects wide options
 AC_ARG_ENABLE([warn-all])

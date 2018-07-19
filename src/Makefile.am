@@ -36,20 +36,24 @@
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
 CLEANFILES = drool \
   drool.1 \
-  drool-replay.1
+  drool-replay.1 \
+  drool-respdiff.1
 
 SUBDIRS = test
 
 EXTRA_DIST = drool.in \
   drool.1in \
-  drool-replay.1in
+  drool-replay.1in \
+  drool-respdiff.1in
 
 bin_SCRIPTS = drool
 droollibdir = $(datadir)/drool/lib/drool
-dist_droollib_DATA = lib/drool/replay.lua
+dist_droollib_DATA = lib/drool/replay.lua \
+  lib/drool/respdiff.lua
 
 man1_MANS = drool.1 \
-  drool-replay.1
+  drool-replay.1 \
+  drool-respdiff.1
 
 drool: drool.in Makefile
 	sed -e 's,[@]PACKAGE_NAME[@],$(PACKAGE_NAME),g' \
