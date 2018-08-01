@@ -69,6 +69,7 @@ function Respdiff.new(getopt)
         no_tcp = false,
         udp_threads = 4,
         tcp_threads = 2,
+        size = 10485760,
 
         packets = 0,
         queries = 0,
@@ -98,6 +99,7 @@ function Respdiff.new(getopt)
         getopt:add(nil, "udp-threads", 4, "Set the number of UDP threads to use, default 4", "?")
         getopt:add(nil, "tcp-threads", 2, "Set the number of TCP threads to use, default 2", "?")
         getopt:add(nil, "timeout", "10.0", "Set timeout for waiting on responses [seconds.nanoseconds], default 10.0", "?")
+        getopt:add(nil, "size", 10485760, "Set the size (in bytes, multiple of OS page size) of the LMDB database, default 10485760.", "?")
     end
 
     return self
@@ -147,6 +149,7 @@ function Respdiff:getopt(getopt)
     self.udp_threads = getopt:val("udp-threads")
     self.no_tcp = getopt:val("no-tcp")
     self.tcp_threads = getopt:val("tcp-threads")
+    self.size = getopt:val("size")
 end
 
 local _thr_func = function(thr)
@@ -222,7 +225,7 @@ function Respdiff:setup()
     self.layer = require("dnsjit.filter.layer").new()
     self.layer:producer(self.input)
 
-    self.respdiff = require("dnsjit.output.respdiff").new(self.path, self.fname, self.hname)
+    self.respdiff = require("dnsjit.output.respdiff").new(self.path, self.fname, self.hname, self.size)
 
     self._timespec.sec = math.floor(self.timeout)
     self._timespec.nsec = (self.timeout - math.floor(self.timeout)) * 1000000000
@@ -286,8 +289,9 @@ function Respdiff:run()
     local lprod, lctx = self.layer:produce()
     local udpcli = self._udpcli
     local tcpcli = self._tcpcli
-    local log, packets, queries, responses, errors, timeouts, thread_resps = self.log, 0, 0, 0, 0, 0, 0
+    local log, packets, queries, responses, errors, timeouts = self.log, 0, 0, 0, 0, 0
     local send
+    local resprecv, respctx = self.respdiff:receive()
 
     if self.use_threads then
         -- TODO: generate code for all udp/tcp channels, see split gen code in test
@@ -331,8 +335,6 @@ function Respdiff:run()
             send = send_tcp
         end
     else
-        local resprecv, respctx = self.respdiff:receive()
-
         local urecv, uctx, uprod
         if udpcli then
             urecv, uctx = udpcli:receive()
@@ -437,7 +439,7 @@ function Respdiff:run()
                 protocol = protocol.obj_prev
             end
 
-            if transport and protocol then
+            if transport ~= nil and protocol ~= nil then
                 transport = transport:cast()
                 protocol = protocol:cast()
 
@@ -464,13 +466,13 @@ function Respdiff:run()
             end
         end
 
-        if self.use_threads and thread_resps < queries then
+        if self.use_threads and responses < queries then
             for _, result in pairs(self._result_channels) do
                 local res = result:try_get()
                 if res ~= nil then
                     res = ffi.cast("core_object_t*", res)
                     resprecv(respctx, res)
-                    thread_resps = thread_resps + 1
+                    responses = responses + 1
 
                     if res.obj_prev.obj_prev ~= nil then
                         ffi.cast("core_object_t*", res.obj_prev.obj_prev):free()
@@ -515,12 +517,14 @@ end
 
 function Respdiff:finish()
     if self.use_threads then
+        local left = 0 - self.responses
+        self.responses = 0
+
         for _, thr in pairs(self._threads) do
             thr:stop()
         end
         for _, stats in pairs(self._stat_channels) do
             local stat = ffi.cast("struct respdiff_stats*", stats:get())
-            self.queries = self.queries + stat.sent
             self.sent = self.sent + stat.sent
             self.received = self.received + stat.received
             self.responses = self.responses + stat.responses
@@ -528,7 +532,6 @@ function Respdiff:finish()
             self.errors = self.errors + stat.errors
             C.free(stat)
         end
-        self.queries = tonumber(self.queries)
         self.sent = tonumber(self.sent)
         self.received = tonumber(self.received)
         self.responses = tonumber(self.responses)
@@ -537,24 +540,27 @@ function Respdiff:finish()
 
         -- TODO: received == responses ?
         self.received = self.responses
-    end
 
-    while (self.responses + self.timeouts) < self.queries do
+        left = left + self.responses + self.timeouts
         local resprecv, respctx = self.respdiff:receive()
+        local tries = 0
+        while left > 0 and tries < 10000 do
+            for _, result in pairs(self._result_channels) do
+                local res = result:try_get()
+                if res ~= nil then
+                    res = ffi.cast("core_object_t*", res)
+                    resprecv(respctx, res)
+                    left = left - 1
+                    tries = 0
 
-        for _, result in pairs(self._result_channels) do
-            local res = result:try_get()
-            if res ~= nil then
-                res = ffi.cast("core_object_t*", res)
-                resprecv(respctx, res)
-                self.responses = self.responses + 1
-
-                if res.obj_prev.obj_prev ~= nil then
-                    ffi.cast("core_object_t*", res.obj_prev.obj_prev):free()
+                    if res.obj_prev.obj_prev ~= nil then
+                        ffi.cast("core_object_t*", res.obj_prev.obj_prev):free()
+                    end
+                    ffi.cast("core_object_t*", res.obj_prev):free()
+                    res:free()
                 end
-                ffi.cast("core_object_t*", res.obj_prev):free()
-                res:free()
             end
+            tries = tries + 1
         end
     end
 

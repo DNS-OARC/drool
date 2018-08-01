@@ -100,6 +100,15 @@ Set the number of UDP threads to use, default 4.
 .TP
 .B \-\-timeout N.N
 Set timeout for waiting on responses [seconds.nanoseconds], default 10.0.
+.TP
+.B \-\-size BYTES
+Set the size (in bytes, multiple of OS page size) of the LMDB database, default 10485760.
+.SH DATABASE SIZE
+Note that you will need to set a database size that is large enough for all
+queries, all original responses, all received responses and all analysis done
+by
+.I respdiff
+tool-chain in order for a successful analysis to be done.
 .SH EXAMPLE
 This example replays a PCAP file against localhost and then uses the
 .I respdiff
