@@ -139,9 +139,10 @@ function Replay:getopt(getopt)
     self.tcp_threads = getopt:val("tcp-threads")
 
     if getopt:val("t") ~= "ignore" then
-        local mode, opt = getopt:val("t")
-        self.timing_mode = mode
-        self.timing_opt = opt
+        self.timing_mode, self.timing_opt = getopt:val("t"):match("(%w+)=([%w%.]+)")
+        if self.timing_mode == nil then
+            self.timing_mode = getopt:val("t")
+        end
     end
 end
 
