@@ -66,7 +66,7 @@ Jerry Lundström <jerry@dns-oarc.net>
 
 ## Copyright
 
-Copyright (c) 2017-2018, OARC, Inc.
+Copyright (c) 2017-2019, OARC, Inc.
 
 Copyright (c) 2017, Comcast Corporation
 
