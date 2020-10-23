@@ -16,6 +16,15 @@ Another example is to be able to replay a packet stream for a
 bug that is sequence- and/or timing-related in order to validate the
 efficacy of subsequent bug fixes.
 
+More information may be found here:
+- https://www.dns-oarc.net/tools/drool
+
+Issues should be reported here:
+- https://github.com/DNS-OARC/drool/issues
+
+General support and discussion:
+- Mattermost: https://chat.dns-oarc.net/community/channels/oarc-software
+
 ## Known Issues
 
 - IP fragments are currently not processed and will be discarded.
