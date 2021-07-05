@@ -40,7 +40,14 @@ AC_CONFIG_SRCDIR([src/drool.in])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
-AC_PATH_PROG([DNSJIT],[dnsjit])
+DNSJIT_ROOT=
+AC_ARG_WITH([dnsjit], [AS_HELP_STRING([--with-dnsjit=PATH], [Use PATH when checking for dnsjit binaries])], [
+  AC_PATH_PROG([DNSJIT],[dnsjit],,[$withval/bin])
+  DNSJIT_ROOT="$withval"
+], [
+  AC_PATH_PROG([DNSJIT],[dnsjit])
+])
+AC_SUBST([DNSJIT_ROOT])
 AS_IF([test "x$ac_cv_path_DNSJIT" = "x"], [
   AC_MSG_ERROR([dnsjit was not found])
 ])

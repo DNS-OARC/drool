@@ -33,7 +33,7 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
+MAINTAINERCLEANFILES = $(srcdir)/Makefile.in env.sh
 
 CLEANFILES = test*.log test*.trs \
   *.pcap-dist \
@@ -42,7 +42,16 @@ CLEANFILES = test*.log test*.trs \
 
 TESTS = test1.sh test2.sh
 
-test2.sh: dns.pcap-dist 1qtcp.pcap-dist
+BUILT_SOURCES = env.sh
+
+env.sh:
+	echo "export PATH=\"\$$PATH:@DNSJIT_ROOT@/bin\"" >"$@"
+	echo "export LUA_CPATH=\"@DNSJIT_ROOT@/lib/lua/5.1/?.so;;\"" >>"$@"
+	echo "export LUA_PATH=\"@DNSJIT_ROOT@/share/lua/5.1/?.lua;;\"" >>"$@"
+
+test1.sh: env.sh
+
+test2.sh: env.sh dns.pcap-dist 1qtcp.pcap-dist
 
 .pcap.pcap-dist:
 	cp "$<" "$@"

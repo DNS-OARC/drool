@@ -35,6 +35,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-export LUA_PATH="$srcdir/../lib/?.lua"
+. ./env.sh
+
+export LUA_PATH="$srcdir/../lib/?.lua;$LUA_PATH"
 ../drool -h
 ../drool replay -h
