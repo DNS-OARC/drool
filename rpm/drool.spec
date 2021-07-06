@@ -15,6 +15,7 @@ BuildArch:      noarch
 BuildRequires:  dnsjit >= 0.9.7
 BuildRequires:  autoconf
 BuildRequires:  automake
+BuildRequires:  make
 
 Requires:       dnsjit >= 0.9.7
 
