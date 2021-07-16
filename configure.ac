@@ -1,6 +1,6 @@
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017-2019, OARC, Inc.
+# Copyright (c) 2017-2021, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -34,7 +34,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 AC_PREREQ(2.61)
-AC_INIT([drool], [1.99.4], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
+AC_INIT([drool], [2.0.0], [admin@dns-oarc.net], [drool], [https://github.com/DNS-OARC/drool/issues])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_SRCDIR([src/drool.in])
 AC_CONFIG_MACRO_DIR([m4])
@@ -51,8 +51,8 @@ AC_SUBST([DNSJIT_ROOT])
 AS_IF([test "x$ac_cv_path_DNSJIT" = "x"], [
   AC_MSG_ERROR([dnsjit was not found])
 ])
-AC_MSG_CHECKING([for dnsjit >= 0.9.7])
-AS_IF(["$DNSJIT" "$srcdir/dnsjit_version.lua" 0 9 7 2>/dev/null], [
+AC_MSG_CHECKING([for dnsjit >= 1.0.0])
+AS_IF(["$DNSJIT" "$srcdir/dnsjit_version.lua" 1 0 0 2>/dev/null], [
   AC_MSG_RESULT([yes])
 ], [
   AC_MSG_RESULT([no])
