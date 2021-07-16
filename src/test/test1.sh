@@ -2,7 +2,7 @@
 #
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017-2018, OARC, Inc.
+# Copyright (c) 2017-2021, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -35,4 +35,8 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+. ./env.sh
+
+export LUA_PATH="$srcdir/../lib/?.lua;$LUA_PATH"
 ../drool -h
+../drool replay -h

@@ -1,0 +1,125 @@
+.\" DNS Reply Tool (drool)
+.\"
+.\" Copyright (c) 2017-2021, OARC, Inc.
+.\" Copyright (c) 2017, Comcast Corporation
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\"
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in
+.\"    the documentation and/or other materials provided with the
+.\"    distribution.
+.\"
+.\" 3. Neither the name of the copyright holder nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+.\" "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+.\" LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+.\" FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+.\" COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+.\" BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+.\" LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+.\" CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+.\" ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.\"
+.TH drool 1 "@PACKAGE_VERSION@" "DNS Replay Tool"
+.SH NAME
+drool \- DNS Replay Tool
+.SH SYNOPSIS
+.B drool command
+[
+.I options
+] <
+.I arguments
+>
+.SH DESCRIPTION
+.B drool
+can replay DNS traffic from packet capture (PCAP) files and send
+it to a specified server, with options such as to manipulate the timing
+between packets, as well as loop packets infinitely or for a set number
+of iterations.
+This tool's goal is to be able to produce a high amount of UDP packets per
+second and TCP sessions per second on common hardware.
+
+The purpose can be to simulate Distributed Denial of Service (DDoS) attacks
+on the DNS and measure normal DNS querying.
+For example, the tool could enable you to take a snapshot of a DDoS and be
+able to replay it later to test if new code or hardening techniques are
+useful, safe & effective.
+Another example is to be able to replay a packet stream for a bug that is
+sequence- and/or timing-related in order to validate the efficacy of
+subsequent bug fixes.
+.SH COMMANDS
+.B drool
+is divided into various commands for different scenarios.
+Each command has it's own man-page, may take different arguments and may
+have additional options.
+.TP
+.B replay
+Replay DNS from a PCAP file, see
+.IR drool-replay (1).
+.TP
+.B respdiff
+Replay DNS and store the responses along with the responses found in the PCAP
+for analysis with the
+.I respdiff
+tool-chain, see
+.IR drool-respdiff (1).
+.SH OPTIONS
+These options are generic for all
+.B drool
+commands.
+.TP
+.B \-\-csv
+Output statistics as CSV.
+.TP
+.B \-\-json
+Output statistics as JSON.
+.TP
+.B \-v \-\-verbose
+Enable verbose logging, can be given multiple times to increase verbosity level.
+.TP
+.B \-h \-\-help
+Print help and exit.
+.TP
+.B \-V \-\-version
+Print version and exit.
+.SH EXIT VALUES
+0 \- no error
+.br
+1 \- generic error
+.SH SEE ALSO
+drool-replay(1)
+.SH AUTHORS
+Jerry Lundström, DNS-OARC
+.LP
+Maintained by DNS-OARC
+.LP
+.RS
+.I https://www.dns-oarc.net/
+.RE
+.LP
+.SH BUGS
+For issues and feature requests please use:
+.LP
+.RS
+.I @PACKAGE_URL@
+.RE
+.LP
+For question and help please use:
+.LP
+.RS
+.I @PACKAGE_BUGREPORT@
+.RE
+.LP

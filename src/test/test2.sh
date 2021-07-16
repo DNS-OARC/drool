@@ -2,7 +2,7 @@
 #
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017-2018, OARC, Inc.
+# Copyright (c) 2017-2021, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -35,4 +35,22 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-! ../drool -c "$srcdir/test2.conf"
+. ./env.sh
+
+export LUA_PATH="$srcdir/../lib/?.lua;$LUA_PATH"
+
+if [ -n "$DROOL_TEST_NETWORK" ]; then
+    rm -f test2.out test2.out2
+    for pcap in ./dns.pcap-dist ./1qtcp.pcap-dist; do
+        ../drool replay -n --no-tcp "$pcap" 127.0.0.1 53 | tail -n 7 >>test2.out
+        ../drool replay -n --no-tcp "$pcap" ::1 53 | tail -n 7 >>test2.out
+        ../drool replay -T -n --no-tcp "$pcap" 127.0.0.1 53 | tail -n 7 >>test2-threads.out
+        ../drool replay -T -n --no-tcp "$pcap" ::1 53 | tail -n 7 >>test2-threads.out
+    done
+    awk '{print $1 " " $2}' <test2.out >test2.out2
+    diff test2.out2 "$srcdir/test2.gold"
+    awk '{print $1 " " $2}' <test2-threads.out >test2-threads.out2
+    diff test2-threads.out2 "$srcdir/test2.gold"
+else
+    echo "Not testing network (set DROOL_TEST_NETWORK to enable)"
+fi

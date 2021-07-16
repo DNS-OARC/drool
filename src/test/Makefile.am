@@ -1,6 +1,6 @@
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017-2018, OARC, Inc.
+# Copyright (c) 2017-2021, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -33,22 +33,29 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
+MAINTAINERCLEANFILES = $(srcdir)/Makefile.in env.sh
 
 CLEANFILES = test*.log test*.trs \
-    *.pcap-dist \
-    test4.out test4.out2
+  *.pcap-dist \
+  test2.out test2.out2 \
+  test2-threads.out test2-threads.out2
 
-TESTS = test1.sh test2.sh test3.sh test4.sh
+TESTS = test1.sh test2.sh
 
-test3.sh: dns.pcap-dist 1qtcp.pcap-dist
+BUILT_SOURCES = env.sh
 
-test4.sh: dns.pcap-dist 1qtcp.pcap-dist
+env.sh:
+	echo "export PATH=\"\$$PATH:@DNSJIT_ROOT@/bin\"" >"$@"
+	echo "export LUA_CPATH=\"@DNSJIT_ROOT@/lib/lua/5.1/?.so;;\"" >>"$@"
+	echo "export LUA_PATH=\"@DNSJIT_ROOT@/share/lua/5.1/?.lua;;\"" >>"$@"
+
+test1.sh: env.sh
+
+test2.sh: env.sh dns.pcap-dist 1qtcp.pcap-dist
 
 .pcap.pcap-dist:
 	cp "$<" "$@"
 
 EXTRA_DIST = $(TESTS) \
-    test2.conf \
-    dns.pcap 1qtcp.pcap \
-    test4.gold
+  dns.pcap 1qtcp.pcap \
+  test2.gold

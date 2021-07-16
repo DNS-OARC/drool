@@ -1,6 +1,6 @@
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017-2018, OARC, Inc.
+# Copyright (c) 2017-2021, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -33,16 +33,15 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-ACLOCAL_AMFLAGS = -I m4 -I src/pcap-thread/m4
+ACLOCAL_AMFLAGS = -I m4
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in \
-    $(srcdir)/src/config.h.in~ \
-    $(srcdir)/configure
+  $(srcdir)/configure
 
 SUBDIRS = src
 
-dist_doc_DATA = CHANGES README.md LICENSE NOTES.md
+dist_doc_DATA = CHANGES README.md LICENSE
 
-EXTRA_DIST = m4
+EXTRA_DIST = m4 dnsjit_version.lua
 
 test: check

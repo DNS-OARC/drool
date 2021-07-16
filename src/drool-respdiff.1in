@@ -1,0 +1,143 @@
+.\" DNS Reply Tool (drool)
+.\"
+.\" Copyright (c) 2017-2021, OARC, Inc.
+.\" Copyright (c) 2017, Comcast Corporation
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\"
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in
+.\"    the documentation and/or other materials provided with the
+.\"    distribution.
+.\"
+.\" 3. Neither the name of the copyright holder nor the names of its
+.\"    contributors may be used to endorse or promote products derived
+.\"    from this software without specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+.\" "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+.\" LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+.\" FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+.\" COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+.\" BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+.\" LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+.\" CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+.\" ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+.\" POSSIBILITY OF SUCH DAMAGE.
+.\"
+.TH drool 1 "@PACKAGE_VERSION@" "DNS Replay Tool"
+.SH NAME
+drool \- DNS Replay Tool
+.SH SYNOPSIS
+.B drool respdiff
+[
+.I options
+]
+.B path
+.B name
+.B file
+.B name
+.B host
+.B port
+.SH DESCRIPTION
+This tool is to be used in conjunction with the tool-chain
+.I respdiff
+by CZ.NIC (see
+.IR https://gitlab.labs.nic.cz/knot/respdiff ).
+.LP
+It will replay DNS queries found in the PCAP, but only if a correlating
+response is also found, against the target
+.I host
+and
+.IR port .
+The query, original response and the received response is then stored into
+a LMDB database located at
+.IR path .
+The
+.I name
+before the PCAP
+.I file
+and the
+.I name
+before the target
+.I host
+are stored in the meta table which should correspond with the configuration
+use for
+.I respdiff
+in order for it to be able to read the results correctly.
+.SH OPTIONS
+These options are specific for the
+.B respdiff
+command, see
+.IR drool (1)
+for generic options.
+.TP
+.B \-D
+Show DNS queries and responses as processing goes.
+.TP
+.B \-\-no\-tcp
+Do not use TCP.
+.TP
+.B \-\-no\-udp
+Do not use UDP.
+.TP
+.B \-T \-\-threads
+Use threads.
+.TP
+.B \-\-tcp\-threads N
+Set the number of TCP threads to use, default 2.
+.TP
+.B \-\-udp\-threads N
+Set the number of UDP threads to use, default 4.
+.TP
+.B \-\-timeout N.N
+Set timeout for waiting on responses [seconds.nanoseconds], default 10.0.
+.TP
+.B \-\-size BYTES
+Set the size (in bytes, multiple of OS page size) of the LMDB database, default 10485760.
+.SH DATABASE SIZE
+Note that you will need to set a database size that is large enough for all
+queries, all original responses, all received responses and all analysis done
+by
+.I respdiff
+tool-chain in order for a successful analysis to be done.
+.SH EXAMPLE
+This example replays a PCAP file against localhost and then uses the
+.I respdiff
+tool-chain to analyze the results.
+.LP
+  $ drool respdiff /lmdb/path pcap file.pcap target 127.0.0.1 53
+  $ msgdiff.py /lmdb/path
+  $ diffsum.py /lmdb/path
+.SH SEE ALSO
+drool(1)
+.SH AUTHORS
+Jerry Lundström, DNS-OARC
+.LP
+Maintained by DNS-OARC
+.LP
+.RS
+.I https://www.dns-oarc.net/
+.RE
+.LP
+.SH BUGS
+For issues and feature requests please use:
+.LP
+.RS
+\fI@PACKAGE_URL@\fP
+.RE
+.LP
+For question and help please use:
+.LP
+.RS
+\fI@PACKAGE_BUGREPORT@\fP
+.RE
+.LP

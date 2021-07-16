@@ -1,6 +1,6 @@
 # DNS Reply Tool (drool)
 #
-# Copyright (c) 2017-2018, OARC, Inc.
+# Copyright (c) 2017-2021, OARC, Inc.
 # Copyright (c) 2017, Comcast Corporation
 # All rights reserved.
 #
@@ -34,48 +34,39 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
-CLEANFILES = drool.1
+CLEANFILES = drool \
+  drool.1 \
+  drool-replay.1 \
+  drool-respdiff.1
 
 SUBDIRS = test
 
-AM_CFLAGS = -I$(srcdir) \
-    -I$(top_srcdir) \
-    $(PTHREAD_CFLAGS)
+EXTRA_DIST = drool.in \
+  drool.1in \
+  drool-replay.1in \
+  drool-respdiff.1in
 
-EXTRA_DIST = drool.1.in \
-    drool.conf.5.in \
-    drool.conf.example
+bin_SCRIPTS = drool
+droollibdir = $(datadir)/drool/lib/drool
+dist_droollib_DATA = lib/drool/replay.lua \
+  lib/drool/respdiff.lua
 
-bin_PROGRAMS = drool
+man1_MANS = drool.1 \
+  drool-replay.1 \
+  drool-respdiff.1
 
-drool_SOURCES = callback.c client.c client_pool.c \
-    conf.c conf_client_pool.c conf_file.c conf_interface.c \
-    drool.c dropback.c log.c query.c stats_callback.c \
-    omg-dns/omg_dns.c \
-    parseconf/parseconf.c \
-    pcap-thread/pcap_thread.c \
-    sllq/sllq.c
-dist_drool_SOURCES = assert.h callback.h client.h client_pool.h \
-    client_pool_sendas.h \
-    conf.h conf_client_pool.h conf_file.h conf_interface.h \
-    drool.h dropback.h log.h query.h stats_callback.h timing.h \
-    omg-dns/omg_dns.h \
-    parseconf/parseconf.h \
-    pcap-thread/pcap_thread.h \
-    sllq/sllq.h
-drool_LDADD = $(PTHREAD_LIBS)
+drool: drool.in Makefile
+	sed -e 's,[@]PACKAGE_NAME[@],$(PACKAGE_NAME),g' \
+  -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
+  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  -e 's,[@]droollibdir[@],$(datadir)/drool/lib,g' \
+  -e 's,[@]DROOL_SHEBANG[@],$(DROOL_SHEBANG),g' \
+  < "$(srcdir)/drool.in" > drool
+	chmod +x drool
 
-man1_MANS = drool.1
-man5_MANS = drool.conf.5
-
-drool.1: drool.1.in Makefile
+.1in.1:
 	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < $(srcdir)/drool.1.in > drool.1
-
-drool.conf.5: drool.conf.5.in Makefile
-	sed -e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
-        -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
-        -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
-        < $(srcdir)/drool.conf.5.in > drool.conf.5
+  -e 's,[@]PACKAGE_URL[@],$(PACKAGE_URL),g' \
+  -e 's,[@]PACKAGE_BUGREPORT[@],$(PACKAGE_BUGREPORT),g' \
+  < "$<" > "$@"
