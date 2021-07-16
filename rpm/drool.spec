@@ -67,7 +67,7 @@ rm -rf $RPM_BUILD_ROOT
 - Release 2.0.0
   * This major release is a complete rewrite of drool to Lua using dnsjit!
   * This includes two commands:
-    - `drool reply`: replay DNS traffic from packet capture (PCAP) files
+    - `drool replay`: replay DNS traffic from packet capture (PCAP) files
       and send it to a specified server, with options such as to manipulate
       the timing between packets, as well as loop packets infinitely or for
       a set number of iterations.
