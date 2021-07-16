@@ -3,12 +3,12 @@ Upstream-Name: drool
 Source: https://github.com/DNS-OARC/drool
 
 Files: *
-Copyright: 2017-2019 OARC, Inc.
+Copyright: 2017-2021 OARC, Inc.
            2017 Comcast Corporation
 License: BSD-3-Clause
 
 Files: debian/*
-Copyright: 2019 Jerry Lundström <lundstrom.jerry@gmail.com>
+Copyright: 2021 Jerry Lundström <lundstrom.jerry@gmail.com>
 License: BSD-3-Clause
 
 License: BSD-3-Clause

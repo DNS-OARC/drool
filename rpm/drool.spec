@@ -1,5 +1,5 @@
 Name:           drool
-Version:        1.99.4
+Version:        2.0.0
 Release:        1%{?dist}
 Summary:        DNS Replay Tool
 Group:          Productivity/Networking/DNS/Utilities
@@ -12,12 +12,12 @@ Source0:        https://www.dns-oarc.net/files/drool/%{name}-%{version}.tar.gz?/
 
 BuildArch:      noarch
 
-BuildRequires:  dnsjit >= 0.9.7
+BuildRequires:  dnsjit >= 1.0.0
 BuildRequires:  autoconf
 BuildRequires:  automake
 BuildRequires:  make
 
-Requires:       dnsjit >= 0.9.7
+Requires:       dnsjit >= 1.0.0
 
 
 %description
@@ -63,6 +63,43 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jul 16 2021 Jerry Lundström <lundstrom.jerry@gmail.com> 2.0.0-1
+- Release 2.0.0
+  * This major release is a complete rewrite of drool to Lua using dnsjit!
+  * This includes two commands:
+    - `drool reply`: replay DNS traffic from packet capture (PCAP) files
+      and send it to a specified server, with options such as to manipulate
+      the timing between packets, as well as loop packets infinitely or for
+      a set number of iterations.
+    - `drool respdiff`: replay DNS queries found in the PCAP, but only if
+      a correlating response is also found. The query, original response
+      and the received response is then stored into a LMDB database which
+      can then be used by respdiff by CZ.NIC (see https://gitlab.labs.nic.cz/knot/respdiff)
+      for analysis.
+  * See `man drool`, `man drool reply` and `man drool respdiff` for more
+    information.
+  * Commits:
+    9357c54 RPM
+    dc27432 configure
+    5a60fd3 Bye Travis
+    21d950c Info, Travis
+    eb44217 Badges
+    5623d60 COPR
+    1b5bd66 COPR, spec
+    2033d26 Package
+    61264d2 Funding
+    c3eb323 (tag: v1.99.4) Copyright, v1.99.4
+    ff9dfd5 Timing Mode
+    fc55d2d (tag: v1.99.3) Respdiff fix
+    e432c91 (tag: v1.99.2) Respdiff, v1.99.2
+    8e99d0e Dependencies
+    46712c0 Packaging
+    dcc5450 Configure options
+    de63694 (tag: v1.99.1) Rewrite, v1.99.1
+    e96a9f9 (tag: v1.99.0) Backends
+    8c99925 pcapthread
+    cf3f65a Split
+    99542e5 Rewrite into Lua using `dnsjit`
 * Fri Jan 25 2019 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.4-1
 - Alpha release 1.99.4
 * Wed Aug 01 2018 Jerry Lundström <lundstrom.jerry@gmail.com> 1.99.3-1
