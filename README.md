@@ -1,3 +1,5 @@
+# NOTE: Moved to https://codeberg.org/DNS-OARC/drool
+
 # DNS Replay Tool (drool)
 
 `drool` can replay DNS traffic from packet capture (PCAP) files and send
